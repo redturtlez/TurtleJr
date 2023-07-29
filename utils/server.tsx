@@ -12,7 +12,7 @@ export async function generateMetadata(params): Promise<Metadata> {
           type: "image/png",
         },
         {
-          url: "turtle192.ico",
+          url: "maskturtle192.ico",
           sizes: "96x96 128x128 192x192",
         },
       ],
