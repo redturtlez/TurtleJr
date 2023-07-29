@@ -4,9 +4,11 @@ import { Inter } from "next/font/google";
 import Navbar from "./navbar";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { generateMetadata } from "utils/server";
 
 const inter = Inter({ subsets: ["latin"] });
 
+export const metadata = generateMetadata({});
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
