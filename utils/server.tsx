@@ -7,6 +7,9 @@ export async function generateMetadata(params): Promise<Metadata> {
     icons: {
       icon: "/turtle192.png",
       shortcut: "/maskturtle192.ico",
+      other: {
+        url: "/maskturtle192.ico",
+      },
     },
   };
 }
