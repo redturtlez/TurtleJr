@@ -5,11 +5,17 @@ export async function generateMetadata(params): Promise<Metadata> {
     title: params.title != undefined ? params.title + " | Turtle Jr" : "Default",
     description: params.description != undefined ? params.description : "Default Metadata",
     icons: {
-      icon: "/turtle192.png",
-      shortcut: "/maskturtle192.ico",
-      other: {
-        url: "/maskturtle192.ico",
-      },
+      icon: [
+        {
+          url: "turtlejr.png",
+          sizes: "48x48",
+          type: "image/png",
+        },
+        {
+          url: "turtle192.ico",
+          sizes: "96x96 128x128 192x192",
+        },
+      ],
     },
   };
 }
