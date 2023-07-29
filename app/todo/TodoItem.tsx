@@ -59,7 +59,7 @@ export default function TodoItem(props: { item: Todo; updateList: () => void }) 
             {item.title}
             {flipCaret
               ? item.tasks.map((i) => (
-                  <div key={i.id} className="flex max-w-full [text-wrap:balance] ">
+                  <div key={i.id} className="flex max-w-full  font-normal [text-wrap:balance]">
                     -{i.title}
                   </div>
                 ))
