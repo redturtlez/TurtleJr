@@ -93,24 +93,19 @@ export async function getToDos(input) {
               break;
           }
           updateItem.then();
-          if (item.nextShow.valueOf() == today.valueOf()) {
-            if (item.priority) {
-              todays.unshift(item);
-            } else {
-              todays.push(item);
-            }
-          }
         }
+      }
+      if (item.nextShow.valueOf() == today.valueOf()) {
+        if (item.priority) {
+          todays.unshift(item);
+        } else {
+          todays.push(item);
+        }
+      }
+      if (item.priority) {
+        overall.unshift(item);
       } else {
-        if (item.nextShow.valueOf() == today.valueOf()) {
-          if (item.priority) {
-            todays.unshift(item);
-            overall.unshift(item);
-          } else {
-            todays.push(item);
-            overall.push(item);
-          }
-        }
+        overall.push(item);
       }
     }
   });

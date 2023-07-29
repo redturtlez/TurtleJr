@@ -16,13 +16,18 @@ const Navbar = () => {
       <div className="flex h-16 w-full justify-center bg-[#1f1f1f] text-center">
         {menuOpen ? (
           <div className="absolute z-50 mt-16 flex w-screen flex-col text-xl">
-            <Link prefetch={false} href="/" className={"navitem w-full bg-neutral-800 " + (pathname == "/" ? " active" : "")} onClick={() => setMenuOpen((prev) => !prev)}>
+            <Link
+              prefetch={false}
+              href="/"
+              className={"navitem w-full border-b-[1px] border-neutral-900 bg-neutral-800 " + (pathname == "/" ? " active" : "")}
+              onClick={() => setMenuOpen((prev) => !prev)}
+            >
               HOME
             </Link>
             <Link
               prefetch={false}
               href="/about"
-              className={"navitem w-full bg-neutral-800 " + (pathname == "/about" ? " active" : "")}
+              className={"navitem w-full border-b-[1px] border-neutral-900 bg-neutral-800 " + (pathname == "/about" ? " active" : "")}
               onClick={() => setMenuOpen((prev) => !prev)}
             >
               ABOUT
@@ -31,7 +36,7 @@ const Navbar = () => {
             <Link
               prefetch={false}
               href="/projects"
-              className={"navitem w-full bg-neutral-800 " + (pathname == "/projects" ? " active" : "")}
+              className={"navitem w-full border-b-[1px] border-neutral-900 bg-neutral-800 " + (pathname == "/projects" ? " active" : "")}
               onClick={() => setMenuOpen((prev) => !prev)}
             >
               PROJECTS
@@ -39,7 +44,7 @@ const Navbar = () => {
             <Link
               prefetch={false}
               href="/contact"
-              className={"navitem w-full bg-neutral-800 " + (pathname == "/contact" ? " active" : "")}
+              className={"navitem w-full border-b-[1px] border-neutral-900 bg-neutral-800 " + (pathname == "/contact" ? " active" : "")}
               onClick={() => setMenuOpen((prev) => !prev)}
             >
               CONTACT
@@ -68,7 +73,7 @@ const Navbar = () => {
             </div>
           ) : (
             <div className="float-right">
-              <Link prefetch={false} href="/" className={"navitem " + (pathname == "/" ? " active" : "")}>
+              <Link prefetch={false} href="/" className={"navitem  " + (pathname == "/" ? " active" : "")}>
                 HOME
               </Link>
               <Link prefetch={false} href="/about" className={"navitem " + (pathname == "/about" ? " active" : "")}>

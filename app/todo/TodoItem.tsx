@@ -31,60 +31,65 @@ export default function TodoItem(props: { item: Todo; updateList: () => void }) 
     setEditing((prev) => !prev);
   };
   return (
-    <div className="relative flex min-h-[48px] w-full break-normal rounded-md text-3xl hover:bg-neutral-300">
-      <div className="mr-auto flex w-full flex-col">
-        <div
-          className={
-            "my-auto mb-auto flex break-normal font-bold" +
-            (crossed ? "line-through " : "") +
-            (item.nextShow != undefined
-              ? item.nextShow?.valueOf() < new Date(new Date().setUTCHours(4, 0, 0, 0)).valueOf()
-                ? "text-orange-900 "
-                : item.priority
-                ? " text-green-800 "
-                : ""
-              : "")
-          }
-        >
+    <div
+      className={
+        "relative m-2 flex min-h-[8vh] break-normal rounded-2xl  p-2 text-3xl " +
+        (crossed ? " bg-neutral-300/70 text-neutral-700 line-through " : " bg-neutral-300 text-black ") +
+        (item.priority ? "text-green-800 " : " ")
+      }
+    >
+      <div className="mr-auto flex w-full ">
+        <div className={"my-auto flex break-normal text-xl font-bold "}>
           <Image
             alt=""
-            className="my-auto mr-2 hover:cursor-pointer"
+            className={"my-auto mr-2 hover:cursor-pointer " + (crossed ? " opacity-70" : "")}
             src={crossed ? "/check-circle-filled.svg" : "/check-circle.svg"}
             onClick={() => crossout()}
             height={28}
             width={28}
           />
-          <div className="overflow-hidden max-sm:max-w-[69vw]">
+          <div
+            className="max-w-[55vw] overflow-hidden"
+            onClick={() => {
+              setFlipCaret(!flipCaret);
+            }}
+          >
             {item.title}
-
-            {item.tasks != null && item.tasks.length != 0 ? (
-              <Image
-                alt=""
-                src="caret-down.svg"
-                height={24}
-                width={24}
-                onClick={() => {
-                  setFlipCaret(!flipCaret);
-                }}
-                className={" " + (flipCaret ? "rotate-180" : "")}
-              />
-            ) : null}
+            {flipCaret
+              ? item.tasks.map((i) => (
+                  <div key={i.id} className="flex max-w-full [text-wrap:balance] ">
+                    -{i.title}
+                  </div>
+                ))
+              : null}
           </div>
         </div>
-        {flipCaret
-          ? item.tasks.map((i) => (
-              <div key={i.id} className="break-normal pl-12">
-                -{i.title}
-              </div>
-            ))
-          : null}
+        {item.tasks != null && item.tasks.length != 0 ? (
+          <Image
+            alt=""
+            src="caret-down.svg"
+            height={24}
+            width={24}
+            onClick={() => {
+              setFlipCaret(!flipCaret);
+            }}
+            className={" min-w-[25px] " + (flipCaret ? "rotate-180 " : "") + (crossed ? " opacity-70 " : "")}
+          />
+        ) : null}
       </div>
       <div className="static float-right flex">
-        <Image alt="" className=" mx-1 my-auto min-w-[32px] hover:cursor-pointer" src="/edit.svg" height={32} width={32} onClick={() => toggleEditing()} />
+        <Image
+          alt=""
+          className={"mx-1 my-auto min-w-[26px] hover:cursor-pointer " + (crossed ? " opacity-70 " : "")}
+          src="/edit.svg"
+          height={26}
+          width={26}
+          onClick={() => toggleEditing()}
+        />
         {editing ? <AddModal toggle={toggleEditing} updateList={props.updateList} item={item} /> : null}
         <AlertDialog>
           <AlertDialogTrigger>
-            <Image alt="" className="my-auto mr-2 min-w-[32px] hover:cursor-pointer" src="/trash.svg" height={32} width={32} />
+            <Image alt="" className={"my-auto min-w-[26px] stroke-stone-600 hover:cursor-pointer " + (crossed ? " opacity-70 " : "")} src="/trash.svg" height={26} width={26} />
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>

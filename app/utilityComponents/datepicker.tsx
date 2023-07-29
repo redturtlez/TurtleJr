@@ -9,27 +9,21 @@ import { Calendar } from "./calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 import { cn } from "utils/cnhelper";
 import Image from "next/image";
+import { useTodoStore } from "app/todo/todoStates";
 
-export function DatePicker(props: { setDate: ({}: any) => void }) {
-  const [date, setDate] = React.useState<Date>(new Date(new Date().setHours(0, 0, 0, 0)));
+export function DatePicker(props: { setDate: ({}: any) => void; defaultDate: Date }) {
+  const todoStore = useTodoStore();
+  const [date, setDate] = React.useState<Date>(props.defaultDate);
   const update = (e: Date) => {
     setDate(e);
-    setOpen(false);
-    props.setDate(e);
+    todoStore.setDate(e);
   };
-  const [open, setOpen] = React.useState(false);
   return (
     <div className="flex">
       <Image alt="" src="cross.svg" height={12} width={12} className="mx-2 my-auto cursor-pointer" onClick={() => update(null)} />
-      <Popover open={open}>
-        <PopoverTrigger asChild={true}>
-          <Button
-            onClick={(e) => {
-              setOpen(true);
-            }}
-            variant={"outline"}
-            className={cn("w-[180px] justify-start text-left font-normal", !date && "text-muted-foreground")}
-          >
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant={"outline"} className={cn("w-[130px] justify-start p-2 text-left font-normal", !date && "text-muted-foreground")}>
             <CalendarIcon className="mr-2 h-4 w-4" />
             {date ? date.toLocaleDateString("en-US", { dateStyle: "medium" }) : <span>Select a date</span>}
           </Button>

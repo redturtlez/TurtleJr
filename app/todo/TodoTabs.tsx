@@ -23,37 +23,44 @@ export default function TodoTabs() {
     getUserTodos();
   }, []);
   return (
-    <div className=" flex h-full w-full flex-col bg-neutral-400">
+    <div className=" relative flex h-full w-full flex-col bg-slate-500">
       {addingThings ? <AddModal toggle={toggleModal} updateList={getUserTodos} /> : null}
-      <div className="flex h-1/5 w-full font-medium text-neutral-900">
-        <div onClick={() => setActiveTab(1)} className={"flex h-full w-1/3 items-center justify-center text-6xl max-sm:text-2xl " + (activeTab === 1 ? "" : " bg-neutral-600")}>
-          Today
-        </div>
-        <div
-          onClick={() => setActiveTab(2)}
-          className={"flex h-full w-1/3  items-center justify-center border-x-2  border-neutral-900 text-6xl max-sm:text-2xl " + (activeTab === 2 ? "" : " bg-neutral-600")}
-        >
-          General
-        </div>
-        <div
-          onClick={() => setActiveTab(3)}
-          className={"flex h-full w-1/3  items-center justify-center  border-neutral-900 text-6xl max-sm:text-2xl " + (activeTab === 3 ? "" : " bg-neutral-600")}
-        >
-          Overview
+      <div className="flex h-28 w-full font-medium text-neutral-900">
+        <div className="m-auto flex h-16 w-11/12 rounded-full bg-neutral-800 md:w-6/12 ">
+          <div className="m-auto flex h-16 w-11/12">
+            <div
+              className={
+                "m-auto flex h-[70%] min-w-[28%] rounded-full   px-4  text-xl  " + (activeTab === 1 ? "bg-neutral-300 font-semibold text-neutral-800 " : "text-neutral-400")
+              }
+              onClick={() => setActiveTab(1)}
+            >
+              <p className="m-auto">Today</p>
+            </div>
+            <div
+              className={"m-auto flex h-[70%] min-w-[32%] rounded-full px-4  text-xl  " + (activeTab === 2 ? "bg-neutral-300 font-semibold text-neutral-800" : "text-neutral-400")}
+              onClick={() => setActiveTab(2)}
+            >
+              <p className="m-auto">Untimed</p>
+            </div>
+            <div
+              className={
+                "m-auto flex h-[70%] min-w-[23%] rounded-full  px-4   text-xl  " + (activeTab === 3 ? "bg-neutral-300 font-semibold text-neutral-800" : "text-neutral-400")
+              }
+              onClick={() => setActiveTab(3)}
+            >
+              <p className="m-auto">All</p>
+            </div>
+          </div>
         </div>
       </div>
-      <div className=" flex h-4/5 w-full overflow-hidden">
-        <div className={"relative flex h-full w-full flex-col"}>
-          <AddItemButton onClick={() => toggleModal()} />
-          <ScrollArea className="mx-auto mb-4 flex h-full w-10/12 max-sm:w-11/12">
-            {activeTab == 1
-              ? queryList.todays.map((item) => <TodoItem item={item} key={item.id} updateList={getUserTodos} />)
-              : activeTab == 2
-              ? queryList.general.map((item) => <TodoItem item={item} key={item.id} updateList={getUserTodos} />)
-              : queryList.overall.map((item) => <TodoItem item={item} key={item.id} updateList={getUserTodos} />)}
-          </ScrollArea>
-        </div>
-      </div>
+      <AddItemButton onClick={() => toggleModal()} />
+      <ScrollArea className="mx-auto mb-4 h-full w-11/12">
+        {activeTab == 1
+          ? queryList.todays.map((item) => <TodoItem item={item} key={item.id} updateList={getUserTodos} />)
+          : activeTab == 2
+          ? queryList.general.map((item) => <TodoItem item={item} key={item.id} updateList={getUserTodos} />)
+          : queryList.overall.map((item) => <TodoItem item={item} key={item.id} updateList={getUserTodos} />)}
+      </ScrollArea>
     </div>
   );
 }
