@@ -14,6 +14,7 @@ import {
 import Image from "next/image";
 import AddModal from "./AddModal";
 import { Todo } from "utils/types";
+import { deleteTodo } from "./todoServer";
 
 export default function TodoItem(props: { item: Todo; updateList: () => void }) {
   const item = props.item;
@@ -24,8 +25,9 @@ export default function TodoItem(props: { item: Todo; updateList: () => void }) 
   const crossout = () => {
     setCrossed((prev) => !prev);
   };
-  const deleteItem = () => {
-    //TODO
+  const deleteItem = (id) => {
+    deleteTodo(id);
+    props.updateList();
   };
   const toggleEditing = () => {
     setEditing((prev) => !prev);
@@ -98,7 +100,7 @@ export default function TodoItem(props: { item: Todo; updateList: () => void }) 
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => deleteItem()}>Continue</AlertDialogAction>
+              <AlertDialogAction onClick={() => deleteItem(item.id)}>Continue</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

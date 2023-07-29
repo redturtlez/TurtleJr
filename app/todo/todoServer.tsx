@@ -132,6 +132,12 @@ export async function updateTodo(input) {
       },
     });
   }
+  const newtasks = input.tasks.map(({ id, todoID, ...title }) => title);
+  newtasks.map((item, i) => {
+    if (item.title == "") {
+      newtasks.splice(i, 1);
+    }
+  });
   await prisma.toDo.update({
     where: {
       id: input.id,
@@ -143,7 +149,7 @@ export async function updateTodo(input) {
       userid: input.userid,
       nextShow: input.nextShow,
       tasks: {
-        create: input.tasks,
+        create: newtasks,
       },
     },
   });

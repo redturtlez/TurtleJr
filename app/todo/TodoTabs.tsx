@@ -10,6 +10,7 @@ import { useAuth } from "@clerk/nextjs";
 export default function TodoTabs() {
   const user = useAuth();
   const getUserTodos = async () => {
+    setAddingThings(false);
     const temp = await getToDos(user.userId);
     setQueryList(temp);
   };
@@ -17,7 +18,7 @@ export default function TodoTabs() {
   const [activeTab, setActiveTab] = useState(1);
   const [addingThings, setAddingThings] = useState(false);
   const toggleModal = () => {
-    setAddingThings(!addingThings);
+    setAddingThings(false);
   };
   useEffect(() => {
     getUserTodos();
@@ -53,13 +54,14 @@ export default function TodoTabs() {
           </div>
         </div>
       </div>
-      <AddItemButton onClick={() => toggleModal()} />
+      <AddItemButton onClick={() => setAddingThings(true)} />
       <ScrollArea className="mx-auto mb-4 h-full w-11/12">
         {activeTab == 1
           ? queryList.todays.map((item) => <TodoItem item={item} key={item.id} updateList={getUserTodos} />)
           : activeTab == 2
           ? queryList.general.map((item) => <TodoItem item={item} key={item.id} updateList={getUserTodos} />)
           : queryList.overall.map((item) => <TodoItem item={item} key={item.id} updateList={getUserTodos} />)}
+        <div className="h-60"></div>
       </ScrollArea>
     </div>
   );

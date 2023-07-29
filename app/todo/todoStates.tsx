@@ -6,13 +6,13 @@ import { persist } from "zustand/middleware";
 interface TodoState {
   id: string;
   priority: boolean;
-  tasks: Task[];
+  tasks: { title: string }[];
   frequency: string;
   todoTitle: string;
   date: Date;
   setPriority: () => void;
   setId: (input: string) => void;
-  setTasks: (input: Task[]) => void;
+  setTasks: (input: { title: string }[]) => void;
   setFrequency: (input: string) => void;
   setTodoTitle: (input: string) => void;
   setDate: (input: Date) => void;
@@ -30,7 +30,7 @@ const initialState = {
   tasks: [],
   frequency: null,
   todoTitle: "",
-  date: null,
+  date: new Date(new Date().setHours(0, 0, 0, 0)),
 };
 export const useTodoStore = create<TodoState>()(
   //persist(

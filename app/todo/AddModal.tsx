@@ -25,13 +25,6 @@ export default function AddModal(props: { toggle: () => void; updateList: () => 
     if (todoStore.todoTitle.length == 0) {
       toast.error("Title cant be empty");
     } else {
-      todoStore.tasks.map((item, i) => {
-        const newTasks: Task[] = [];
-        if (item.title != "") {
-          newTasks.push(item);
-        }
-        todoStore.setTasks(newTasks);
-      });
       const newTodo = {
         id: props.item != null ? props.item.id : undefined,
         title: todoStore.todoTitle,
@@ -46,6 +39,7 @@ export default function AddModal(props: { toggle: () => void; updateList: () => 
       } else {
         saveTodo(newTodo);
       }
+      props.updateList();
       toast.success("Succesfully saved");
     }
   };
