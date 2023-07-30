@@ -1,4 +1,5 @@
 "use server";
+import { formatToTimeZone } from "date-fns-timezone";
 import { prisma } from "utils/database";
 import z from "zod";
 
@@ -57,7 +58,8 @@ export async function getToDos(input) {
         overall.push(item);
       }
     } else {
-      const today = new Date(new Date().setHours(item.nextShow.getHours(), 0, 0, 0));
+      const todayServer = new Date();
+      const today = new Date(new Date(todayServer.setHours(todayServer.getHours() - item.nextShow.getHours())).setHours(item.nextShow.getHours(), 0, 0, 0));
       if (item.nextShow?.valueOf() < today.valueOf()) {
         if (item.frequency == null) {
           expired.push(item);
