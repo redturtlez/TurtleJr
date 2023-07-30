@@ -21,7 +21,7 @@ export default function AddModal(props: { toggle: () => void; updateList: () => 
   const todoStore = useTodoStore();
 
   const user = useUser();
-  const addToDb = () => {
+  const addToDb = async () => {
     if (todoStore.todoTitle.length == 0) {
       toast.error("Title cant be empty");
     } else {
@@ -35,13 +35,22 @@ export default function AddModal(props: { toggle: () => void; updateList: () => 
         nextShow: todoStore.date,
       };
       if (props.item != null) {
-        updateTodo(newTodo);
+        if (await updateTodo(newTodo)) {
+          props.updateList();
+          props.toggle();
+          toast.success("Succesfully saved");
+        } else {
+          toast.error("Failed due to rate limit");
+        }
       } else {
-        saveTodo(newTodo);
+        if (saveTodo(newTodo)) {
+          props.updateList();
+          props.toggle();
+          toast.success("Succesfully saved");
+        } else {
+          toast.error("Failed due to rate limit");
+        }
       }
-      props.updateList();
-      props.toggle();
-      toast.success("Succesfully saved");
     }
   };
   useEffect(() => {

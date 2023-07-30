@@ -1,7 +1,13 @@
 "use server";
-import { formatToTimeZone } from "date-fns-timezone";
+import { Ratelimit } from "@upstash/ratelimit";
 import { prisma } from "utils/database";
 import z from "zod";
+import { Redis } from "@upstash/redis";
+
+const rateLimiter = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.fixedWindow(1, "1 s"),
+});
 
 const inputNoId = z.object({
   title: z.string().min(1),
@@ -23,18 +29,24 @@ const inputWithId = z.object({
 
 export async function saveTodo(input) {
   inputNoId.safeParse(input);
-  await prisma.toDo.create({
-    data: {
-      title: input.title,
-      priority: input.priority,
-      frequency: input.frequency,
-      userid: input.userid,
-      nextShow: input.nextShow,
-      tasks: {
-        create: input.tasks,
+  const { success } = await rateLimiter.limit(input.userid);
+  if (success) {
+    await prisma.toDo.create({
+      data: {
+        title: input.title,
+        priority: input.priority,
+        frequency: input.frequency,
+        userid: input.userid,
+        nextShow: input.nextShow,
+        tasks: {
+          create: input.tasks,
+        },
       },
-    },
-  });
+    });
+    return true;
+  } else {
+    return false;
+  }
 }
 export async function getToDos(input) {
   z.string().safeParse(input);
@@ -127,31 +139,38 @@ export async function deleteTodo(input) {
 }
 export async function updateTodo(input) {
   inputWithId.safeParse(input);
-  const newtasks = input.tasks.map(({ id, todoID, ...title }) => title);
-  await prisma.task.deleteMany({
-    where: {
-      todoID: input.id,
-    },
-  });
-  newtasks.map((item, i) => {
-    if (item.title == "") {
-      newtasks.splice(i, 1);
-    }
-  });
-
-  await prisma.toDo.update({
-    where: {
-      id: input.id,
-    },
-    data: {
-      title: input.title,
-      priority: input.priority,
-      frequency: input.frequency,
-      userid: input.userid,
-      nextShow: input.nextShow,
-      tasks: {
-        create: newtasks,
+  const { success } = await rateLimiter.limit(input.userid);
+  if (success) {
+    console.log("passed");
+    const newtasks = input.tasks.map(({ id, todoID, ...title }) => title);
+    await prisma.task.deleteMany({
+      where: {
+        todoID: input.id,
       },
-    },
-  });
+    });
+    newtasks.map((item, i) => {
+      if (item.title == "") {
+        newtasks.splice(i, 1);
+      }
+    });
+
+    await prisma.toDo.update({
+      where: {
+        id: input.id,
+      },
+      data: {
+        title: input.title,
+        priority: input.priority,
+        frequency: input.frequency,
+        userid: input.userid,
+        nextShow: input.nextShow,
+        tasks: {
+          create: newtasks,
+        },
+      },
+    });
+    return true;
+  } else {
+    return false;
+  }
 }

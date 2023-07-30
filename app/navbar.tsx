@@ -41,14 +41,6 @@ const Navbar = () => {
             >
               PROJECTS
             </Link>
-            <Link
-              prefetch={false}
-              href="/contact"
-              className={"navitem w-full border-b-[1px] border-neutral-900 bg-neutral-800 " + (pathname == "/contact" ? " active" : "")}
-              onClick={() => setMenuOpen((prev) => !prev)}
-            >
-              CONTACT
-            </Link>
             {user.isSignedIn && (
               <Link
                 prefetch={false}
@@ -82,9 +74,6 @@ const Navbar = () => {
 
               <Link prefetch={false} href="/projects" className={"navitem " + (pathname == "/projects" ? " active" : "")}>
                 PROJECTS
-              </Link>
-              <Link prefetch={false} href="/contact" className={"navitem " + (pathname == "/contact" ? " active" : "")}>
-                CONTACT
               </Link>
               {user.isSignedIn && (
                 <Link prefetch={false} href="/todo" className={"navitem " + (pathname == "/todo" || pathname == "/dashboard" ? " active" : "")}>

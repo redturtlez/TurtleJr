@@ -1,3 +1,5 @@
+import Loader from "./utilityComponents/loader";
+
 export default function Loading() {
-  return <p>LOADING</p>;
+  return <Loader />;
 }
