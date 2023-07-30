@@ -30,17 +30,15 @@ export default function TodoItem(props: { item: Todo; updateList: () => void }) 
     props.updateList();
   };
   const toggleEditing = () => {
-    setEditing((prev) => !prev);
+    setEditing(false);
   };
   return (
     <div
       className={
-        "relative m-2 flex min-h-[8vh] break-normal rounded-2xl  p-2 text-3xl " +
-        (crossed ? " bg-neutral-300/70 text-neutral-700 line-through " : " bg-neutral-300 text-black ") +
-        (item.priority ? " text-green-800 " : " ")
+        "relative m-2 flex min-h-[8vh] break-normal rounded-2xl  p-2 text-3xl " + (crossed ? " bg-neutral-300/70 text-neutral-700 line-through " : " bg-neutral-300 text-black ")
       }
     >
-      <div className="mr-auto flex w-full ">
+      <div className="mr-auto flex w-full">
         <div className={"my-auto flex break-normal text-xl font-bold "}>
           <Image
             alt=""
@@ -51,7 +49,7 @@ export default function TodoItem(props: { item: Todo; updateList: () => void }) 
             width={28}
           />
           <div
-            className="max-w-[55vw] overflow-hidden"
+            className={"max-w-[55vw] overflow-hidden" + (item.priority ? " text-green-800 " : " ")}
             onClick={() => {
               setFlipCaret(!flipCaret);
             }}
@@ -59,7 +57,7 @@ export default function TodoItem(props: { item: Todo; updateList: () => void }) 
             {item.title}
             {flipCaret
               ? item.tasks.map((i) => (
-                  <div key={i.id} className="flex max-w-full  font-normal [text-wrap:balance]">
+                  <div key={i.id} className="flex max-w-full  font-normal  [text-wrap:balance]">
                     -{i.title}
                   </div>
                 ))
@@ -86,7 +84,7 @@ export default function TodoItem(props: { item: Todo; updateList: () => void }) 
           src="/edit.svg"
           height={26}
           width={26}
-          onClick={() => toggleEditing()}
+          onClick={() => setEditing(true)}
         />
         {editing ? <AddModal toggle={toggleEditing} updateList={props.updateList} item={item} /> : null}
         <AlertDialog>

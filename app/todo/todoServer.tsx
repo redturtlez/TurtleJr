@@ -127,19 +127,18 @@ export async function deleteTodo(input) {
 }
 export async function updateTodo(input) {
   inputWithId.safeParse(input);
-  if (input.tasks.length > 0) {
-    await prisma.task.deleteMany({
-      where: {
-        todoID: input.id,
-      },
-    });
-  }
   const newtasks = input.tasks.map(({ id, todoID, ...title }) => title);
+  await prisma.task.deleteMany({
+    where: {
+      todoID: input.id,
+    },
+  });
   newtasks.map((item, i) => {
     if (item.title == "") {
       newtasks.splice(i, 1);
     }
   });
+
   await prisma.toDo.update({
     where: {
       id: input.id,

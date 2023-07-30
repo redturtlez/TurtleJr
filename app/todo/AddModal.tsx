@@ -40,6 +40,7 @@ export default function AddModal(props: { toggle: () => void; updateList: () => 
         saveTodo(newTodo);
       }
       props.updateList();
+      props.toggle();
       toast.success("Succesfully saved");
     }
   };
