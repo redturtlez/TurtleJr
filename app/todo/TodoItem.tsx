@@ -37,7 +37,7 @@ export default function TodoItem(props: { item: Todo; updateList: () => void }) 
       className={
         "relative m-2 flex min-h-[8vh] break-normal rounded-2xl  p-2 text-3xl " +
         (crossed ? " bg-neutral-300/70 text-neutral-700 line-through " : " bg-neutral-300 text-black ") +
-        (item.priority ? "text-green-800 " : " ")
+        (item.priority ? " text-green-800 " : " ")
       }
     >
       <div className="mr-auto flex w-full ">

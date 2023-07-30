@@ -57,10 +57,10 @@ export default function TodoTabs() {
       <AddItemButton onClick={() => setAddingThings(true)} />
       <ScrollArea className="mx-auto mb-4 h-full w-11/12">
         {activeTab == 1
-          ? queryList.todays.map((item) => <TodoItem item={item} key={item.id} updateList={getUserTodos} />)
+          ? queryList.todays.map((item) => <TodoItem item={item} key={item.id + "1"} updateList={getUserTodos} />)
           : activeTab == 2
-          ? queryList.general.map((item) => <TodoItem item={item} key={item.id} updateList={getUserTodos} />)
-          : queryList.overall.map((item) => <TodoItem item={item} key={item.id} updateList={getUserTodos} />)}
+          ? queryList.general.map((item) => <TodoItem item={item} key={item.id + "2"} updateList={getUserTodos} />)
+          : queryList.overall.map((item) => <TodoItem item={item} key={item.id + "3"} updateList={getUserTodos} />)}
         <div className="h-60"></div>
       </ScrollArea>
     </div>
