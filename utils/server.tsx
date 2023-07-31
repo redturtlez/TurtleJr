@@ -17,9 +17,6 @@ export async function generateMetadata(params): Promise<Metadata> {
         },
       ],
     },
-    viewport: {
-      viewportFit: "auto",
-      interactiveWidget: "resizes-visual",
-    },
+    manifest: '{ "display": "standalone"}',
   };
 }
