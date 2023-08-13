@@ -43,7 +43,7 @@ export default function AddModal(props: { toggle: () => void; updateList: () => 
           toast.error("Failed due to rate limit");
         }
       } else {
-        if (saveTodo(newTodo)) {
+        if (await saveTodo(newTodo)) {
           props.updateList();
           props.toggle();
           toast.success("Succesfully saved");
@@ -57,7 +57,7 @@ export default function AddModal(props: { toggle: () => void; updateList: () => 
     props.item != undefined ? todoStore.importItem(props.item) : todoStore.reset();
   }, []);
   return (
-    <div className="fixed left-0 top-0 z-50 flex h-screen w-screen">
+    <div className="fixed left-0 top-0 z-[99999] flex h-screen w-screen">
       <div className="fixed left-0 top-0 h-screen w-screen bg-black bg-opacity-70 " onMouseDown={() => props.toggle()}></div>
       <div className="relative m-auto flex max-h-[80%] min-h-[40%] w-[90%] flex-col rounded-xl bg-gray-400 py-6 sm:w-3/5">
         <Image src="./cross.svg" alt={""} width={24} height={24} className="absolute right-4 top-4" onClick={() => props.toggle()} />

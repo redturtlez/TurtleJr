@@ -24,7 +24,7 @@ export default function TodoTabs() {
     getUserTodos();
   }, []);
   return (
-    <div className=" relative flex h-full w-full flex-col bg-slate-500">
+    <div className="mt-16 flex h-full w-full flex-col">
       {addingThings ? <AddModal toggle={toggleModal} updateList={getUserTodos} /> : null}
       <div className="flex h-28 w-full font-medium text-neutral-900">
         <div className="m-auto flex h-16 w-11/12 rounded-full bg-neutral-800 md:w-6/12 ">

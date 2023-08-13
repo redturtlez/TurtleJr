@@ -2,11 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-.navitem {
-  @apply p-4 font-semibold text-white decoration-red-600 decoration-2 underline-offset-8 hover:underline;
-}
 .active {
-  @apply underline decoration-red-600 decoration-2 underline-offset-8;
+  @apply underline decoration-indigo-700 decoration-2 underline-offset-8;
 }
 @layer base {
   :root {
