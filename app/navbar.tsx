@@ -28,7 +28,7 @@ const Navbar = () => {
           <Link
             prefetch={false}
             href="/"
-            className={"mx-4 flex h-16 w-screen items-center justify-center border-y-[1px] border-neutral-900 sq:w-auto " + (pathname == "/" ? " active" : "")}
+            className={"mx-4 flex h-16 items-center justify-center border-y-[1px] border-neutral-900 sq:w-auto " + (pathname == "/" ? " active" : "")}
             onClick={() => setMenuOpen((prev) => !prev)}
           >
             HOME
@@ -36,7 +36,7 @@ const Navbar = () => {
           <Link
             prefetch={false}
             href="/about"
-            className={" mx-4 flex h-16 w-full items-center justify-center border-b-[1px] border-neutral-900 sq:w-auto " + (pathname == "/about" ? " active" : "")}
+            className={" mx-4 flex h-16 items-center justify-center border-b-[1px] border-neutral-900 sq:w-auto " + (pathname == "/about" ? " active" : "")}
             onClick={() => setMenuOpen((prev) => !prev)}
           >
             ABOUT
@@ -45,12 +45,12 @@ const Navbar = () => {
           <Link
             prefetch={false}
             href="/projects"
-            className={" mx-4 flex h-16 w-full items-center justify-center border-b-[1px] border-neutral-900 sq:w-auto " + (pathname == "/projects" ? " active" : "")}
+            className={" mx-4 flex h-16 items-center justify-center border-b-[1px] border-neutral-900 sq:w-auto " + (pathname == "/projects" ? " active" : "")}
             onClick={() => setMenuOpen((prev) => !prev)}
           >
             PROJECTS
           </Link>
-          <div className="mx-4 h-16 w-full border-b-[1px] border-neutral-900 sq:w-auto ">
+          <div className="mx-4 h-16 border-b-[1px] border-neutral-900 sq:w-auto ">
             {!user.isSignedIn && (
               <SignInButton mode="modal">
                 <button className="h-16">LOG IN</button>
@@ -73,7 +73,7 @@ const Navbar = () => {
             <Link
               prefetch={false}
               href="/todo"
-              className={" mx-4 flex h-16 w-full items-center justify-center sq:w-auto " + (pathname == "/todo" || pathname == "/dashboard" ? " active" : "")}
+              className={" mx-4 flex h-16  items-center justify-center sq:w-auto " + (pathname == "/todo" || pathname == "/dashboard" ? " active" : "")}
               onClick={() => setMenuOpen((prev) => !prev)}
             >
               TODO
