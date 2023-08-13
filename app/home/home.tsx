@@ -13,7 +13,7 @@ export default function HomePage() {
           <div className="mb-2">
             I'm <span className="text-indigo-700">Simonè</span>
           </div>
-          <div className="">Fill</div>
+          <div className="text-2xl">Full Stack Software Engineer</div>
           <div className="mb-auto mt-4 flex h-12 w-32 rounded-xl bg-indigo-700 text-lg font-bold">
             <div className="m-auto">Contact</div>
           </div>
