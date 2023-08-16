@@ -29,7 +29,7 @@ export default function HomePage() {
           </Link>
         </div>
         <div className="relative m-auto flex aspect-square w-[70%] sq:ml-2">
-          <Image src={"/me2.png"} className="" fill alt="none" priority />
+          <Image src={"/me.png"} className="" fill alt="none" priority />
         </div>
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { Logo } from "public/svg";
 import { generateMetadata } from "../utils/server";
 import HomePage from "./home/home";
 
