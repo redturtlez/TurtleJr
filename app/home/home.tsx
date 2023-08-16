@@ -24,7 +24,7 @@ export default function HomePage() {
           <Link href={"https://github.com/redturtlez"} target="_blank">
             <Github className=" mb-6 ml-4 mt-20 fill-inherit" width={30} height={30} onClick={() => {}} />
           </Link>
-          <Link href={"https://www.linkedin.com/in/simone-mineo-2211aa151/"} target="_blank">
+          <Link href={"https://www.linkedin.com/in/simone-mineo-abc123/"} target="_blank">
             <Linkedin className="m-auto ml-4 mt-0 fill-inherit" width={30} height={30} onClick={() => {}} />
           </Link>
         </div>
