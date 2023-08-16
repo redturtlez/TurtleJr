@@ -15,6 +15,7 @@ import Image from "next/image";
 import AddModal from "./AddModal";
 import { Todo } from "utils/types";
 import { deleteTodo } from "./todoServer";
+import { CaretDown } from "public/svg";
 
 export default function TodoItem(props: { item: Todo; updateList: () => void }) {
   const item = props.item;
@@ -65,15 +66,13 @@ export default function TodoItem(props: { item: Todo; updateList: () => void }) 
           </div>
         </div>
         {item.tasks != null && item.tasks.length != 0 ? (
-          <Image
-            alt=""
-            src="caret-down.svg"
+          <CaretDown
             height={24}
             width={24}
             onClick={() => {
               setFlipCaret(!flipCaret);
             }}
-            className={" min-w-[25px] " + (flipCaret ? "rotate-180 " : "") + (crossed ? " opacity-70 " : "")}
+            className={"h-full min-w-[25px] fill-black " + (flipCaret ? "rotate-180 " : "") + (crossed ? " opacity-70 " : "")}
           />
         ) : null}
       </div>

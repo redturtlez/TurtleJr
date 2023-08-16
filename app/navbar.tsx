@@ -3,19 +3,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
-import { Cross, Menu } from "public/svg";
+import { CaretDown, Cross, Logo, Menu } from "public/svg";
 
 const Navbar = () => {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [appsOpen, setAppsOpen] = useState(false);
   const user = useUser();
 
   return (
     <>
       <div className="fixed z-[1] flex min-h-[64px] w-full flex-col justify-center bg-[#1f1f1f] text-center  sq:flex-row">
         <div className="flex h-16">
-          <Link prefetch={false} href="/" className={" m-auto  ml-6 text-xl font-semibold text-[#def2de] " + (pathname == "/" ? " active" : "")}>
-            LOGO
+          <Link prefetch={false} href="/" className={" m-auto ml-6 text-xl font-semibold text-[#def2de] " + (pathname == "/" ? " underline" : " no-underline")}>
+            <Logo className="h-12 w-12" />
           </Link>
 
           <div className="m-auto mr-6 sq:hidden ">
@@ -24,20 +25,37 @@ const Navbar = () => {
           </div>
         </div>
         {/* {menuOpen ? ( */}
-        <div className={"flex-col text-xl font-semibold text-[#def2de]  sq:ml-auto sq:mr-6 sq:w-fit sq:flex-row" + (menuOpen ? " flex" : " hidden sq:flex")}>
+        <div
+          className={
+            "flex-col text-xl font-semibold text-[#def2de]  decoration-indigo-700 decoration-2 underline-offset-8 sq:ml-auto sq:mr-6 sq:w-fit sq:flex-row " +
+            (menuOpen ? " flex" : " hidden sq:flex")
+          }
+        >
           <Link
             prefetch={false}
             href="/"
-            className={"mx-4 flex h-16 items-center justify-center border-y-[1px] border-neutral-900 sq:w-auto " + (pathname == "/" ? " active" : "")}
-            onClick={() => setMenuOpen((prev) => !prev)}
+            className={
+              "flex h-16 items-center justify-center border-y-[1px] border-neutral-900 px-4 decoration-indigo-700 decoration-2 underline-offset-8 hover:underline sq:w-auto sq:border-y-0 " +
+              (pathname == "/" ? " underline" : " no-underline")
+            }
+            onClick={() => {
+              setMenuOpen((prev) => !prev);
+              setAppsOpen(false);
+            }}
           >
             HOME
           </Link>
           <Link
             prefetch={false}
             href="/about"
-            className={" mx-4 flex h-16 items-center justify-center border-b-[1px] border-neutral-900 sq:w-auto " + (pathname == "/about" ? " active" : "")}
-            onClick={() => setMenuOpen((prev) => !prev)}
+            className={
+              " flex h-16 items-center justify-center border-b-[1px] border-neutral-900 px-4 decoration-indigo-700 decoration-2 underline-offset-8 hover:underline sq:w-auto sq:border-y-0 " +
+              (pathname == "/about" ? " underline" : " no-underline")
+            }
+            onClick={() => {
+              setMenuOpen((prev) => !prev);
+              setAppsOpen(false);
+            }}
           >
             ABOUT
           </Link>
@@ -45,23 +63,30 @@ const Navbar = () => {
           <Link
             prefetch={false}
             href="/projects"
-            className={" mx-4 flex h-16 items-center justify-center border-b-[1px] border-neutral-900 sq:w-auto " + (pathname == "/projects" ? " active" : "")}
-            onClick={() => setMenuOpen((prev) => !prev)}
+            className={
+              " flex h-16 items-center justify-center border-b-[1px] border-neutral-900 px-4 decoration-indigo-700 decoration-2 underline-offset-8 hover:underline sq:w-auto sq:border-y-0 " +
+              (pathname == "/projects" ? " underline" : " no-underline")
+            }
+            onClick={() => {
+              setMenuOpen((prev) => !prev);
+              setAppsOpen(false);
+            }}
           >
             PROJECTS
           </Link>
-          <div className="mx-4 h-16 border-b-[1px] border-neutral-900 sq:w-auto ">
+          <div className="h-16 border-b-[1px] border-neutral-900 px-4  sq:w-auto sq:border-y-0">
             {!user.isSignedIn && (
               <SignInButton mode="modal">
-                <button className="h-16">LOG IN</button>
+                <button className="h-16 decoration-indigo-700 decoration-2 underline-offset-8 hover:underline">LOG IN</button>
               </SignInButton>
             )}
             {user.isSignedIn && (
               <SignOutButton>
                 <button
-                  className=" h-16"
+                  className=" h-16 decoration-indigo-700 decoration-2 underline-offset-8 hover:underline"
                   onClick={() => {
                     setMenuOpen((prev) => !prev);
+                    setAppsOpen(false);
                   }}
                 >
                   LOG OUT
@@ -70,17 +95,40 @@ const Navbar = () => {
             )}
           </div>
           {user.isSignedIn && (
-            <Link
-              prefetch={false}
-              href="/todo"
-              className={" mx-4 flex h-16  items-center justify-center sq:w-auto " + (pathname == "/todo" || pathname == "/dashboard" ? " active" : "")}
-              onClick={() => setMenuOpen((prev) => !prev)}
-            >
-              TODO
-            </Link>
+            <div className="relative flex h-16 w-full flex-col sq:w-auto ">
+              <div
+                className={
+                  "flex min-h-[64px] cursor-pointer items-center justify-center border-b-[1px] border-neutral-900 px-4 decoration-indigo-700 decoration-2 underline-offset-8 hover:underline sq:border-y-0"
+                }
+                onClick={() => {
+                  setAppsOpen((prev) => !prev);
+                  console.log("clicked" + appsOpen);
+                }}
+              >
+                APPS
+                <CaretDown height={24} width={24} className={"h-full min-w-[25px] fill-[#def2de] " + (appsOpen ? " rotate-180" : " ")} />
+              </div>
+              <div
+                className={
+                  "relative min-h-[64px] w-full items-center justify-center border-b-[1px] border-neutral-900 bg-[#1f1f1f] px-4 decoration-indigo-700 decoration-2  underline-offset-8 hover:underline sq:border-y-0 " +
+                  (appsOpen ? " flex" : "hidden")
+                }
+              >
+                <Link
+                  prefetch={false}
+                  href="/todo"
+                  className={"flex h-16  cursor-pointer items-center justify-center sq:w-auto" + (pathname == "/todo" ? " underline" : " no-underline")}
+                  onClick={() => {
+                    setMenuOpen((prev) => !prev);
+                    setAppsOpen((prev) => !prev);
+                  }}
+                >
+                  TO DO
+                </Link>
+              </div>
+            </div>
           )}
         </div>
-        {/* ) : null} */}
       </div>
     </>
   );
