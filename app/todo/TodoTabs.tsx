@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import AddModal from "./AddModal";
 import TodoItem from "./TodoItem";
-import AddItemButton from "../utilityComponents/AddItemButton";
-import { ScrollArea } from "../utilityComponents/scrollarea";
+import AddItemButton from "../_utilityComponents/AddItemButton";
+import { ScrollArea } from "../_utilityComponents/scrollarea";
 import { getToDos } from "./todoServer";
 import { useAuth } from "@clerk/nextjs";
 

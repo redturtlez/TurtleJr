@@ -10,19 +10,24 @@ module.exports = {
         "2xl": "1400px",
       },
     },
+
     extend: {
+      borderWidth: {
+        1: "1px",
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
+        background: "rgb(var(--background)/<alpha-value>)",
         foreground: "hsl(var(--foreground))",
+        text: "rgb(var(--text)/<alpha-value>)",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
+          DEFAULT: "rgb(var(--primary)/<alpha-value>)",
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
+          DEFAULT: "rgb(var(--secondary)/<alpha-value>)",
           foreground: "hsl(var(--secondary-foreground))",
         },
         destructive: {
@@ -34,7 +39,7 @@ module.exports = {
           foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
+          DEFAULT: "rgb(var(--accent)/<alpha-value>)",
           foreground: "hsl(var(--accent-foreground))",
         },
         popover: {

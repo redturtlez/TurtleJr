@@ -13,22 +13,22 @@ const Navbar = () => {
 
   return (
     <>
-      <div className="fixed z-[1] flex min-h-[64px] w-full flex-col justify-center bg-[#1f1f1f] text-center  sq:flex-row">
+      <div className="fixed z-[1] flex min-h-[64px] w-full flex-col justify-center bg-[#1A1A1A] text-center  sq:flex-row">
         <div className="flex h-16">
           <Link prefetch={false} href="/" className={" m-auto ml-6 text-xl font-semibold text-[#def2de] " + (pathname == "/" ? " underline" : " no-underline")}>
-            <Logo className="h-12 w-12" />
+            <Logo className="h-14 w-14 fill-primary" />
           </Link>
 
           <div className="m-auto mr-6 sq:hidden ">
-            <Menu height={30} width={30} className={" fill-slate-300 " + (menuOpen ? " hidden " : "")} onClick={() => setMenuOpen(true)} />
-            <Cross height={30} width={30} className={"fill-slate-300 " + (menuOpen ? "" : " hidden ")} onClick={() => setMenuOpen(false)} />
+            <Menu height={40} width={40} className={"fill-text " + (menuOpen ? " hidden " : "")} onClick={() => setMenuOpen(true)} />
+            <Cross height={35} width={35} className={"fill-text " + (menuOpen ? "" : " hidden ")} onClick={() => setMenuOpen(false)} />
           </div>
         </div>
-        {/* {menuOpen ? ( */}
+
         <div
           className={
-            "flex-col text-xl font-semibold text-[#def2de]  decoration-indigo-700 decoration-2 underline-offset-8 sq:ml-auto sq:mr-6 sq:w-fit sq:flex-row " +
-            (menuOpen ? " flex" : " hidden sq:flex")
+            "flex-col text-xl font-semibold text-text  decoration-indigo-700 decoration-2 underline-offset-8 sq:ml-auto sq:mr-6 sq:flex sq:w-fit sq:flex-row " +
+            (menuOpen ? " flex" : " hidden")
           }
         >
           <Link
@@ -100,10 +100,7 @@ const Navbar = () => {
                 className={
                   "flex min-h-[64px] cursor-pointer items-center justify-center border-b-[1px] border-neutral-900 px-4 decoration-indigo-700 decoration-2 underline-offset-8 hover:underline sq:border-y-0"
                 }
-                onClick={() => {
-                  setAppsOpen((prev) => !prev);
-                  console.log("clicked" + appsOpen);
-                }}
+                onClick={() => setAppsOpen((prev) => !prev)}
               >
                 APPS
                 <CaretDown height={24} width={24} className={"h-full min-w-[25px] fill-[#def2de] " + (appsOpen ? " rotate-180" : " ")} />
@@ -124,6 +121,24 @@ const Navbar = () => {
                   }}
                 >
                   TO DO
+                </Link>
+              </div>
+              <div
+                className={
+                  "relative min-h-[64px] w-full items-center justify-center border-b-[1px] border-neutral-900 bg-[#1f1f1f] px-4 decoration-indigo-700 decoration-2  underline-offset-8 hover:underline sq:border-y-0 " +
+                  (appsOpen ? " flex" : "hidden")
+                }
+              >
+                <Link
+                  prefetch={false}
+                  href="/health"
+                  className={"flex h-16  cursor-pointer items-center justify-center sq:w-auto" + (pathname == "/todo" ? " underline" : " no-underline")}
+                  onClick={() => {
+                    setMenuOpen((prev) => !prev);
+                    setAppsOpen((prev) => !prev);
+                  }}
+                >
+                  HEALTH
                 </Link>
               </div>
             </div>

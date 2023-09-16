@@ -4,4 +4,5 @@ export { default as Github } from "./github.svg";
 export { default as Linkedin } from "./linkedin.svg";
 export { default as CaretDown } from "./caret-down.svg";
 export { default as Logo } from "./logo.svg";
+export { default as Arrow } from "./arrow.svg";
 //export {default as } from "./.svg";

@@ -23,7 +23,7 @@ export function DatePicker(props: { setDate: ({}: any) => void; defaultDate: Dat
       <Image alt="" src="cross.svg" height={12} width={12} className="mx-2 my-auto cursor-pointer" onClick={() => update(null)} />
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant={"outline"} className={cn("w-[130px] justify-start p-2 text-left font-normal", !date && "text-muted-foreground")}>
+          <Button variant={"outline"} className={cn("w-[150px] justify-start p-2 text-left font-normal", !date && "text-muted-foreground")}>
             <CalendarIcon className="mr-2 h-4 w-4" />
             {date ? date.toLocaleDateString("en-US", { dateStyle: "medium" }) : <span>Select a date</span>}
           </Button>

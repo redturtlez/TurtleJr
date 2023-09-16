@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "../utilityComponents/alertDialog";
+} from "../_utilityComponents/alertDialog";
 import Image from "next/image";
 import AddModal from "./AddModal";
 import { Todo } from "utils/types";
@@ -35,9 +35,7 @@ export default function TodoItem(props: { item: Todo; updateList: () => void }) 
   };
   return (
     <div
-      className={
-        "relative m-2 flex min-h-[8vh] break-normal rounded-2xl  p-2 text-3xl " + (crossed ? " bg-[#def2de]/70 text-neutral-700 line-through " : " bg-[#def2de] text-black ")
-      }
+      className={"relative m-2 flex min-h-[8vh] break-normal rounded-2xl  p-2 text-3xl " + (crossed ? " bg-[#def2de]/70 text-neutral-700 line-through " : " bg-text text-black ")}
     >
       <div className="mr-auto flex w-full">
         <div className={"my-auto flex break-normal text-xl font-bold "}>
