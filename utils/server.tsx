@@ -7,12 +7,12 @@ export async function generateMetadata(params): Promise<Metadata> {
     icons: {
       icon: [
         {
-          url: "turtlejr.png",
+          url: "logo.svg",
           sizes: "48x48",
           type: "image/png",
         },
         {
-          url: "maskturtle192.ico",
+          url: "logo.svg",
           sizes: "96x96 128x128 192x192",
         },
       ],
