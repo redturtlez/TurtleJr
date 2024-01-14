@@ -16,7 +16,7 @@ const Navbar = () => {
       <div className="fixed z-[1] flex min-h-[64px] w-full flex-col justify-center bg-[#1A1A1A] text-center  sq:flex-row">
         <div className="flex h-16">
           <Link prefetch={false} href="/" className={" m-auto ml-6 text-xl font-semibold text-[#def2de] " + (pathname == "/" ? " underline" : " no-underline")}>
-            <Logo className="h-14 w-14 fill-primary" />
+            <Logo className="h-14 w-14 fill-accent" />
           </Link>
 
           <div className="m-auto mr-6 sq:hidden ">

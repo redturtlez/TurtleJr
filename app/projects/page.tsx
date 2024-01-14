@@ -5,8 +5,8 @@ export const metadata = generateMetadata({ title: "Projects" });
 
 export default async function ProjectsPage() {
   return (
-    <div className="flex h-full flex-col">
-      <div className="self-center py-4 text-4xl font-bold sq:text-6xl ">Projects</div>
+    <div className="animate__animated animate__fadeIn flex h-full flex-col">
+      <div className="self-center py-4 text-4xl font-extrabold sq:text-6xl ">Projects</div>
       <Content />
     </div>
   );

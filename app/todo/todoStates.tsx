@@ -17,6 +17,7 @@ interface TodoState {
   setTodoTitle: (input: string) => void;
   setDate: (input: Date) => void;
   setRepeatable: () => void;
+  setTimed: () => void;
   addTask: () => void;
   updateTask: (input: { e: any; i: number }) => void;
   deleteTask: (input: number) => void;
@@ -30,7 +31,7 @@ const initialState = {
   tasks: [],
   frequency: null,
   todoTitle: "",
-  date: new Date(new Date().setHours(0, 0, 0, 0)),
+  date: null,
 };
 export const useTodoStore = create<TodoState>()(
   //persist(
@@ -43,6 +44,7 @@ export const useTodoStore = create<TodoState>()(
     setDate: (input) => set({ date: input }),
     setPriority: () => set({ priority: !get().priority }),
     setRepeatable: () => set({ frequency: get().frequency != null ? null : "Daily" }),
+    setTimed: () => set({ date: get().date != null ? null : new Date(new Date().setHours(0, 0, 0, 0)) }),
     addTask: () => set({ tasks: [...get().tasks, { title: "" } as Task] }),
     updateTask: (input) =>
       set({
@@ -53,6 +55,7 @@ export const useTodoStore = create<TodoState>()(
             currentTask.title = input.e.target.value;
             currentTasks[input.i] = currentTask;
           }
+          console.log(currentTasks);
           return currentTasks;
         })(),
       }),
@@ -74,7 +77,7 @@ export const useTodoStore = create<TodoState>()(
         date: input.nextShow,
       }),
     reset: () => set(initialState),
-  })
+  }),
   //   ,
   //   {
   //     name: "todoStore",

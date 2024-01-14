@@ -6,11 +6,11 @@ import { Github, Linkedin } from "public/svg";
 
 export default function HomePage() {
   return (
-    <div className="m-auto flex h-full w-full flex-col sq:mt-auto sq:flex-row">
+    <div className=" m-auto flex h-full w-full flex-col font-semibold sq:mt-auto sq:flex-row">
       <div className="m-auto flex h-1/2 w-10/12 flex-col  sq:mr-0 sq:max-w-[50%] ">
         <div className="my-auto ml-6 mr-auto flex flex-col text-4xl font-black sq:mb-56 sq:ml-auto sq:mr-24 sq:text-6xl">
-          <div className="mb-2">Hi,</div>
-          <div className="mb-2">
+          <div className="">Hi,</div>
+          <div className="">
             I'm <span className="text-accent">Simonè</span>
           </div>
           <div className="text-2xl">Full Stack Software Engineer</div>

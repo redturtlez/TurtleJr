@@ -5,4 +5,8 @@ export { default as Linkedin } from "./linkedin.svg";
 export { default as CaretDown } from "./caret-down.svg";
 export { default as Logo } from "./logo.svg";
 export { default as Arrow } from "./arrow.svg";
+export { default as CheckUnfilled } from "./check-circle.svg";
+export { default as CheckFilled } from "./check-circle-filled.svg";
+export { default as Edit } from "./edit.svg";
+export { default as Trash } from "./trash.svg";
 //export {default as } from "./.svg";
