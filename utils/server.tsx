@@ -7,7 +7,7 @@ export async function generateMetadata(params): Promise<Metadata> {
     icons: {
       icon: [
         {
-          url: "logo.svg",
+          url: "logo.png",
           sizes: "48x48",
           type: "image/png",
         },
