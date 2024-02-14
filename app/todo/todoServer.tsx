@@ -6,7 +6,7 @@ import { Redis } from "@upstash/redis";
 
 const rateLimiter = new Ratelimit({
   redis: Redis.fromEnv(),
-  limiter: Ratelimit.fixedWindow(10, "10 s"),
+  limiter: Ratelimit.slidingWindow(10, "10 s"),
 });
 
 const inputNoId = z.object({

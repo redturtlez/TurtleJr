@@ -21,8 +21,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-/*'text': '#def2de',
-'background': '#051405',
-'primary': '#4bb563',
-'secondary': '#00614e',
-'accent': '#11d9b8', */

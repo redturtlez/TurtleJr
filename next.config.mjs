@@ -11,6 +11,12 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  compiler: {
+    // Enables the styled-components SWC transform
+    styledComponents: true,
+  },
+  experimental: {},
+
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/i,

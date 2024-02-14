@@ -15,7 +15,7 @@ const jobs = [
 ];
 const hobbies = [
   {
-    title: "Turtle Jr",
+    title: "Turtle Jr Jones",
     desc: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud  exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla  pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
     url: "/turtlejr",
   },
@@ -50,9 +50,9 @@ export default function Content() {
   return (
     <>
       <div className="flex w-screen flex-col ">
-        <div className="flex h-14 w-72 justify-evenly self-center rounded-full bg-neutral-900 py-2 text-lg">
+        <div className="flex h-14 w-72 justify-evenly self-center rounded-full bg-secondary py-2 text-lg">
           <div
-            className={"self-center rounded-full px-4 py-1 font-semibold " + (tab == 1 ? "bg-neutral-700/50 text-text/100" : " text-text/60 ")}
+            className={"self-center rounded-full px-4 py-1 font-semibold " + (tab == 1 ? "bg-accent/80 font-semibold text-text " : " text-accent")}
             onClick={() => {
               setTab(1);
               setActiveList(jobs);
@@ -61,7 +61,7 @@ export default function Content() {
             Professional
           </div>
           <div
-            className={"self-center rounded-full px-4 py-1 font-semibold " + (tab == 2 ? "bg-neutral-700/50 text-text/100" : " text-text/60 ")}
+            className={"self-center rounded-full px-4 py-1 font-semibold " + (tab == 2 ? "bg-accent/80 font-semibold text-text " : " text-accent ")}
             onClick={() => {
               setTab(2);
               setActiveList(hobbies);
@@ -70,18 +70,17 @@ export default function Content() {
             Personal
           </div>
         </div>
-
-        <div className="w-10/12  self-center py-4 text-2xl font-bold"> {activeList.at(activePage()).title}</div>
-        <div className="h-64 w-10/12 self-center overflow-y-auto text-xl">{activeList.at(activePage()).desc}</div>
-      </div>
-      <div className="absolute bottom-0 left-0 flex w-full flex-col">
-        <a href={activeList.at(activePage()).url} className="z-10 mb-0 h-14 w-36 self-center rounded-xl border-2 border-text/20 bg-secondary p-3 text-center ">
-          Read More
-        </a>
-        <div className=" mb-0 flex">
-          <Arrow className="mx-auto mb-4 h-16 w-1/2 rotate-180 fill-text " onClick={() => changePage(-1)} />
-          <Arrow className="mx-auto mb-4 h-16 w-1/2 fill-text" onClick={() => changePage(1)} />
+        <div className="w-11/12 flex flex-col bg-secondary rounded-xl m-auto mt-4 pt-4">
+          <div className="w-11/12  self-center pb-4 text-2xl font-bold text-accent"> {activeList.at(activePage()).title}</div>
+          <div className="h-64 w-11/12 self-center overflow-y-auto text-xl">{activeList.at(activePage()).desc}</div>
+          <a href={activeList.at(activePage()).url} className="m-4 h-12 w-32 self-center rounded-lg bg-accent/80 p-3 text-center ">
+            Read More
+          </a>
         </div>
+      </div>
+      <div className="flex w-full m-auto">
+        <Arrow className="ml-4 mr-auto w-auto h-8 -rotate-90 fill-accent " onClick={() => changePage(-1)} />
+        <Arrow className="mr-4 ml-auto w-auto h-8 rotate-90 fill-accent" onClick={() => changePage(1)} />
       </div>
     </>
   );
