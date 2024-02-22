@@ -1,4 +1,5 @@
 "use client";
+import { getTodos, saveOneTodo } from "app/todo/todoServer";
 import { Arrow } from "public/svg";
 import { useState } from "react";
 const jobs = [
@@ -46,7 +47,10 @@ export default function Content() {
       setCurrentHobby((prev) => (prev + x < 0 ? jobs.length - 1 : prev + x > jobs.length - 1 ? 0 : prev + x));
     }
   }
-
+  function temp() {
+    saveOneTodo();
+    console.log(getTodos("turtle"));
+  }
   return (
     <>
       <div className="flex w-screen flex-col ">
@@ -79,7 +83,7 @@ export default function Content() {
         </div>
       </div>
       <div className="flex w-full m-auto">
-        <Arrow className="ml-4 mr-auto w-auto h-8 -rotate-90 fill-accent " onClick={() => changePage(-1)} />
+        <Arrow className="ml-4 mr-auto w-auto h-8 -rotate-90 fill-accent " onClick={() => temp() /*changePage(-1)*/} />
         <Arrow className="mr-4 ml-auto w-auto h-8 rotate-90 fill-accent" onClick={() => changePage(1)} />
       </div>
     </>

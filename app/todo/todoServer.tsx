@@ -1,13 +1,7 @@
 "use server";
-import { Ratelimit } from "@upstash/ratelimit";
+import { Prisma } from "@prisma/client";
 import { prisma } from "utils/database";
 import z from "zod";
-import { Redis } from "@upstash/redis";
-
-const rateLimiter = new Ratelimit({
-  redis: Redis.fromEnv(),
-  limiter: Ratelimit.slidingWindow(10, "10 s"),
-});
 
 const inputNoId = z.object({
   title: z.string().min(1),
@@ -27,28 +21,22 @@ const inputWithId = z.object({
   nextShow: z.date().optional().nullable(),
 });
 
-export async function saveTodo(input) {
+export async function saveTodo2(input) {
   inputNoId.safeParse(input);
-  const { success } = await rateLimiter.limit(input.userid);
-  if (success) {
-    await prisma.toDo.create({
-      data: {
-        title: input.title,
-        priority: input.priority,
-        frequency: input.frequency,
-        userid: input.userid,
-        nextShow: input.nextShow,
-        tasks: {
-          create: input.tasks,
-        },
+  await prisma.toDo.create({
+    data: {
+      title: input.title,
+      priority: input.priority,
+      frequency: input.frequency,
+      userid: input.userid,
+      nextShow: input.nextShow,
+      tasks: {
+        create: input.tasks,
       },
-    });
-    return true;
-  } else {
-    return false;
-  }
+    },
+  });
 }
-export async function getToDos(input) {
+export async function getToDos2(input) {
   z.string().safeParse(input);
   const usersTodos = await prisma.toDo.findMany({
     where: { userid: input },
@@ -129,7 +117,7 @@ export async function getToDos(input) {
   return { todays, general, overall };
 }
 
-export async function deleteTodo(input) {
+export async function deleteTodo2(input) {
   z.string().safeParse(input);
   await prisma.toDo.delete({
     where: {
@@ -137,40 +125,65 @@ export async function deleteTodo(input) {
     },
   });
 }
-export async function updateTodo(input) {
+export async function updateTodo2(input) {
   inputWithId.safeParse(input);
-  const { success } = await rateLimiter.limit(input.userid);
-  if (success) {
-    console.log("passed");
-    const newtasks = input.tasks.map(({ id, todoID, ...title }) => title);
-    await prisma.task.deleteMany({
-      where: {
-        todoID: input.id,
-      },
-    });
-    newtasks.map((item, i) => {
-      if (item.title == "") {
-        newtasks.splice(i, 1);
-      }
-    });
+  console.log("passed");
+  const newtasks = input.tasks.map(({ id, todoID, ...title }) => title);
+  await prisma.task.deleteMany({
+    where: {
+      todoID: input.id,
+    },
+  });
+  newtasks.map((item, i) => {
+    if (item.title == "") {
+      newtasks.splice(i, 1);
+    }
+  });
 
-    await prisma.toDo.update({
-      where: {
-        id: input.id,
+  await prisma.toDo.update({
+    where: {
+      id: input.id,
+    },
+    data: {
+      title: input.title,
+      priority: input.priority,
+      frequency: input.frequency,
+      userid: input.userid,
+      nextShow: input.nextShow,
+      tasks: {
+        create: newtasks,
       },
-      data: {
-        title: input.title,
-        priority: input.priority,
-        frequency: input.frequency,
-        userid: input.userid,
-        nextShow: input.nextShow,
-        tasks: {
-          create: newtasks,
-        },
-      },
-    });
-    return true;
-  } else {
-    return false;
-  }
+    },
+  });
 }
+
+export async function getTodos(input) {
+  z.string().safeParse(input);
+  const usersTodos = await prisma.todoRow.findMany({
+    where: { userid: input },
+  });
+  return usersTodos;
+}
+export async function saveTodos() {
+  //inputNoId.safeParse(input);
+  await prisma.todoRow.create({
+    // data: {
+    //   title: input.title,
+    //   priority: input.priority,
+    //   frequency: input.frequency,
+    //   userid: input.userid,
+    //   nextShow: input.nextShow,
+    //   tasks: input.tasks as Prisma.JsonArray,
+    // },
+    data: {
+      title: "title2",
+      priority: false,
+      frequency: "Daily",
+      userid: "turtle",
+      nextShow: null,
+      tasks: ["one", "two"] as Prisma.JsonArray,
+    },
+  });
+}
+export async function updateTodo() {}
+export async function deleteTodo() {}
