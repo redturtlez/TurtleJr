@@ -37,6 +37,7 @@ export default function Content() {
     if (tab == 2) {
       return currentHobby;
     }
+    return 1;
   }
   function changePage(x: number) {
     if (tab == 1) {
@@ -70,9 +71,9 @@ export default function Content() {
           </div>
         </div>
         <div className="w-11/12 flex flex-col bg-secondary rounded-xl m-auto mt-4 pt-4">
-          <div className="w-11/12  self-center pb-4 text-2xl font-bold text-accent"> {activeList.at(activePage()).title}</div>
-          <div className="h-64 w-11/12 self-center overflow-y-auto text-xl">{activeList.at(activePage()).desc}</div>
-          <a href={activeList.at(activePage()).url} className="m-4 h-12 w-32 self-center rounded-lg bg-accent/80 p-3 text-center ">
+          <div className="w-11/12  self-center pb-4 text-2xl font-bold text-accent"> {activeList.at(activePage())?.title}</div>
+          <div className="h-64 w-11/12 self-center overflow-y-auto text-xl">{activeList.at(activePage())?.desc}</div>
+          <a href={activeList.at(activePage())?.url} className="m-4 h-12 w-32 self-center rounded-lg bg-accent/80 p-3 text-center ">
             Read More
           </a>
         </div>
