@@ -1,31 +1,25 @@
 "use client";
 import { useEffect, useState } from "react";
 import AddModal from "./AddModal";
-import TodoItem from "./TodoItem";
-import AddItemButton from "../_utilityComponents/AddItemButton";
 import { ScrollArea } from "../_utilityComponents/scrollarea";
-import { getToDos } from "./todoServer";
+import { getTodos } from "./todoServer";
 import { useAuth } from "@clerk/nextjs";
+import { useTodoStore } from "./todoStates";
 
 export default function TodoTabs() {
   const user = useAuth();
-  const getUserTodos = async () => {
-    setAddingThings(false);
-    const temp = await getToDos(user.userId);
-    setQueryList(temp);
+  const todoStore = useTodoStore();
+  const init = async () => {
+    todoStore.setTodos(await getTodos(user.userId));
+    todoStore.setUserId(String(user.userId));
   };
-  const [queryList, setQueryList] = useState({ todays: [], general: [], overall: [] });
   const [activeTab, setActiveTab] = useState(1);
-  const [addingThings, setAddingThings] = useState(false);
-  const toggleModal = () => {
-    setAddingThings(false);
-  };
   useEffect(() => {
-    getUserTodos();
+    init();
   }, []);
   return (
     <div className=" animate__animated animate__fadeIn flex h-full w-full flex-col">
-      {addingThings ? <AddModal toggle={toggleModal} updateList={getUserTodos} /> : null}
+      {todoStore.modal ? <AddModal /> : null}
       <div className=" mx-auto mb-2 text-4xl font-extrabold text-text">Tasks</div>
       <div className="flex h-14 w-72 justify-evenly self-center rounded-full bg-secondary py-2 text-lg my-2">
         <div
@@ -48,14 +42,16 @@ export default function TodoTabs() {
         </div>
       </div>
 
-      <ScrollArea className="mx-auto  w-11/12 h-[58vh]">
-        {activeTab == 1
-          ? queryList.todays.map((item) => <TodoItem item={item} key={item.id + "1"} updateList={getUserTodos} />)
-          : activeTab == 2
-            ? queryList.general.map((item) => <TodoItem item={item} key={item.id + "2"} updateList={getUserTodos} />)
-            : queryList.overall.map((item) => <TodoItem item={item} key={item.id + "3"} updateList={getUserTodos} />)}
-      </ScrollArea>
-      <div className="flex m-auto h-16 w-11/12 items-center justify-center rounded-lg bg-accent/80 hover:bg-accent/70 ">Add New Task</div>
+      <ScrollArea className="mx-auto w-11/12 h-[58vh]">{activeTab == 1 ? todoStore.today : activeTab == 2 ? todoStore.general : todoStore.overall}</ScrollArea>
+      <div
+        className="flex m-auto h-16 w-11/12 items-center justify-center rounded-lg bg-accent/80 hover:bg-accent/70 "
+        onClick={() => {
+          todoStore.resetTodo();
+          todoStore.flipModal();
+        }}
+      >
+        Add New Task
+      </div>
     </div>
   );
 }

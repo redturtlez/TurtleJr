@@ -1,86 +1,188 @@
-import { Task } from "@prisma/client";
-import { Todo } from "utils/types";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { Todo, Todos, userTodo } from "./todoServer";
+import TodoItem from "./TodoItem";
 
-interface TodoState {
-  id: string;
-  priority: boolean;
-  tasks: { title: string }[];
-  frequency: string;
-  todoTitle: string;
-  date: Date;
-  setPriority: () => void;
-  setId: (input: string) => void;
-  setTasks: (input: { title: string }[]) => void;
-  setFrequency: (input: string) => void;
-  setTodoTitle: (input: string) => void;
-  setDate: (input: Date) => void;
-  setRepeatable: () => void;
-  setTimed: () => void;
-  addTask: () => void;
-  updateTask: (input: { e: any; i: number }) => void;
-  deleteTask: (input: number) => void;
-  importItem: (input: Todo) => void;
-  reset: () => void;
-}
+type State = userTodo &
+  Todo & {
+    activeTodo: number;
+    timed: boolean;
+    repeatable: boolean;
+    tasks: string[];
+    nextShow: Date;
+    today: Array<JSX.Element>;
+    general: Array<JSX.Element>;
+    overall: Array<JSX.Element>;
+    modal: boolean;
+  };
 
-const initialState = {
-  id: "",
-  priority: false,
+const initialState: State = {
+  userid: "",
+  todos: [],
+  priority: 2,
+  activeTodo: -1,
+  title: "",
   tasks: [],
-  frequency: null,
-  todoTitle: "",
-  date: null,
+  timed: false,
+  repeatable: false,
+  nextShow: new Date(),
+  frequency: "Daily",
+  today: new Array(),
+  general: new Array(),
+  overall: new Array(),
+  modal: false,
 };
-export const useTodoStore = create<TodoState>()(
-  //persist(
-  (set, get) => ({
-    ...initialState,
-    setId: (input) => set({ id: input }),
-    setTasks: (input) => set({ tasks: input }),
-    setFrequency: (input) => set({ frequency: input }),
-    setTodoTitle: (input) => set({ todoTitle: input }),
-    setDate: (input) => set({ date: input }),
-    setPriority: () => set({ priority: !get().priority }),
-    setRepeatable: () => set({ frequency: get().frequency != null ? null : "Daily" }),
-    setTimed: () => set({ date: get().date != null ? null : new Date(new Date().setHours(0, 0, 0, 0)) }),
-    addTask: () => set({ tasks: [...get().tasks, { title: "" } as Task] }),
-    updateTask: (input) =>
-      set({
-        tasks: (() => {
-          const currentTasks = get().tasks;
-          const currentTask = currentTasks[input.i];
-          if (currentTask != undefined) {
-            currentTask.title = input.e.target.value;
-            currentTasks[input.i] = currentTask;
+
+type Actions = {
+  setUserId: (input: string) => void;
+  setTodos: (input: Todos) => void;
+  setPriority: (input: number | undefined) => void;
+  setActiveTodo: (input: number) => void;
+  setTitle: (input: string) => void;
+  setTasks: (input: string[]) => void;
+  flipTimed: () => void;
+  flipRepeatable: () => void;
+  setNextShow: (input: Date) => void;
+  setFrequency: (input: string) => void;
+  deleteTodo: (input: number) => void;
+  addTask: () => void;
+  deleteTask: (input: number) => void;
+  updateTask: (val: string, index: number) => void;
+  pushTodo: () => Todos;
+  resetTodo: () => void;
+  flipModal: () => void;
+};
+
+export const useTodoStore = create<State & Actions>()((set, get) => ({
+  ...initialState,
+  setUserId: (input) => {
+    set({ userid: input });
+  },
+  flipModal: () => {
+    set((state) => ({ modal: !state.modal }));
+  },
+  pushTodo: () => {
+    //create todo, add to list and return it
+    set((state) => ({
+      todos: (() => {
+        const tempTodo = {
+          title: state.title,
+          priority: state.priority,
+          frequency: state.repeatable && state.timed ? state.frequency : undefined,
+          nextShow: state.timed ? state.nextShow : undefined,
+          tasks: state.tasks.filter((word) => word.length > 0),
+        };
+        if (state.activeTodo == -1) {
+          const tempTodos = state.todos != undefined ? [...state.todos, tempTodo] : [tempTodo];
+          return tempTodos;
+        } else {
+          const tempTodos = [...state.todos];
+          tempTodos[state.activeTodo] = tempTodo;
+          return tempTodos;
+        }
+      })(),
+    }));
+    return get().todos;
+  },
+  updateTask: (val, index) => {
+    set((state) => ({
+      tasks: (() => {
+        const currentTasks = [...state.tasks];
+        currentTasks[index] = val;
+        return currentTasks;
+      })(),
+    }));
+  },
+  deleteTask: (input) => {
+    set((state) => ({ tasks: [...state.tasks.toSpliced(input, 1)] }));
+  },
+  addTask: () => {
+    set((state) => ({ tasks: [...state.tasks, ""] }));
+  },
+  setTodos: (input) => {
+    const temp = input != undefined ? input.toSorted((a, b) => b.priority - a.priority) : new Array<Todo>();
+
+    set({ today: new Array(), general: new Array(), overall: new Array() });
+    temp.map((item, i) => {
+      if (item.nextShow == undefined) {
+        set((state) => ({ general: state.general.concat(<TodoItem item={item} key={i} id={i} />) }));
+      } else {
+        let itemdate = new Date(new Date(item.nextShow).setHours(0, 0, 0, 0));
+        const today = new Date(new Date().setHours(0, 0, 0, 0));
+        if (itemdate.getTime() < today.getTime() && item.frequency != undefined) {
+          switch (item.frequency) {
+            case "Daily":
+              item.nextShow = today;
+              break;
+            case "Weekly":
+              item.nextShow = new Date(itemdate.setDate(itemdate.getDate() + 7));
+              break;
+            case "Monthly":
+              item.nextShow = new Date(itemdate.setMonth(itemdate.getMonth() + 1));
+              break;
+            case "Yearly":
+              item.nextShow = new Date(itemdate.setFullYear(itemdate.getFullYear() + 1));
+              break;
+            default:
+              break;
           }
-          console.log(currentTasks);
-          return currentTasks;
-        })(),
-      }),
-    deleteTask: (input) =>
-      set({
-        tasks: (() => {
-          const temp = [...get().tasks];
-          temp.splice(input, 1);
-          return temp;
-        })(),
-      }),
-    importItem: (input) =>
-      set({
-        id: input.id,
-        priority: input.priority,
-        tasks: input.tasks,
-        frequency: input.frequency,
-        todoTitle: input.title,
-        date: input.nextShow,
-      }),
-    reset: () => set(initialState),
-  }),
-  //   ,
-  //   {
-  //     name: "todoStore",
-  //   }
-  // )
-);
+          itemdate = item.nextShow;
+        }
+
+        if (itemdate.getTime() == today.getTime()) {
+          set((state) => ({ today: state.today.concat(<TodoItem item={item} key={i} id={i} />) }));
+          //else if date is less than today AND repeatable, update date
+        }
+      }
+
+      set((state) => ({ overall: state.overall.concat(<TodoItem item={item} key={i} id={i} />) }));
+    });
+    set({ todos: temp });
+  },
+  setPriority: (input) => {
+    set({ priority: input });
+  },
+  setActiveTodo: (input) => {
+    set((state) => ({
+      activeTodo: input,
+      priority: state.todos[input]?.priority,
+      title: state.todos[input]?.title,
+      tasks: state.todos[input]?.tasks,
+      timed: state.todos[input]?.nextShow != undefined && state.todos[input]?.nextShow != null,
+      repeatable: state.todos[input]?.frequency != undefined && state.todos[input]?.frequency != null,
+      nextShow: state.todos[input]?.nextShow != null ? new Date(state.todos[input]?.nextShow as Date) : new Date(),
+      frequency: state.todos[input]?.frequency,
+    }));
+  },
+  setTitle: (input) => {
+    set({ title: input });
+  },
+  setTasks: (input) => {
+    set({ tasks: input });
+  },
+  flipTimed: () => {
+    set((state) => ({ timed: !state.timed, repeatable: !state.timed ? state.repeatable : false }));
+  },
+  flipRepeatable: () => {
+    set((state) => ({ repeatable: !state.repeatable }));
+  },
+  setNextShow: (input) => {
+    set({ nextShow: input });
+  },
+  setFrequency: (input) => {
+    set({ frequency: input });
+  },
+  deleteTodo: (input) => {
+    set((state) => ({ todos: { ...state.todos.splice(input, 1) } }));
+  },
+  resetTodo: () =>
+    set({
+      priority: initialState.priority,
+      activeTodo: initialState.activeTodo,
+      title: initialState.title,
+      tasks: initialState.tasks,
+      timed: initialState.timed,
+      repeatable: initialState.repeatable,
+      nextShow: initialState.nextShow,
+      frequency: initialState.frequency,
+    }),
+}));

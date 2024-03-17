@@ -1,189 +1,58 @@
 "use server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "utils/database";
-import z from "zod";
+import z, { ZodError } from "zod";
 
-const inputNoId = z.object({
-  title: z.string().min(1),
-  priority: z.boolean(),
+export type userTodo = z.infer<typeof todoSchema>;
+export type Todos = userTodo["todos"];
+export type Todo = userTodo["todos"][0];
+const todoSchema = z.object({
   userid: z.string(),
-  tasks: z.array(z.object({ title: z.string() })),
-  frequency: z.string().optional(),
-  nextShow: z.date().optional(),
+  todos: z.array(
+    z.object({
+      title: z.string().min(1),
+      frequency: z.string().optional(),
+      nextShow: z
+        .union([z.string().pipe(z.coerce.date()), z.date()])
+        .optional()
+        .nullable(),
+      priority: z.number().gte(1).lte(3),
+      tasks: z.array(z.string()).optional(),
+    }),
+  ),
 });
-const inputWithId = z.object({
-  id: z.string(),
-  title: z.string().min(1),
-  priority: z.boolean(),
-  userid: z.string(),
-  tasks: z.array(z.object({ title: z.string() })),
-  frequency: z.string().optional().nullable(),
-  nextShow: z.date().optional().nullable(),
-});
-
-export async function saveTodo2(input) {
-  inputNoId.safeParse(input);
-  await prisma.toDo.create({
-    data: {
-      title: input.title,
-      priority: input.priority,
-      frequency: input.frequency,
-      userid: input.userid,
-      nextShow: input.nextShow,
-      tasks: {
-        create: input.tasks,
-      },
-    },
-  });
-}
-export async function getToDos2(input) {
-  z.string().safeParse(input);
-  const usersTodos = await prisma.toDo.findMany({
-    where: { userid: input },
-    include: {
-      tasks: true,
-    },
-  });
-  const todays: typeof usersTodos = [];
-  const general: typeof usersTodos = [];
-  const overall: typeof usersTodos = [];
-  const expired: typeof usersTodos = [];
-  usersTodos.map((item) => {
-    if (item.nextShow == null) {
-      if (item.priority) {
-        general.unshift(item);
-        overall.unshift(item);
-      } else {
-        general.push(item);
-        overall.push(item);
-      }
-    } else {
-      const todayServer = new Date();
-      const today = new Date(new Date(todayServer.setHours(todayServer.getHours() - item.nextShow.getHours())).setHours(item.nextShow.getHours(), 0, 0, 0));
-      if (item.nextShow?.valueOf() < today.valueOf()) {
-        if (item.frequency == null) {
-          expired.push(item);
-        } else {
-          const updateItem = prisma.toDo.update({
-            where: {
-              id: item.id,
-            },
-            data: {
-              nextShow: item.nextShow,
-            },
-          });
-          switch (item.frequency) {
-            case "Daily":
-              while (item.nextShow.valueOf() < today.valueOf()) {
-                item.nextShow.setDate(item.nextShow.getDate() + 1);
-              }
-              break;
-            case "Weekly":
-              while (item.nextShow.valueOf() < today.valueOf()) {
-                item.nextShow.setDate(item.nextShow.getDate() + 7);
-              }
-              break;
-            case "Monthly":
-              while (item.nextShow.valueOf() < today.valueOf()) {
-                item.nextShow.setMonth(item.nextShow.getMonth() + 1);
-              }
-              break;
-            case "Yearly":
-              while (item.nextShow.valueOf() < today.valueOf()) {
-                item.nextShow.setFullYear(item.nextShow.getFullYear() + 1);
-              }
-              break;
-          }
-          updateItem.then();
-        }
-      }
-      if (item.nextShow.valueOf() == today.valueOf()) {
-        if (item.priority) {
-          todays.unshift(item);
-        } else {
-          todays.push(item);
-        }
-      }
-      if (item.priority) {
-        overall.unshift(item);
-      } else {
-        overall.push(item);
-      }
-    }
-  });
-  expired.map((item) => {
-    overall.push(item);
-  });
-  return { todays, general, overall };
-}
-
-export async function deleteTodo2(input) {
-  z.string().safeParse(input);
-  await prisma.toDo.delete({
-    where: {
-      id: input,
-    },
-  });
-}
-export async function updateTodo2(input) {
-  inputWithId.safeParse(input);
-  console.log("passed");
-  const newtasks = input.tasks.map(({ id, todoID, ...title }) => title);
-  await prisma.task.deleteMany({
-    where: {
-      todoID: input.id,
-    },
-  });
-  newtasks.map((item, i) => {
-    if (item.title == "") {
-      newtasks.splice(i, 1);
-    }
-  });
-
-  await prisma.toDo.update({
-    where: {
-      id: input.id,
-    },
-    data: {
-      title: input.title,
-      priority: input.priority,
-      frequency: input.frequency,
-      userid: input.userid,
-      nextShow: input.nextShow,
-      tasks: {
-        create: newtasks,
-      },
-    },
-  });
-}
 
 export async function getTodos(input) {
   z.string().safeParse(input);
-  const usersTodos = await prisma.todoRow.findMany({
+  const output = await prisma.todo.findMany({
     where: { userid: input },
   });
-  return usersTodos;
+  return output[0]?.todos as Todos;
 }
-export async function saveTodos() {
-  //inputNoId.safeParse(input);
-  await prisma.todoRow.create({
-    // data: {
-    //   title: input.title,
-    //   priority: input.priority,
-    //   frequency: input.frequency,
-    //   userid: input.userid,
-    //   nextShow: input.nextShow,
-    //   tasks: input.tasks as Prisma.JsonArray,
-    // },
-    data: {
-      title: "title2",
-      priority: false,
-      frequency: "Daily",
-      userid: "turtle",
-      nextShow: null,
-      tasks: ["one", "two"] as Prisma.JsonArray,
-    },
+export async function saveTodos(input) {
+  const valid = todoSchema.safeParse(input);
+  if (!valid.success) {
+    return valid.error.issues[0]?.message;
+  } else {
+    const output = await prisma.todo.upsert({
+      where: {
+        userid: valid.data.userid,
+      },
+      update: {
+        todos: valid.data.todos as Prisma.JsonArray,
+      },
+      create: {
+        userid: valid.data.userid,
+        todos: valid.data.todos as Prisma.JsonArray,
+      },
+    });
+    return output as userTodo;
+  }
+}
+export async function deleteTodos(input) {
+  z.string().safeParse(input);
+  const output = await prisma.todo.deleteMany({
+    where: { userid: input },
   });
+  return output;
 }
-export async function updateTodo() {}
-export async function deleteTodo() {}

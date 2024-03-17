@@ -4,39 +4,14 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url = env("DATABASE_URL")
   relationMode = "prisma"
 }
 
-model TodoRow {
-    id String @id @default(cuid()) @unique
-    userid String @default("turtle")
-    title String
-    frequency String?
-    nextShow DateTime?
-    priority Boolean?
-    tasks Json?
+model Todo{
+    userid String @default("turtle") @unique
+    todos Json?
 
     @@index([userid])
-}
-
-model ToDo {
-    id String @id @default(cuid()) @unique
-    userid String @default("turtle")
-    title String
-    frequency String?
-    nextShow DateTime?
-    priority Boolean?
-    tasks Task[]
-
-    @@index([userid])
-}
-model Task {
-    id String @id @default(cuid()) @unique
-    todo ToDo @relation(fields: [todoID], references: [id] , onDelete: Cascade)
-    todoID String
-    title String?
-
-    @@index([todoID])
 }
