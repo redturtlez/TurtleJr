@@ -44,13 +44,7 @@ export default function TodoItem(props: { item: Todo; id: number }) {
     }
   };
   return (
-    <div
-      className={
-        "relative m-2 flex min-h-[8vh] rounded-2xl  bg-secondary fill-accent p-2 text-3xl font-semibold text-text " + (crossed ? " line-through " : " ")
-        // +
-        // (item.priority ? " fill-accent text-accent " : " fill-text text-text")
-      }
-    >
+    <div className={"relative m-2 flex rounded-2xl  bg-secondary fill-accent p-3 text-3xl font-semibold text-text " + (crossed ? " line-through " : " ")}>
       <div className={"flex w-full "}>
         <div className={"my-auto flex text-xl"}>
           {crossed ? (
