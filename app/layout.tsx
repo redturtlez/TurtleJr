@@ -6,7 +6,11 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { generateMetadata } from "utils/server";
 import "animate.css";
+import type { Viewport } from "next";
 
+export const viewport: Viewport = {
+  themeColor: "#1A1A1A",
+};
 export const metadata = generateMetadata({});
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
