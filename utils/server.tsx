@@ -9,7 +9,7 @@ export async function generateMetadata(params): Promise<Metadata> {
         {
           url: "logo.svg",
           type: "image/svg+xml",
-          sizes: "48x48 72x72 96x96 128x128 256x256 512x512",
+          sizes: "48x48 72x72 96x96 128x128 192x192 256x256 512x512",
         },
         {
           url: "logo.ico",
