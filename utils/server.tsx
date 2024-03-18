@@ -11,10 +11,6 @@ export async function generateMetadata(params): Promise<Metadata> {
           type: "image/svg+xml",
           sizes: "48x48 72x72 96x96 128x128 192x192 256x256 512x512",
         },
-        {
-          url: "logo.ico",
-          sizes: "96x96 128x128 192x192",
-        },
       ],
     },
     manifest: '{ "display": "standalone", "theme_color": "#1A1A1A" }',
