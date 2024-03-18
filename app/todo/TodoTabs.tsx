@@ -42,9 +42,9 @@ export default function TodoTabs() {
         </div>
       </div>
 
-      <ScrollArea className="mx-auto w-11/12 h-[58vh]">{activeTab == 1 ? todoStore.today : activeTab == 2 ? todoStore.general : todoStore.overall}</ScrollArea>
+      <ScrollArea className="mx-auto w-11/12 max-h-[58vh]">{activeTab == 1 ? todoStore.today : activeTab == 2 ? todoStore.general : todoStore.overall}</ScrollArea>
       <div
-        className="flex m-auto h-16 w-11/12 items-center justify-center rounded-lg bg-accent/80 hover:bg-accent/70 "
+        className="flex m-4 mt-auto h-16 w-11/12 items-center justify-center rounded-lg bg-accent/80 hover:bg-accent/70 "
         onClick={() => {
           todoStore.resetTodo();
           todoStore.flipModal();
