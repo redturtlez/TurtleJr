@@ -9,7 +9,7 @@ import "animate.css";
 import type { Viewport } from "next";
 
 export const viewport: Viewport = {
-  themeColor: "#1A1A1A",
+  themeColor: "red",
   colorScheme: "dark",
 };
 export const metadata = generateMetadata({});
