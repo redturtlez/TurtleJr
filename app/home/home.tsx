@@ -14,9 +14,10 @@ export default function HomePage() {
             I'm <span className="text-accent">Simonè</span>
           </div>
           <div className="text-2xl text-balance">Full Stack Software Engineer</div>
-          <div className="mb-auto mt-4 flex h-12 w-32 rounded-xl bg-accent/70 text-lg font-bold">
+
+          <Link href={"/about"} className="mb-auto mt-4 flex h-12 w-32 rounded-xl bg-accent/70 text-lg font-bold">
             <div className="m-auto">Contact</div>
-          </div>
+          </Link>
         </div>
       </div>
       <div className="m-auto flex h-1/2 w-full sq:ml-0 sq:mt-32 sq:max-w-[50%]">
