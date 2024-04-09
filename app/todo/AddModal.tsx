@@ -57,7 +57,17 @@ export default function AddModal() {
           }}
         />
         <div className="m-auto flex w-4/5 flex-col">
-          <TitleInput placeholder="Title" className="mx-auto h-14 text-3xl" onChange={(e) => (todoStore.title = e.target.value)} defaultValue={todoStore.title} />
+          <TitleInput
+            placeholder="Title"
+            className="mx-auto h-14 text-3xl"
+            onChange={(e) => (todoStore.title = e.target.value)}
+            defaultValue={todoStore.title}
+            onKeyUp={(e) => {
+              if (e.key === "Enter") {
+                (e.target as HTMLTextAreaElement).blur();
+              }
+            }}
+          />
           <div
             className="my-1 flex h-8 w-full cursor-pointer justify-center rounded-md  bg-text/80 "
             onClick={() => {
