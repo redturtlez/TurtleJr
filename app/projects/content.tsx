@@ -3,26 +3,30 @@ import { Arrow } from "public/svg";
 import { useState } from "react";
 const jobs = [
   {
-    title: "Fedex Ground",
-    desc: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud  exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla  pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-    url: "/fedex",
+    title: "Mphasis - Fedex Ground",
+    date: "Mar. 2021 - Present",
+    desc: "As a member of the DeepDive scrum team contracted by FedEx Ground, the primary goal was to develop Java Spring APIs adhering to industry standards for security and networking within a full-stack agile framework. This involved utilizing various tools such as Java with Spring Framework, Jenkins, SwaggerAPI, Splunk, AppDynamics, SonarQube/Jacoco test coverage, Redis Persistence, and Cassandra Datastax to ensure the creation of functional and well-tested builds following best coding practices. Microservices were employed for seamless data transfer using Java Message Service, while cloud deployments on secure FedEx hosted machines facilitated easy API access for other teams and services. Knowledge transfers and demos were provided for the developed applications, alongside cooperative system integration testing across testing and production environments with other teams.",
+    url: "/about",
   },
   {
-    title: "Professional1",
-    desc: "Professional1",
-    url: "/pro1",
+    title: "Infosys - AT&T",
+    date: "Jul. 2019 - Jan. 2020",
+    desc: "I participated in developing an electronic invoice system for a significant AT&T contract, ensuring compliance with industry networking and security standards within an agile scrum team environment. We utilized modern technologies including Java Spring, OracleSQL, and front-end tools to effectively modernize legacy applications as part of the project.",
+    url: "/about",
+  },
+  {
+    title: "Revature",
+    date: "Feb. 2019 - Jul. 2019",
+    desc: "I was a key member in the development and deployment of RideForce, an internal ride-sharing platform for employees to easily find nearby commute options. This involved integrating Google Maps API for distance-based ride matching and collaborating with an agile team across multiple sprints. We utilized various tools like Slack, Gradle, Git, Jenkins, and AWS for streamlined communication, dependency management, version control, and deployments, ensuring efficient development and implementation processes.",
+    url: "/about",
   },
 ];
 const hobbies = [
   {
-    title: "Turtle Jr Jones",
-    desc: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud  exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla  pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-    url: "/turtlejr",
-  },
-  {
-    title: "Hobby1",
-    desc: "Hobby1",
-    url: "/hobby1",
+    title: "Turtle Jr",
+    date: "Apr. 2023 - Present",
+    desc: "TurtleJr.dev is an all-in-one portfolio progressive web application created using NextJs, designed with a mobile-first approach. It features various self-made tools like a To-Do list, Calorie tracker, Budgeting tool, and more behind a secure login. Additionally, it doubles as a showcase of my programming skills and passion to potential employers, reflecting my self-learned and ambitious journey.",
+    url: "/about",
   },
 ];
 export default function Content() {
@@ -44,7 +48,7 @@ export default function Content() {
       setCurrentJob((prev) => (prev + x < 0 ? jobs.length - 1 : prev + x > jobs.length - 1 ? 0 : prev + x));
     }
     if (tab == 2) {
-      setCurrentHobby((prev) => (prev + x < 0 ? jobs.length - 1 : prev + x > jobs.length - 1 ? 0 : prev + x));
+      setCurrentHobby((prev) => (prev + x < 0 ? hobbies.length - 1 : prev + x > hobbies.length - 1 ? 0 : prev + x));
     }
   }
   return (
@@ -71,16 +75,17 @@ export default function Content() {
           </div>
         </div>
         <div className="w-11/12 flex flex-col bg-secondary rounded-xl m-auto mt-4 pt-4">
-          <div className="w-11/12  self-center pb-4 text-2xl font-bold text-accent"> {activeList.at(activePage())?.title}</div>
-          <div className="h-64 w-11/12 self-center overflow-y-auto text-xl">{activeList.at(activePage())?.desc}</div>
+          <div className="w-11/12  self-center pb-2 text-2xl font-bold text-accent"> {activeList.at(activePage())?.title}</div>
+          <div className="w-11/12  self-center pb-2 text-md font-bold text-text italic"> {activeList.at(activePage())?.date}</div>
+          <div className="h-60 w-11/12 self-center overflow-y-auto text-md">{activeList.at(activePage())?.desc}</div>
           <a href={activeList.at(activePage())?.url} className="m-4 h-12 w-32 self-center rounded-lg bg-accent/80 p-3 text-center ">
             Read More
           </a>
         </div>
       </div>
       <div className="flex w-full m-auto">
-        <Arrow className="ml-4 mr-auto w-auto h-8 -rotate-90 fill-accent " onClick={() => changePage(-1)} />
-        <Arrow className="mr-4 ml-auto w-auto h-8 rotate-90 fill-accent" onClick={() => changePage(1)} />
+        <Arrow className="ml-4 mr-auto w-auto h-10 -rotate-90 fill-accent " onClick={() => changePage(-1)} />
+        <Arrow className="mr-4 ml-auto w-auto h-10 rotate-90 fill-accent" onClick={() => changePage(1)} />
       </div>
     </>
   );
