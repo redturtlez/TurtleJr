@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { Todo, Todos, userTodo } from "./todoServer";
 import TodoItem from "./TodoItem";
 
+import type { JSX } from "react";
+
 type State = userTodo &
   Todo & {
     activeTodo: number;
