@@ -83,7 +83,6 @@ export default function Content() {
               onChange={(e) => proteinCostStore.setPrice(proteinCostStore.activeItem, e.currentTarget.value == "" ? null : e.currentTarget.valueAsNumber)}
             />
           </div>
-
           <div
             className="overflow-hidden text-nowrap border-t border-text pt-4 text-2xl"
             hidden={(() => {
