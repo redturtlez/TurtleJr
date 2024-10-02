@@ -25,6 +25,15 @@ const initialState: {
 };
 export const useProteinCostStore = create(
   combine(initialState, (set) => ({
+    setItemName: (i: number, val: string | null) => {
+      set((state) => ({
+        items: (() => {
+          const currentItems = [...state.items];
+          currentItems[i]!.item = val;
+          return currentItems;
+        })(),
+      }));
+    },
     setServings: (i: number, val: number | null) => {
       set((state) => ({
         items: (() => {

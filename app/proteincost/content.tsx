@@ -74,7 +74,7 @@ export default function Content() {
                 type="text"
                 className={inputclass}
                 value={proteinCostStore.items[proteinCostStore.activeItem]!.item ?? ""}
-                onChange={(e) => proteinCostStore.setServings(proteinCostStore.activeItem, e.currentTarget.value == "" ? null : e.currentTarget.valueAsNumber)}
+                onChange={(e) => proteinCostStore.setItemName(proteinCostStore.activeItem, e.currentTarget.value == "" ? null : e.currentTarget.value)}
               />
             </div>
             <div className={divsclass}>
