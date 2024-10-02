@@ -8,6 +8,7 @@ const initialState: {
     proteinPerServing: number | null;
     price: number | null;
     item: string | null;
+    ppd?: number | null;
   }[];
   activeItem: number;
 } = {
@@ -77,6 +78,25 @@ export const useProteinCostStore = create(
     setActiveItem: (val: number) => {
       set({ activeItem: val });
     },
-    ppd: () => {},
   })),
 );
+
+export const ppd = () => {
+  const getPPD = useProteinCostStore().items[useProteinCostStore().activeItem];
+  return ((getPPD!.servings! * getPPD!.proteinPerServing!) / getPPD!.price!).toFixed(4);
+};
+export const bestPpd = () => {
+  var max = 0;
+  var maxI = 0;
+  const items = useProteinCostStore().items;
+  items.map((val, i) => {
+    const temp = (val.servings! * val.proteinPerServing!) / val.price!;
+    temp > max
+      ? (() => {
+          max = temp;
+          maxI = i;
+        })()
+      : null;
+  });
+  return maxI;
+};

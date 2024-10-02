@@ -10,4 +10,5 @@ export { default as CheckFilled } from "./check-circle-filled.svg";
 export { default as Edit } from "./edit.svg";
 export { default as Trash } from "./trash.svg";
 export { default as Plus } from "./plus.svg";
+export { default as CrossCircle } from "./cross-circle.svg";
 //export {default as } from "./.svg";
