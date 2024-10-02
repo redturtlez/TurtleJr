@@ -73,6 +73,22 @@ const Navbar = () => {
         >
           PROJECTS
         </Link>
+
+        <Link
+          prefetch={false}
+          href="/proteincost"
+          className={
+            "flex h-16 items-center justify-center border-b-[1px] border-accent px-4 decoration-accent decoration-2 underline-offset-8 hover:underline sq:w-auto sq:border-y-0 " +
+            (pathname == "/proteinCost" ? " underline" : " no-underline")
+          }
+          onClick={() => {
+            setMenuOpen((prev) => !prev);
+            setAppsOpen(false);
+          }}
+        >
+          PROTEIN COST
+        </Link>
+
         <div className="h-16 border-b-[1px] border-accent px-4 sq:w-auto sq:border-y-0">
           {!user.isSignedIn && (
             <SignInButton mode="modal">
@@ -138,24 +154,6 @@ const Navbar = () => {
                 }}
               >
                 HEALTH
-              </Link>
-            </div>
-            <div
-              className={
-                "relative min-h-[64px] w-full items-center justify-center border-b-[1px] border-secondary bg-[#1f1f1f] px-4 decoration-accent decoration-2 underline-offset-8 hover:underline sq:border-y-0 " +
-                (appsOpen ? " flex" : "hidden")
-              }
-            >
-              <Link
-                prefetch={false}
-                href="/proteincost"
-                className={"flex h-16 cursor-pointer items-center justify-center sq:w-auto" + (pathname == "/proteincost" ? " underline" : " no-underline")}
-                onClick={() => {
-                  setMenuOpen((prev) => !prev);
-                  setAppsOpen((prev) => !prev);
-                }}
-              >
-                PROTEIN COST
               </Link>
             </div>
           </div>

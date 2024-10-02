@@ -28,7 +28,9 @@ export default function Content() {
             </div>
           ))}
           <div
-            className="mx-4 mt-2 flex h-12 flex-col space-y-2 rounded-sm border-1 border-secondary bg-text text-xl text-secondary"
+            className={
+              "mx-4 mt-2 h-12 space-y-2 rounded-sm border-1 border-secondary bg-text text-xl text-secondary " + (proteinCostStore.items.length >= 6 ? "hidden" : "flex flex-col")
+            }
             onClick={() => {
               proteinCostStore.addItem();
             }}
