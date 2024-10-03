@@ -34,6 +34,16 @@ export const useProteinCostStore = create(
         })(),
       }));
     },
+    deleteItem: (i: number) => {
+      //  set((state) => ({ tasks: [...state.tasks.toSpliced(input, 1)] }));
+      set((state) => ({
+        activeItem: (() => {
+          if ([...state.items].length == i + 1) return i - 1;
+          else return i;
+        })(),
+        items: [...state.items.toSpliced(i, 1)],
+      }));
+    },
     setServings: (i: number, val: number | null) => {
       set((state) => ({
         items: (() => {

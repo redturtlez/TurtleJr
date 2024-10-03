@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckUnfilled, CrossCircle, Plus } from "public/svg";
+import { CheckUnfilled, CrossCircle, Plus, Trash } from "public/svg";
 import { useProteinCostStore, ppd, bestPpd } from "./proteinCostStates";
 
 export default function Content() {
@@ -10,14 +10,14 @@ export default function Content() {
   const newppd = ppd();
   const bestppd = bestPpd();
   return (
-    <div className="mt-4 flex w-full flex-col">
+    <div className="mt-2 flex w-full flex-col">
       <div className="flex w-full">
         <div className="mt-2 flex w-1/3 flex-col overflow-hidden">
           {proteinCostStore.items.map((val, index) => (
             <div
               className={
-                "mx-4 mt-2 flex h-12 flex-col space-y-2 rounded-sm border-1 border-background text-xl " +
-                (proteinCostStore.activeItem == index ? "bg-text text-secondary" : "bg-secondary text-text")
+                "mx-4 mt-2 flex h-12 flex-col space-y-2 rounded-sm border-1 text-xl " +
+                (proteinCostStore.activeItem == index ? "border-background bg-text text-secondary" : "border-text/20 bg-secondary text-text")
               }
               key={index}
               onClick={() => {
@@ -28,9 +28,7 @@ export default function Content() {
             </div>
           ))}
           <div
-            className={
-              "mx-4 mt-2 h-12 space-y-2 rounded-sm border-1 border-secondary bg-text text-xl text-secondary " + (proteinCostStore.items.length >= 6 ? "hidden" : "flex flex-col")
-            }
+            className={"mx-4 mt-2 h-12 space-y-2 rounded-sm border-1 border-secondary bg-text " + (proteinCostStore.items.length >= 6 ? "hidden" : "flex flex-col")}
             onClick={() => {
               proteinCostStore.addItem();
             }}
@@ -38,32 +36,12 @@ export default function Content() {
             <Plus alt="" className="m-auto fill-background" />
           </div>
           <div
-            className={
-              "m-auto mb-0 " +
-              ((() => {
-                if (
-                  proteinCostStore.items[proteinCostStore.activeItem]!.servings == null ||
-                  proteinCostStore.items[proteinCostStore.activeItem]!.proteinPerServing == null ||
-                  proteinCostStore.items[proteinCostStore.activeItem]!.price == null ||
-                  proteinCostStore.items[proteinCostStore.activeItem]!.caloriesPerServing == null ||
-                  proteinCostStore.items.length <= 1
-                ) {
-                  return true;
-                }
-                return false;
-              })()
-                ? "hidden"
-                : "flex")
-            }
+            className={"mx-4 mt-2 h-12 space-y-2 rounded-sm border-1 border-text/20 bg-secondary " + (proteinCostStore.items.length <= 1 ? "hidden" : "flex flex-col")}
+            onClick={() => {
+              proteinCostStore.deleteItem(proteinCostStore.activeItem);
+            }}
           >
-            {proteinCostStore.activeItem == bestppd ? (
-              <CheckUnfilled alt="" className={"m-auto fill-accent hover:cursor-pointer"} height={64} width={64} />
-            ) : (
-              <CrossCircle alt="" className={"m-auto stroke-red-500 hover:cursor-pointer"} height={64} width={64} />
-            )}
-            {/* <CrossCircle alt="" className={"m-auto stroke-red-500"} height={64} width={64} />
-
-            <CheckUnfilled alt="" className={"m-auto fill-accent"} height={52} width={52} /> */}
+            <Trash alt="" className="m-auto fill-text" height={20} width={20} />
           </div>
         </div>
         <div className="flex w-2/3 flex-col">
@@ -118,7 +96,7 @@ export default function Content() {
         </div>
       </div>
       <div
-        className="mx-auto mt-4 overflow-hidden text-nowrap border-t border-text pt-4 text-2xl"
+        className="mx-auto mt-4 overflow-hidden text-nowrap border-t border-text pt-2 text-2xl"
         hidden={(() => {
           if (
             proteinCostStore.items[proteinCostStore.activeItem]!.servings == null ||
@@ -132,6 +110,27 @@ export default function Content() {
         })()}
       >
         {"Protein per dollar: " + newppd + "g"}
+        <div
+          className={
+            "m-auto mb-0 " +
+            ((() => {
+              if (proteinCostStore.items.length <= 1) {
+                return true;
+              }
+              return false;
+            })()
+              ? "hidden"
+              : "flex")
+          }
+        >
+          {proteinCostStore.activeItem == bestppd ? (
+            // <CheckUnfilled alt="" className={"m-auto fill-accent hover:cursor-pointer"} height={64} width={64} />
+            <div className="flex w-full justify-center tracking-widest text-accent">BEST VALUE</div>
+          ) : (
+            <div className="flex w-full justify-center tracking-widest text-red-500">NOT BEST VALUE</div>
+            // <CrossCircle alt="" className={"m-auto stroke-red-500 hover:cursor-pointer"} height={64} width={64} />
+          )}
+        </div>
       </div>
     </div>
   );
