@@ -14,9 +14,9 @@ import {
 import AddModal from "./AddModal";
 import { CaretDown, CheckFilled, CheckUnfilled, Edit, Trash } from "public/svg";
 import { Todo, Todos, saveTodos } from "./todoServer";
-import { useTodoStore } from "./todoStates";
 import { toast } from "react-toastify";
 import { cn } from "utils/cnhelper";
+import { useTodoStore } from "app/_context/todoStates";
 
 export default function TodoItem(props: { item: Todo; id: number }) {
   const todoStore = useTodoStore();
@@ -44,16 +44,16 @@ export default function TodoItem(props: { item: Todo; id: number }) {
     }
   };
   return (
-    <div className={"relative m-2 flex rounded-2xl  bg-secondary fill-accent p-3 text-3xl font-semibold text-text " + (crossed ? " line-through " : " ")}>
-      <div className={"flex w-full "}>
+    <div className={"relative m-2 flex rounded-2xl bg-secondary fill-accent p-3 text-3xl font-semibold text-text " + (crossed ? " line-through" : " ")}>
+      <div className={"flex w-full"}>
         <div className={"my-auto flex text-xl"}>
           {crossed ? (
-            <CheckFilled alt="" className={"my-auto mr-2 min-w-[26px]  hover:cursor-pointer "} onClick={() => crossout()} height={28} width={28} />
+            <CheckFilled alt="" className={"my-auto mr-2 min-w-[26px] hover:cursor-pointer"} onClick={() => crossout()} height={28} width={28} />
           ) : (
-            <CheckUnfilled alt="" className={"my-auto mr-2 min-w-[26px] hover:cursor-pointer "} onClick={() => crossout()} height={28} width={28} />
+            <CheckUnfilled alt="" className={"my-auto mr-2 min-w-[26px] hover:cursor-pointer"} onClick={() => crossout()} height={28} width={28} />
           )}
           <div
-            className={cn("overflow-hidden w-full", flipCaret ? "grow basis-0 w-[100vw]" : "")}
+            className={cn("w-full overflow-hidden", flipCaret ? "w-[100vw] grow basis-0" : "")}
             onClick={() => {
               setFlipCaret(!flipCaret);
             }}
@@ -61,7 +61,7 @@ export default function TodoItem(props: { item: Todo; id: number }) {
             {item.title}
             {flipCaret
               ? item.tasks?.map((i, index) => (
-                  <label key={index} className="flex text-balance text-text bg-transparent font-normal whitespace-pre-wrap ">
+                  <label key={index} className="flex whitespace-pre-wrap text-balance bg-transparent font-normal text-text">
                     {"-" + i}
                   </label>
                 ))
@@ -75,14 +75,14 @@ export default function TodoItem(props: { item: Todo; id: number }) {
             onClick={() => {
               setFlipCaret(!flipCaret);
             }}
-            className={"h-full min-w-[25px] fill-text " + (flipCaret ? "rotate-180 " : "")}
+            className={"h-full min-w-[25px] fill-text " + (flipCaret ? "rotate-180" : "")}
           />
         ) : null}
       </div>
-      <div className="static float-right flex min-w-fit ">
+      <div className="static float-right flex min-w-fit">
         <Edit
           alt=""
-          className={"mx-1 my-auto fill-accent/50 hover:cursor-pointer "}
+          className={"mx-1 my-auto fill-accent/50 hover:cursor-pointer"}
           height={26}
           width={26}
           onClick={() => {
@@ -92,7 +92,7 @@ export default function TodoItem(props: { item: Todo; id: number }) {
         />
         <AlertDialog>
           <AlertDialogTrigger>
-            <Trash alt="" className={"my-auto  fill-red-500 hover:cursor-pointer "} height={26} width={26} />
+            <Trash alt="" className={"my-auto fill-red-500 hover:cursor-pointer"} height={26} width={26} />
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>

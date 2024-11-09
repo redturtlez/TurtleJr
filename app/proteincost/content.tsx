@@ -2,6 +2,7 @@
 
 import { CheckUnfilled, CrossCircle, Plus, Trash } from "public/svg";
 import { useProteinCostStore, ppd, bestPpd } from "./proteinCostStates";
+import { useEffect } from "react";
 
 export default function Content() {
   const proteinCostStore = useProteinCostStore();
@@ -9,6 +10,7 @@ export default function Content() {
   const divsclass = "relative flex flex-col space-y-1 text-nowrap";
   const newppd = ppd();
   const bestppd = bestPpd();
+
   return (
     <div className="mt-2 flex w-full flex-col">
       <div className="flex w-full">
