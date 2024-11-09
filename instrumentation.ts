@@ -24,7 +24,7 @@ export function register() {
   };
 
   const breakfastRule = new schedule.RecurrenceRule();
-  breakfastRule.hour = 8;
+  breakfastRule.hour = 9;
   breakfastRule.minute = 0;
   breakfastRule.tz = "America/Detroit";
 
@@ -34,7 +34,7 @@ export function register() {
   lunchRule.tz = "America/Detroit";
 
   const dinnerRule = new schedule.RecurrenceRule();
-  dinnerRule.hour = 18;
+  dinnerRule.hour = 19;
   dinnerRule.minute = 0;
   dinnerRule.tz = "America/Detroit";
 
