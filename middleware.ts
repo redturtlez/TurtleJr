@@ -2,7 +2,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 const isProtectedRoute = createRouteMatcher(["/todo", "/health"]);
 
 export default clerkMiddleware((auth, req) => {
-  if (isProtectedRoute(req)) auth().protect();
+  if (isProtectedRoute(req)) auth.protect();
 });
 //   {
 //   publicRoutes: ["/", "/about", "/contact", "/projects", "/happybirthdaymom"],
