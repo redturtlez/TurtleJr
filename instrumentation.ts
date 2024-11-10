@@ -1,14 +1,14 @@
 export function register() {
   const { CronJob } = require("cron");
-  const { env } = require("env.mjs");
+  //const { env } = require("env.mjs");
   const meal = async (type: string) => {
-    await fetch(env.DISCORD_WEBHOOK_URL, {
+    await fetch(process.env.DISCORD_WEBHOOK_URL!, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        content: env.DISCORD_PING,
+        content: process.env.DISCORD_PING,
         embeds: [
           {
             author: {
