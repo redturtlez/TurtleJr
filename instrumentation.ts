@@ -52,7 +52,7 @@ export function register() {
   );
 
   const testJob = new CronJob(
-    "4 11 * * *", // cronTime
+    "12 11 * * *", // cronTime
     function () {
       meal("Dinner");
     }, // onTick
