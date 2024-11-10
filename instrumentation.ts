@@ -35,7 +35,7 @@ export function register() {
   lunchRule.tz = "America/Detroit";
 
   const dinnerRule = new schedule.RecurrenceRule();
-  dinnerRule.hour = 1;
+  dinnerRule.hour = 19;
   dinnerRule.minute = 0;
   dinnerRule.tz = "America/Detroit";
 
@@ -47,5 +47,13 @@ export function register() {
   });
   schedule.scheduleJob(dinnerRule, function () {
     meal("Dinner");
+  });
+
+  const testRule = new schedule.RecurrenceRule();
+  testRule.hour = 10;
+  testRule.minute = 16;
+  testRule.tz = "America/Detroit";
+  schedule.scheduleJob(testRule, function () {
+    meal("TEST");
   });
 }
