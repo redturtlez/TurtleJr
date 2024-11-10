@@ -50,9 +50,9 @@ export function register() {
     true, // start
     "America/New_York", // timeZone
   );
-  console.log("TEST:" + new Date());
+  const date = new Date(new Date().setUTCHours(11 + 5, 38, 0, 0));
   const testJob = new CronJob(
-    "28 11 * * *", // cronTime
+    date, // cronTime
     function () {
       meal("Dinner");
     }, // onTick
