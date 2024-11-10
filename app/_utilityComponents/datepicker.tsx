@@ -9,8 +9,8 @@ import { Calendar } from "./calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 import { cn } from "utils/cnhelper";
 import Image from "next/image";
-import { useTodoStore } from "app/todo/todoStates";
 import { Cross } from "public/svg";
+import { useTodoStore } from "app/_context/todoStates";
 
 export function DatePicker() {
   const todoStore = useTodoStore();
