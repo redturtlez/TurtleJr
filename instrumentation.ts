@@ -58,7 +58,6 @@ export function register() {
     }, // onTick
     null, // onComplete
     true, // start
-    "America/New_York", // timeZone
   );
   // const breakfastRule = new schedule.RecurrenceRule();
   // breakfastRule.hour = 9;
