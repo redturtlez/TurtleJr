@@ -1,7 +1,6 @@
 import { create } from "zustand";
-import { Todo, Todos, userTodo } from "./todoServer";
-import TodoItem from "./TodoItem";
-
+import TodoItem from "app/todo/TodoItem";
+import { Todo, Todos, userTodo } from "app/todo/todoServer";
 import type { JSX } from "react";
 
 type State = userTodo &
