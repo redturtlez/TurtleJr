@@ -30,7 +30,7 @@ export function register() {
     }, // onTick
     null, // onComplete
     true, // start
-    "America/Detroit", // timeZone
+    "America/New_York", // timeZone
   );
   const lunchJob = new CronJob(
     "0 13 * * *", // cronTime
@@ -39,7 +39,7 @@ export function register() {
     }, // onTick
     null, // onComplete
     true, // start
-    "America/Detroit", // timeZone
+    "America/New_York", // timeZone
   );
   const dinnerJob = new CronJob(
     "0 19 * * *", // cronTime
@@ -48,17 +48,17 @@ export function register() {
     }, // onTick
     null, // onComplete
     true, // start
-    "America/Detroit", // timeZone
+    "America/New_York", // timeZone
   );
-
+  console.log("TEST:" + new Date());
   const testJob = new CronJob(
-    "12 11 * * *", // cronTime
+    "28 11 * * *", // cronTime
     function () {
       meal("Dinner");
     }, // onTick
     null, // onComplete
     true, // start
-    "America/Detroit", // timeZone
+    "America/New_York", // timeZone
   );
   // const breakfastRule = new schedule.RecurrenceRule();
   // breakfastRule.hour = 9;
