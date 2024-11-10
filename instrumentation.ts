@@ -50,9 +50,11 @@ export function register() {
     true, // start
     "America/New_York", // timeZone
   );
-
+  const temp = new Date(new Date().getTime() + 30000);
+  console.log("TEST:" + temp);
   const testJob = new CronJob(
-    "49 16 * * *", // cronTime
+    // "49 16 * * *", // cronTime
+    temp,
     function () {
       meal("Dinner");
     }, // onTick
