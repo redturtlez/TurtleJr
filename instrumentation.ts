@@ -51,7 +51,7 @@ export function register() {
 
   const testRule = new schedule.RecurrenceRule();
   testRule.hour = 10;
-  testRule.minute = 16;
+  testRule.minute = 45;
   testRule.tz = "America/Detroit";
   schedule.scheduleJob(testRule, function () {
     meal("TEST");
