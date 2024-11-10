@@ -9,6 +9,8 @@ const server = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]),
   CLERK_SECRET_KEY: z.string(),
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
+  DISCORD_WEBHOOK_URL: z.string(),
+  DISCORD_PING: z.string(),
   // Add `.min(1) on ID and SECRET if you want to make sure they're not empty
 });
 
@@ -31,6 +33,8 @@ const processEnv = {
   NODE_ENV: process.env.NODE_ENV,
   CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+  DISCORD_WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL,
+  DISCORD_PING: process.env.DISCORD_PING,
 };
 
 // Don't touch the part below
