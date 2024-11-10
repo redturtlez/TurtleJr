@@ -1,7 +1,6 @@
-import { env } from "env.mjs";
-
 export function register() {
-  const schedule = require("node-schedule");
+  const { CronJob } = require("cron");
+  const { env } = require("env.mjs");
   const meal = async (type: string) => {
     await fetch(env.DISCORD_WEBHOOK_URL, {
       method: "POST",
@@ -24,37 +23,74 @@ export function register() {
     });
   };
 
-  const breakfastRule = new schedule.RecurrenceRule();
-  breakfastRule.hour = 9;
-  breakfastRule.minute = 0;
-  breakfastRule.tz = "America/Detroit";
+  const breakfastJob = new CronJob(
+    "0 9 * * *", // cronTime
+    function () {
+      meal("Breakfast");
+    }, // onTick
+    null, // onComplete
+    true, // start
+    "America/Detroit", // timeZone
+  );
+  const lunchJob = new CronJob(
+    "0 13 * * *", // cronTime
+    function () {
+      meal("Lunch");
+    }, // onTick
+    null, // onComplete
+    true, // start
+    "America/Detroit", // timeZone
+  );
+  const dinnerJob = new CronJob(
+    "0 19 * * *", // cronTime
+    function () {
+      meal("Dinner");
+    }, // onTick
+    null, // onComplete
+    true, // start
+    "America/Detroit", // timeZone
+  );
 
-  const lunchRule = new schedule.RecurrenceRule();
-  lunchRule.hour = 13;
-  lunchRule.minute = 0;
-  lunchRule.tz = "America/Detroit";
+  const testJob = new CronJob(
+    "4 11 * * *", // cronTime
+    function () {
+      meal("Dinner");
+    }, // onTick
+    null, // onComplete
+    true, // start
+    "America/Detroit", // timeZone
+  );
+  // const breakfastRule = new schedule.RecurrenceRule();
+  // breakfastRule.hour = 9;
+  // breakfastRule.minute = 0;
+  // breakfastRule.tz = "America/Detroit";
 
-  const dinnerRule = new schedule.RecurrenceRule();
-  dinnerRule.hour = 19;
-  dinnerRule.minute = 0;
-  dinnerRule.tz = "America/Detroit";
+  // const lunchRule = new schedule.RecurrenceRule();
+  // lunchRule.hour = 13;
+  // lunchRule.minute = 0;
+  // lunchRule.tz = "America/Detroit";
 
-  schedule.scheduleJob(breakfastRule, function () {
-    meal("Breakfast");
-  });
-  schedule.scheduleJob(lunchRule, function () {
-    meal("Lunch");
-  });
-  schedule.scheduleJob(dinnerRule, function () {
-    meal("Dinner");
-  });
+  // const dinnerRule = new schedule.RecurrenceRule();
+  // dinnerRule.hour = 19;
+  // dinnerRule.minute = 0;
+  // dinnerRule.tz = "America/Detroit";
 
-  const testRule = new schedule.RecurrenceRule();
-  testRule.hour = 10;
-  testRule.minute = 50;
-  testRule.tz = "America/Detroit";
-  schedule.scheduleJob(testRule, function () {
-    console.log("TESTTESTTEST");
-    meal("TEST");
-  });
+  // schedule.scheduleJob(breakfastRule, function () {
+  //   meal("Breakfast");
+  // });
+  // schedule.scheduleJob(lunchRule, function () {
+  //   meal("Lunch");
+  // });
+  // schedule.scheduleJob(dinnerRule, function () {
+  //   meal("Dinner");
+  // });
+
+  // const testRule = new schedule.RecurrenceRule();
+  // testRule.hour = 10;
+  // testRule.minute = 50;
+  // testRule.tz = "America/Detroit";
+  // schedule.scheduleJob(testRule, function () {
+  //   console.log("TESTTESTTEST");
+  //   meal("TEST");
+  // });
 }
