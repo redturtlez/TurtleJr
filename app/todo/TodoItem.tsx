@@ -15,8 +15,8 @@ import AddModal from "./AddModal";
 import { CaretDown, CheckFilled, CheckUnfilled, Edit, Trash } from "public/svg";
 import { Todo, Todos, saveTodos } from "./todoServer";
 import { toast } from "react-toastify";
-import { cn } from "utils/cnhelper";
-import { useTodoStore } from "app/_context/todoStates";
+import { cn } from "@/lib/utils";
+import { useTodoStore } from "@/app/todo/todoStates";
 
 export default function TodoItem(props: { item: Todo; id: number }) {
   const todoStore = useTodoStore();
@@ -82,7 +82,7 @@ export default function TodoItem(props: { item: Todo; id: number }) {
       <div className="static float-right flex min-w-fit">
         <Edit
           alt=""
-          className={"mx-1 my-auto fill-accent/50 hover:cursor-pointer"}
+          className={"mx-1 my-auto fill-accent/70 hover:cursor-pointer"}
           height={26}
           width={26}
           onClick={() => {
@@ -101,7 +101,9 @@ export default function TodoItem(props: { item: Todo; id: number }) {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => deleteItem(props.id)}>Continue</AlertDialogAction>
+              <AlertDialogAction className="bg-accent" onClick={() => deleteItem(props.id)}>
+                Continue
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

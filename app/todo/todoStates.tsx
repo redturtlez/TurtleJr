@@ -9,6 +9,7 @@ type State = userTodo &
     timed: boolean;
     repeatable: boolean;
     tasks: string[];
+    tasksNew: string;
     nextShow: Date;
     today: Array<JSX.Element>;
     general: Array<JSX.Element>;
@@ -23,6 +24,7 @@ const initialState: State = {
   activeTodo: -1,
   title: "",
   tasks: [],
+  tasksNew: "",
   timed: false,
   repeatable: false,
   nextShow: new Date(),
@@ -48,6 +50,7 @@ type Actions = {
   addTask: () => void;
   deleteTask: (input: number) => void;
   updateTask: (val: string, index: number) => void;
+  updateTaskNew: (val: string) => void;
   pushTodo: () => Todos;
   resetTodo: () => void;
   flipModal: () => void;
@@ -92,6 +95,9 @@ export const useTodoStore = create<State & Actions>()((set, get) => ({
         return currentTasks;
       })(),
     }));
+  },
+  updateTaskNew: (val) => {
+    set({ tasksNew: val });
   },
   deleteTask: (input) => {
     set((state) => ({ tasks: [...state.tasks.toSpliced(input, 1)] }));

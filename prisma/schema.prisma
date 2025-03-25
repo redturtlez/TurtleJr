@@ -15,3 +15,10 @@ model Todo{
 
     @@index([userid])
 }
+
+model Budget{
+    userid String @default("turtle") @unique
+    budgetItems Json?
+
+    @@index([userid])
+}

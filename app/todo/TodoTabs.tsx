@@ -4,7 +4,7 @@ import AddModal from "./AddModal";
 import { ScrollArea } from "../_utilityComponents/scrollarea";
 import { getTodos } from "./todoServer";
 import { useAuth } from "@clerk/nextjs";
-import { useTodoStore } from "app/_context/todoStates";
+import { useTodoStore } from "@/app/todo/todoStates";
 
 export default function TodoTabs() {
   const user = useAuth();
@@ -20,7 +20,7 @@ export default function TodoTabs() {
   return (
     <div className="animate__animated animate__fadeIn flex h-full w-full flex-col">
       {todoStore.modal ? <AddModal /> : null}
-      <div className="mx-auto mb-2 text-4xl font-extrabold text-text">Tasks</div>
+      <div className="mx-auto my-2 text-4xl font-extrabold text-text">Tasks</div>
       <div className="my-2 flex h-14 w-72 justify-evenly self-center rounded-full bg-secondary py-2 text-lg">
         <div
           className={"self-center rounded-full px-4 py-1 font-semibold " + (activeTab === 1 ? "bg-accent/80 font-semibold text-text" : "text-accent")}

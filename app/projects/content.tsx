@@ -53,10 +53,10 @@ export default function Content() {
   }
   return (
     <>
-      <div className="flex w-screen flex-col ">
+      <div className="flex w-screen flex-col">
         <div className="flex h-14 w-72 justify-evenly self-center rounded-full bg-secondary py-2 text-lg">
           <div
-            className={"self-center rounded-full px-4 py-1 font-semibold " + (tab == 1 ? "bg-accent/80 font-semibold text-text " : " text-accent")}
+            className={"self-center rounded-full px-4 py-1 font-semibold " + (tab == 1 ? "bg-accent/80 font-semibold text-text" : " text-accent")}
             onClick={() => {
               setTab(1);
               setActiveList(jobs);
@@ -65,7 +65,7 @@ export default function Content() {
             Professional
           </div>
           <div
-            className={"self-center rounded-full px-4 py-1 font-semibold " + (tab == 2 ? "bg-accent/80 font-semibold text-text " : " text-accent ")}
+            className={"self-center rounded-full px-4 py-1 font-semibold " + (tab == 2 ? "bg-accent/80 font-semibold text-text" : " text-accent")}
             onClick={() => {
               setTab(2);
               setActiveList(hobbies);
@@ -74,18 +74,18 @@ export default function Content() {
             Personal
           </div>
         </div>
-        <div className="w-11/12 flex flex-col bg-secondary rounded-xl m-auto mt-4 pt-4">
-          <div className="w-11/12  self-center pb-2 text-2xl font-bold text-accent"> {activeList.at(activePage())?.title}</div>
-          <div className="w-11/12  self-center pb-2 text-md font-bold text-text italic"> {activeList.at(activePage())?.date}</div>
-          <div className="h-60 w-11/12 self-center overflow-y-auto text-md">{activeList.at(activePage())?.desc}</div>
-          <a href={activeList.at(activePage())?.url} className="m-4 h-12 w-32 self-center rounded-lg bg-accent/80 p-3 text-center ">
+        <div className="m-auto mt-4 flex w-11/12 flex-col rounded-xl bg-secondary pt-4">
+          <div className="w-11/12 self-center pb-2 text-2xl font-bold text-accent"> {activeList.at(activePage())?.title}</div>
+          <div className="text-md w-11/12 self-center pb-2 font-bold italic text-text"> {activeList.at(activePage())?.date}</div>
+          <div className="text-md h-60 w-11/12 self-center overflow-y-auto">{activeList.at(activePage())?.desc}</div>
+          <a href={activeList.at(activePage())?.url} className="m-4 h-12 w-32 self-center rounded-lg bg-accent/80 p-3 text-center">
             Read More
           </a>
         </div>
       </div>
-      <div className="flex w-full m-auto">
-        <Arrow className="ml-4 mr-auto w-auto h-10 -rotate-90 fill-accent " onClick={() => changePage(-1)} />
-        <Arrow className="mr-4 ml-auto w-auto h-10 rotate-90 fill-accent" onClick={() => changePage(1)} />
+      <div className="m-auto flex w-full">
+        <Arrow className="ml-4 mr-auto h-10 w-auto -rotate-90 fill-accent" onClick={() => changePage(-1)} />
+        <Arrow className="ml-auto mr-4 h-10 w-auto rotate-90 fill-accent" onClick={() => changePage(1)} />
       </div>
     </>
   );

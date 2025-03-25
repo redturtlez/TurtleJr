@@ -8,18 +8,21 @@ module.exports = {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: "1rem",
       screens: {
         "2xl": "1400px",
       },
     },
 
     extend: {
+      flex: {
+        1: "1 1 0px",
+      },
       borderWidth: {
         1: "1px",
       },
       colors: {
-        border: "hsl(var(--border))",
+        border: "rgb(var(--border)/<alpha-value>)",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "rgb(var(--background)/<alpha-value>)",
@@ -50,8 +53,8 @@ module.exports = {
           foreground: "hsl(var(--popover-foreground))",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "rgb(var(--card)/<alpha-value>)",
+          foreground: "rgb(var(--card-foreground)/<alpha-value>)",
         },
       },
       borderRadius: {

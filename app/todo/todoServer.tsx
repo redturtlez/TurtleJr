@@ -1,6 +1,6 @@
 "use server";
 import { Prisma } from "@prisma/client";
-import { prisma } from "utils/database";
+import { prisma } from "@/lib/database";
 import z, { ZodError } from "zod";
 
 export type userTodo = z.infer<typeof todoSchema>;

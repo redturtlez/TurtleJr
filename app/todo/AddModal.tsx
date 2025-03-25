@@ -10,9 +10,12 @@ import { Todos, saveTodos } from "./todoServer";
 import { Cross, Plus } from "public/svg";
 import MyCheckbox from "app/_utilityComponents/mycheckbox";
 import { Slider } from "app/_utilityComponents/slider";
-import { cn } from "utils/cnhelper";
+import { cn } from "@/lib/utils";
 import { toast } from "react-toastify";
-import { useTodoStore } from "app/_context/todoStates";
+import { useTodoStore } from "@/app/todo/todoStates";
+import { Input } from "app/_utilityComponents/inputComponent";
+import { Textarea } from "app/_utilityComponents/textarea";
+import { Switch } from "app/_utilityComponents/switch";
 
 export default function AddModal() {
   const todoStore = useTodoStore();
@@ -47,7 +50,7 @@ export default function AddModal() {
           todoStore.flipModal();
         }}
       ></div>
-      <div className="relative m-auto flex max-h-[80%] w-[90%] flex-col rounded-xl bg-secondary py-6 sm:w-3/5">
+      <div className="relative m-auto flex max-h-[80%] w-[90%] flex-col rounded-xl bg-secondary sm:w-3/5">
         <Cross
           alt={""}
           width={24}
@@ -58,7 +61,8 @@ export default function AddModal() {
           }}
         />
         <div className="m-auto flex w-4/5 flex-col">
-          <TitleInput
+          <div className="mb-4 mt-6 text-xl font-semibold">Add New Task</div>
+          {/* <TitleInput
             placeholder="Title"
             className="mx-auto h-14 text-3xl"
             onChange={(e) => (todoStore.title = e.target.value)}
@@ -68,60 +72,49 @@ export default function AddModal() {
                 (e.target as HTMLTextAreaElement).blur();
               }
             }}
+          /> */}
+
+          <label>Title</label>
+          <Input
+            placeholder="Enter task title"
+            defaultValue={todoStore.title}
+            className="mb-4 mt-2 border-primary/70 pr-10 placeholder:text-primary/70"
+            onChange={(e) => (todoStore.title = e.target.value)}
           />
-          <div
-            className="my-1 flex h-8 w-full cursor-pointer justify-center rounded-md bg-text/80"
-            onClick={() => {
-              todoStore.addTask();
-            }}
-          >
-            <Plus height={16} width={16} className="h-auto w-auto fill-secondary" alt="" />
-          </div>
-          <ScrollArea className="mb-1">
-            <div className="max-h-56">
-              {todoStore.tasks != undefined
-                ? todoStore.tasks.map((data, i) => {
-                    return (
-                      <div key={i} className="mt-4 flex rounded-md bg-text/50 py-2">
-                        <Cross alt="" height={12} width={12} className="my-auto ml-2 cursor-pointer fill-background" onClick={() => todoStore.deleteTask(i)} />
-                        <textarea
-                          rows={1}
-                          placeholder="add details here"
-                          className="mr-2 max-w-[64vw] flex-grow whitespace-pre-wrap border-b-0 bg-transparent text-background placeholder:text-background/50"
-                          value={data != null ? data : ""}
-                          onChange={(e) => todoStore.updateTask(e.target.value, i)}
-                        />
-                      </div>
-                    );
-                  })
-                : null}
-            </div>
-          </ScrollArea>
-          <div className="m-1 flex h-8 w-full">
-            <label className="my-auto text-base">Priority:</label>
-            <Slider defaultValue={[todoStore.priority]} max={3} min={1} step={1} className="mx-auto grow basis-0 px-4" onValueChange={(e) => todoStore.setPriority(e[0])} />
-          </div>
-          <div className="m-1 flex h-8 items-center">
-            <MyCheckbox label={"Timed?"} className="mr-4 text-base" onChange={() => todoStore.flipTimed()} checked={todoStore.timed} />
+          <label>Details</label>
+          <Textarea
+            rows={3}
+            placeholder="Add task details"
+            className="mb-4 mt-2 resize-none whitespace-pre-wrap rounded-md border-1 border-primary/70 bg-transparent placeholder:text-primary/70"
+            value={todoStore.tasksNew != null ? todoStore.tasksNew : ""}
+            onChange={(e) => todoStore.updateTaskNew(e.target.value)}
+          />
+
+          <label> Priority</label>
+          <Slider defaultValue={[todoStore.priority]} max={3} min={1} step={1} className="mb-4 mt-2" onValueChange={(e) => todoStore.setPriority(e[0])} />
+          <div className="mb-4 flex h-8 items-center">
+            <Switch className="mr-2" id="timed" checked={todoStore.timed} onClick={() => todoStore.flipTimed()} />
+            <label>Timed?</label>
             {todoStore.timed && (
-              <div className="mr-0 flex-grow">
+              <div className="ml-2 mr-0 flex-grow">
                 <DatePicker />
               </div>
             )}
           </div>
-          <div className={cn("m-1 flex h-8", !todoStore.timed ? "opacity-30" : "")}>
-            <MyCheckbox
-              label={"Repeatable?"}
-              className="mr-4 text-base"
-              onChange={() => {
+          <div className={cn("mb-4 flex h-8", !todoStore.timed ? "opacity-30" : "")}>
+            <Switch
+              className="mr-2"
+              id="repeatable"
+              checked={todoStore.repeatable}
+              onClick={() => {
                 todoStore.flipRepeatable();
               }}
               disabled={!todoStore.timed}
-              checked={todoStore.repeatable}
             />
+            <label>Repeatable?</label>
             {todoStore.repeatable && (
-              <Select defaultValue={todoStore.frequency} onValueChange={(e) => todoStore.setFrequency(e)} value={todoStore.frequency}>
-                <SelectTrigger className="h-full w-1/3 flex-grow">
+              <Select onValueChange={(e) => todoStore.setFrequency(e)} value={todoStore.frequency == null ? "Daily" : todoStore.frequency}>
+                <SelectTrigger className="ml-2 h-full w-1/3 flex-grow">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-secondary text-text" ref={(ref) => ref?.addEventListener("touchend", (e) => e.preventDefault())}>
@@ -135,8 +128,7 @@ export default function AddModal() {
               </Select>
             )}
           </div>
-
-          <Button className="my-1 bg-accent text-background" onClick={() => addToDb()} disabled={disableButton}>
+          <Button className="mb-4 bg-accent text-background" onClick={() => addToDb()} disabled={disableButton}>
             {todoStore.activeTodo == -1 ? "Add" : "Update"}
           </Button>
         </div>

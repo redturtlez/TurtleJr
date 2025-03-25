@@ -1,4 +1,4 @@
-import { generateMetadata } from "../../utils/server";
+import { generateMetadata } from "../../lib/server";
 import Content from "./content";
 
 export const metadata = generateMetadata({ title: "Protein Cost" });

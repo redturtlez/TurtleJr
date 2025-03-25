@@ -156,6 +156,24 @@ const Navbar = () => {
                 HEALTH
               </Link>
             </div>
+            <div
+              className={
+                "relative min-h-[64px] w-full items-center justify-center border-b-[1px] border-secondary bg-[#1f1f1f] px-4 decoration-accent decoration-2 underline-offset-8 hover:underline sq:border-y-0 " +
+                (appsOpen ? " flex" : "hidden")
+              }
+            >
+              <Link
+                prefetch={false}
+                href="/budget"
+                className={"flex h-16 cursor-pointer items-center justify-center sq:w-auto" + (pathname == "/budget" ? " underline" : " no-underline")}
+                onClick={() => {
+                  setMenuOpen((prev) => !prev);
+                  setAppsOpen((prev) => !prev);
+                }}
+              >
+                BUDGET
+              </Link>
+            </div>
           </div>
         )}
       </div>

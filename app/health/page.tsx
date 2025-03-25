@@ -1,4 +1,4 @@
-import { generateMetadata } from "../../utils/server";
+import { generateMetadata } from "../../lib/server";
 
 export const metadata = generateMetadata({ title: "Health" });
 
