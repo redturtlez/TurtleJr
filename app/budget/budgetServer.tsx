@@ -9,30 +9,28 @@ export type BudgetItem = z.infer<typeof itemSchema>;
 
 const itemSchema = z.object({
   name: z.string(),
+  id: z.number(),
   amount: z.number(),
+  category: z.string().optional(),
+  frequency: z.string().optional(),
+  date: z
+    .union([z.string().pipe(z.coerce.date()), z.date()])
+    .optional()
+    .nullable(),
+  icon: z.string(),
+  type: z.enum(["expense", "income"]),
+  subitems: z
+    .array(
+      z.object({
+        name: z.string(),
+        amount: z.number(),
+      }),
+    )
+    .optional(),
 });
 const budgetSchema = z.object({
   userid: z.string(),
-  budgetItems: z.array(
-    z.object({
-      name: z.string(),
-      amount: z.number(),
-      frequency: z.string().optional(),
-      date: z
-        .union([z.string().pipe(z.coerce.date()), z.date()])
-        .optional()
-        .nullable(),
-      icon: z.string(),
-      subitems: z
-        .array(
-          z.object({
-            name: z.string(),
-            amount: z.number(),
-          }),
-        )
-        .optional(),
-    }),
-  ),
+  budgetItems: z.array(itemSchema),
 });
 
 export async function getBudgets(input) {

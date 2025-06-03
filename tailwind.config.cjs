@@ -1,9 +1,6 @@
 // /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
-  future: {
-    hoverOnlyWhenSupported: true,
-  },
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   theme: {
     container: {
@@ -16,7 +13,7 @@ module.exports = {
 
     extend: {
       flex: {
-        1: "1 1 0px",
+        "1px": "1 1 0px",
       },
       borderWidth: {
         1: "1px",

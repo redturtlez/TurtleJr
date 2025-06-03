@@ -15,7 +15,7 @@ type Actions = {
   setUserId: (input: string) => void;
 };
 
-export const useTodoStore = create<State & Actions>()((set, get) => ({
+export const useBudgetStore = create<State & Actions>()((set, get) => ({
   ...initialState,
   setUserId: (input) => {
     set({ userid: input });

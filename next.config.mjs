@@ -7,7 +7,6 @@
 
 /** @type {import("next").NextConfig} */
 const nextConfig = {
-  productionBrowserSourceMaps: false,
   reactStrictMode: false,
   eslint: {
     ignoreDuringBuilds: true,

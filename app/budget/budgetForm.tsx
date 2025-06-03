@@ -40,7 +40,7 @@ import { Badge } from "@/components/ui/badge";
 const formSchema = z
   .object({
     name: z.string().min(1, "Name is required"),
-    category: z.string().min(1, "Category is required"),
+    category: z.string().optional(),
     amount: z
       .string()
       .min(1, "Amount is required")
@@ -111,7 +111,7 @@ const icons = [
   { value: "travel", icon: Plane, label: "Travel" },
 ];
 
-const getIconComponent = (iconName: string) => {
+export const getIconComponent = (iconName: string) => {
   const icon = icons.find((i) => i.value === iconName);
   if (icon) {
     const IconComponent = icon.icon;
@@ -315,7 +315,7 @@ export function ExpenseForm({
                         <Button
                           type="button"
                           variant={field.value === icon.value ? "default" : "outline"}
-                          className={cn("h-10 w-10 rounded-md p-2", field.value === icon.value && "border-2 border-text bg-accent")}
+                          className={cn("h-10 w-10 rounded-md p-2", field.value === icon.value && "border-text bg-accent border-2")}
                           onClick={() => field.onChange(icon.value)}
                         >
                           <icon.icon className="h-6 w-6" />

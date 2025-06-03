@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @config '../tailwind.config.cjs';
 
+.flex-1 {
+  flex: 1 1 0px !important;
+}
 @layer base {
   /* --- Default border color compatibility (from Tailwind v3) --- */
   *,
@@ -30,18 +33,6 @@
   *::-webkit-scrollbar-thumb {
     background-color: rgb(var(--primary) / 0.5);
     border-radius: 14px;
-  }
-
-  /* --- Font face --- */
-  @font-face {
-    font-family: "yugioh-title2";
-    src: url("/fonts/yugioh-title2.ttf") format("truetype");
-    font-display: swap;
-  }
-  @font-face {
-    font-family: "yugioh-title2";
-    src: url("/fonts/yugioh-title1.ttf") format("truetype");
-    font-display: swap;
   }
 
   /* --- CSS Variables --- */
@@ -121,9 +112,4 @@
       "calt" 1;
     will-change: contents;
   }
-}
-
-@theme {
-  --font-yugioh-title2: "yugioh-title2";
-  --font-yugioh-title1: "yugioh-title1";
 }
