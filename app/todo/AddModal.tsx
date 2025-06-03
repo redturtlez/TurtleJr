@@ -43,25 +43,25 @@ export default function AddModal() {
 
   useEffect(() => {}, []);
   return (
-    <div className="fixed left-0 top-0 z-[5] flex h-screen w-screen text-text">
+    <div className="text-text fixed top-0 left-0 z-5 flex h-screen w-screen">
       <div
-        className="fixed left-0 top-0 h-screen w-screen bg-black bg-opacity-70"
+        className="bg-opacity-70 fixed top-0 left-0 h-screen w-screen bg-black"
         onClick={() => {
           todoStore.flipModal();
         }}
       ></div>
-      <div className="relative m-auto flex max-h-[80%] w-[90%] flex-col rounded-xl bg-secondary sm:w-3/5">
+      <div className="bg-secondary relative m-auto flex max-h-[80%] w-[90%] flex-col rounded-xl sm:w-3/5">
         <Cross
           alt={""}
           width={24}
           height={24}
-          className="absolute right-4 top-4 fill-text"
+          className="fill-text absolute top-4 right-4"
           onClick={() => {
             todoStore.flipModal();
           }}
         />
         <div className="m-auto flex w-4/5 flex-col">
-          <div className="mb-4 mt-6 text-xl font-semibold">Add New Task</div>
+          <div className="mt-6 mb-4 text-xl font-semibold">Add New Task</div>
           {/* <TitleInput
             placeholder="Title"
             className="mx-auto h-14 text-3xl"
@@ -78,25 +78,25 @@ export default function AddModal() {
           <Input
             placeholder="Enter task title"
             defaultValue={todoStore.title}
-            className="mb-4 mt-2 border-primary/70 pr-10 placeholder:text-primary/70"
+            className="border-primary/70 placeholder:text-primary/70 mt-2 mb-4 pr-10"
             onChange={(e) => (todoStore.title = e.target.value)}
           />
           <label>Details</label>
           <Textarea
             rows={3}
             placeholder="Add task details"
-            className="mb-4 mt-2 resize-none whitespace-pre-wrap rounded-md border-1 border-primary/70 bg-transparent placeholder:text-primary/70"
+            className="border-primary/70 placeholder:text-primary/70 mt-2 mb-4 resize-none rounded-md border-1 bg-transparent whitespace-pre-wrap"
             value={todoStore.tasksNew != null ? todoStore.tasksNew : ""}
             onChange={(e) => todoStore.updateTaskNew(e.target.value)}
           />
 
           <label> Priority</label>
-          <Slider defaultValue={[todoStore.priority]} max={3} min={1} step={1} className="mb-4 mt-2" onValueChange={(e) => todoStore.setPriority(e[0])} />
+          <Slider defaultValue={[todoStore.priority]} max={3} min={1} step={1} className="mt-2 mb-4" onValueChange={(e) => todoStore.setPriority(e[0])} />
           <div className="mb-4 flex h-8 items-center">
             <Switch className="mr-2" id="timed" checked={todoStore.timed} onClick={() => todoStore.flipTimed()} />
             <label>Timed?</label>
             {todoStore.timed && (
-              <div className="ml-2 mr-0 flex-grow">
+              <div className="mr-0 ml-2 grow">
                 <DatePicker />
               </div>
             )}
@@ -114,7 +114,7 @@ export default function AddModal() {
             <label>Repeatable?</label>
             {todoStore.repeatable && (
               <Select onValueChange={(e) => todoStore.setFrequency(e)} value={todoStore.frequency == null ? "Daily" : todoStore.frequency}>
-                <SelectTrigger className="ml-2 h-full w-1/3 flex-grow">
+                <SelectTrigger className="ml-2 h-full w-1/3 grow">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-secondary text-text" ref={(ref) => ref?.addEventListener("touchend", (e) => e.preventDefault())}>
@@ -128,7 +128,7 @@ export default function AddModal() {
               </Select>
             )}
           </div>
-          <Button className="mb-4 bg-accent text-background" onClick={() => addToDb()} disabled={disableButton}>
+          <Button className="bg-accent text-background mb-4" onClick={() => addToDb()} disabled={disableButton}>
             {todoStore.activeTodo == -1 ? "Add" : "Update"}
           </Button>
         </div>

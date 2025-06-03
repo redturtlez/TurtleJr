@@ -12,13 +12,13 @@ const Navbar = () => {
   const user = useUser();
 
   return (
-    <div className="fixed z-[1] flex min-h-[64px] w-full flex-col justify-center bg-background text-center sq:flex-row">
+    <div className="bg-background sq:flex-row fixed z-1 flex min-h-[64px] w-full flex-col justify-center text-center">
       <div className="flex h-16">
         <Link prefetch={false} href="/" className={"m-auto ml-6 text-xl font-semibold text-[#def2de] " + (pathname == "/" ? " underline" : " no-underline")}>
           <Logo className="h-12 w-12" />
         </Link>
 
-        <div className="m-auto mr-6 sq:hidden">
+        <div className="sq:hidden m-auto mr-6">
           <Menu height={40} width={40} className={"fill-text " + (menuOpen ? " hidden" : "")} onClick={() => setMenuOpen(true)} />
           <Cross height={40} width={40} className={"fill-text " + (menuOpen ? "" : " hidden")} onClick={() => setMenuOpen(false)} />
         </div>
@@ -26,7 +26,7 @@ const Navbar = () => {
 
       <div
         className={
-          "flex-col text-xl font-semibold text-text decoration-accent decoration-2 underline-offset-8 sq:ml-auto sq:mr-6 sq:flex sq:w-fit sq:flex-row " +
+          "text-text decoration-accent sq:ml-auto sq:mr-6 sq:flex sq:w-fit sq:flex-row flex-col text-xl font-semibold decoration-2 underline-offset-8 " +
           (menuOpen ? " flex" : " hidden")
         }
       >
@@ -34,7 +34,7 @@ const Navbar = () => {
           prefetch={false}
           href="/"
           className={
-            "flex h-16 items-center justify-center border-y-[1px] border-accent px-4 decoration-accent decoration-2 underline-offset-8 hover:underline sq:w-auto sq:border-y-0 " +
+            "border-accent decoration-accent sq:w-auto sq:border-y-0 flex h-16 items-center justify-center border-y-[1px] px-4 decoration-2 underline-offset-8 hover:underline " +
             (pathname == "/" ? " underline" : " no-underline")
           }
           onClick={() => {
@@ -48,7 +48,7 @@ const Navbar = () => {
           prefetch={false}
           href="/about"
           className={
-            "flex h-16 items-center justify-center border-b-[1px] border-accent px-4 decoration-accent decoration-2 underline-offset-8 hover:underline sq:w-auto sq:border-y-0 " +
+            "border-accent decoration-accent sq:w-auto sq:border-y-0 flex h-16 items-center justify-center border-b-[1px] px-4 decoration-2 underline-offset-8 hover:underline " +
             (pathname == "/about" ? " underline" : " no-underline")
           }
           onClick={() => {
@@ -63,7 +63,7 @@ const Navbar = () => {
           prefetch={false}
           href="/projects"
           className={
-            "flex h-16 items-center justify-center border-b-[1px] border-accent px-4 decoration-accent decoration-2 underline-offset-8 hover:underline sq:w-auto sq:border-y-0 " +
+            "border-accent decoration-accent sq:w-auto sq:border-y-0 flex h-16 items-center justify-center border-b-[1px] px-4 decoration-2 underline-offset-8 hover:underline " +
             (pathname == "/projects" ? " underline" : " no-underline")
           }
           onClick={() => {
@@ -78,7 +78,7 @@ const Navbar = () => {
           prefetch={false}
           href="/proteincost"
           className={
-            "flex h-16 items-center justify-center border-b-[1px] border-accent px-4 decoration-accent decoration-2 underline-offset-8 hover:underline sq:w-auto sq:border-y-0 " +
+            "border-accent decoration-accent sq:w-auto sq:border-y-0 flex h-16 items-center justify-center border-b-[1px] px-4 decoration-2 underline-offset-8 hover:underline " +
             (pathname == "/proteinCost" ? " underline" : " no-underline")
           }
           onClick={() => {
@@ -89,16 +89,16 @@ const Navbar = () => {
           PROTEIN COST
         </Link>
 
-        <div className="h-16 border-b-[1px] border-accent px-4 sq:w-auto sq:border-y-0">
+        <div className="border-accent sq:w-auto sq:border-y-0 h-16 border-b-[1px] px-4">
           {!user.isSignedIn && (
             <SignInButton mode="modal">
-              <button className="h-16 decoration-accent decoration-2 underline-offset-8 hover:underline">LOG IN</button>
+              <button className="decoration-accent h-16 decoration-2 underline-offset-8 hover:underline">LOG IN</button>
             </SignInButton>
           )}
           {user.isSignedIn && (
             <SignOutButton>
               <button
-                className="h-16 decoration-accent decoration-2 underline-offset-8 hover:underline"
+                className="decoration-accent h-16 decoration-2 underline-offset-8 hover:underline"
                 onClick={() => {
                   setMenuOpen((prev) => !prev);
                   setAppsOpen(false);
@@ -110,10 +110,10 @@ const Navbar = () => {
           )}
         </div>
         {user.isSignedIn && (
-          <div className="relative flex h-16 w-full flex-col sq:w-auto">
+          <div className="sq:w-auto relative flex h-16 w-full flex-col">
             <div
               className={
-                "flex min-h-[64px] cursor-pointer items-center justify-center border-b-[1px] border-accent px-4 decoration-accent decoration-2 underline-offset-8 hover:underline sq:border-y-0"
+                "border-accent decoration-accent sq:border-y-0 flex min-h-[64px] cursor-pointer items-center justify-center border-b-[1px] px-4 decoration-2 underline-offset-8 hover:underline"
               }
               onClick={() => setAppsOpen((prev) => !prev)}
             >
@@ -122,14 +122,14 @@ const Navbar = () => {
             </div>
             <div
               className={
-                "relative min-h-[64px] w-full items-center justify-center border-b-[1px] border-accent bg-[#1f1f1f] px-4 decoration-accent decoration-2 underline-offset-8 hover:underline sq:border-y-0 " +
+                "border-accent decoration-accent sq:border-y-0 relative min-h-[64px] w-full items-center justify-center border-b-[1px] bg-[#1f1f1f] px-4 decoration-2 underline-offset-8 hover:underline " +
                 (appsOpen ? " flex" : "hidden")
               }
             >
               <Link
                 prefetch={false}
                 href="/todo"
-                className={"flex h-16 cursor-pointer items-center justify-center sq:w-auto" + (pathname == "/todo" ? " underline" : " no-underline")}
+                className={"sq:w-auto flex h-16 cursor-pointer items-center justify-center" + (pathname == "/todo" ? " underline" : " no-underline")}
                 onClick={() => {
                   setMenuOpen((prev) => !prev);
                   setAppsOpen((prev) => !prev);
@@ -140,14 +140,14 @@ const Navbar = () => {
             </div>
             <div
               className={
-                "relative min-h-[64px] w-full items-center justify-center border-b-[1px] border-secondary bg-[#1f1f1f] px-4 decoration-accent decoration-2 underline-offset-8 hover:underline sq:border-y-0 " +
+                "border-secondary decoration-accent sq:border-y-0 relative min-h-[64px] w-full items-center justify-center border-b-[1px] bg-[#1f1f1f] px-4 decoration-2 underline-offset-8 hover:underline " +
                 (appsOpen ? " flex" : "hidden")
               }
             >
               <Link
                 prefetch={false}
                 href="/health"
-                className={"flex h-16 cursor-pointer items-center justify-center sq:w-auto" + (pathname == "/health" ? " underline" : " no-underline")}
+                className={"sq:w-auto flex h-16 cursor-pointer items-center justify-center" + (pathname == "/health" ? " underline" : " no-underline")}
                 onClick={() => {
                   setMenuOpen((prev) => !prev);
                   setAppsOpen((prev) => !prev);
@@ -158,14 +158,14 @@ const Navbar = () => {
             </div>
             <div
               className={
-                "relative min-h-[64px] w-full items-center justify-center border-b-[1px] border-secondary bg-[#1f1f1f] px-4 decoration-accent decoration-2 underline-offset-8 hover:underline sq:border-y-0 " +
+                "border-secondary decoration-accent sq:border-y-0 relative min-h-[64px] w-full items-center justify-center border-b-[1px] bg-[#1f1f1f] px-4 decoration-2 underline-offset-8 hover:underline " +
                 (appsOpen ? " flex" : "hidden")
               }
             >
               <Link
                 prefetch={false}
                 href="/budget"
-                className={"flex h-16 cursor-pointer items-center justify-center sq:w-auto" + (pathname == "/budget" ? " underline" : " no-underline")}
+                className={"sq:w-auto flex h-16 cursor-pointer items-center justify-center" + (pathname == "/budget" ? " underline" : " no-underline")}
                 onClick={() => {
                   setMenuOpen((prev) => !prev);
                   setAppsOpen((prev) => !prev);

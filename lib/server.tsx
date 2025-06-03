@@ -13,6 +13,6 @@ export async function generateMetadata(params): Promise<Metadata> {
         },
       ],
     },
-    manifest: '{ "display": "standalone"}',
+    manifest: "/manifest.json",
   };
 }

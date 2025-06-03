@@ -128,13 +128,13 @@ export default function BudgetSummary() {
             <div className="pb-2 text-2xl">Summary</div>
             <div className="grid grid-cols-2 items-center gap-4">
               <div className="">
-                <Checkbox id="expenses" className="align-middle data-[state=checked]:bg-accent/90" defaultChecked />
+                <Checkbox id="expenses" className="data-[state=checked]:bg-accent/90 align-middle" defaultChecked />
                 <label htmlFor="expenses" className="pl-2">
                   Expenses
                 </label>
               </div>
               <div className="">
-                <Checkbox id="incomes" className="align-middle data-[state=checked]:bg-accent/90" defaultChecked />
+                <Checkbox id="incomes" className="data-[state=checked]:bg-accent/90 align-middle" defaultChecked />
                 <label htmlFor="incomes" className="pl-2">
                   Incomes
                 </label>
@@ -167,27 +167,27 @@ export default function BudgetSummary() {
           </ResponsiveContainer>
         </CardContent>
       </Card>{" "}
-      <Button className="mb-4 h-12 w-full border border-primary bg-accent/90 text-xl" onClick={() => setSumTab((prev) => !prev)}>
+      <Button className="border-primary bg-accent/90 mb-4 h-12 w-full border text-xl" onClick={() => setSumTab((prev) => !prev)}>
         View/Edit Items
       </Button>
     </>,
     <>
-      <div className="my-4 flex flex-1 flex-col rounded-none border-none bg-background">
-        <div className="mb-4 flex h-14 w-full justify-evenly self-center rounded-full bg-secondary py-2 text-lg">
+      <div className="bg-background my-4 flex flex-1 flex-col rounded-none border-none">
+        <div className="bg-secondary mb-4 flex h-14 w-full justify-evenly self-center rounded-full py-2 text-lg">
           <div
-            className={"self-center rounded-full px-4 py-1 font-semibold " + (activeTab === 1 ? "bg-accent/80 font-semibold text-text" : "text-accent")}
+            className={"self-center rounded-full px-4 py-1 font-semibold " + (activeTab === 1 ? "bg-accent/80 text-text font-semibold" : "text-accent")}
             onClick={() => setActiveTab(1)}
           >
             <p className="m-auto">All</p>
           </div>
           <div
-            className={"self-center rounded-full px-4 py-1 font-semibold " + (activeTab === 2 ? "bg-accent/80 font-semibold text-text" : "text-accent")}
+            className={"self-center rounded-full px-4 py-1 font-semibold " + (activeTab === 2 ? "bg-accent/80 text-text font-semibold" : "text-accent")}
             onClick={() => setActiveTab(2)}
           >
             <p className="m-auto">Expenses</p>
           </div>
           <div
-            className={"self-center rounded-full px-4 py-1 font-semibold " + (activeTab === 3 ? "bg-accent/80 font-semibold text-text" : "text-accent")}
+            className={"self-center rounded-full px-4 py-1 font-semibold " + (activeTab === 3 ? "bg-accent/80 text-text font-semibold" : "text-accent")}
             onClick={() => setActiveTab(3)}
           >
             <p className="m-auto">Incomes</p>
@@ -222,22 +222,11 @@ export default function BudgetSummary() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() => {
-                        // setEditingTransaction(transaction)
-                        // setOpenForm(true)
-                      }}
-                    >
+                    <DropdownMenuItem onClick={() => {}}>
                       <Edit className="mr-2 h-4 w-4" />
                       Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="text-red-400"
-                      onClick={() => {
-                        // setDeletingId(transaction.id)
-                        // setOpenDeleteDialog(true)
-                      }}
-                    >
+                    <DropdownMenuItem className="text-red-400" onClick={() => {}}>
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete
                     </DropdownMenuItem>
@@ -249,10 +238,10 @@ export default function BudgetSummary() {
         </ScrollArea>
       </div>
       <div className="flex gap-4">
-        <Button className="mb-4 h-12 w-3/4 border border-primary bg-accent/90 text-xl" onClick={() => setSumTab((prev) => !prev)}>
+        <Button className="border-primary bg-accent/90 mb-4 h-12 w-3/4 border text-xl" onClick={() => setSumTab((prev) => !prev)}>
           View Summary
         </Button>
-        <Button className="mb-4 h-12 w-1/4 border border-primary bg-accent/90 text-xl" onClick={() => setAddModal((prev) => !prev)}>
+        <Button className="border-primary bg-accent/90 mb-4 h-12 w-1/4 border text-xl" onClick={() => setAddModal((prev) => !prev)}>
           Add
         </Button>
       </div>
@@ -261,48 +250,17 @@ export default function BudgetSummary() {
   return (
     <>
       {addModal ? (
-        // <div className="container absolute z-50 flex h-full flex-col bg-black/80">
-        //   <div className="my-auto flex flex-col bg-primary text-text">
-        //     <div className="mx-auto mt-4">Add Transaction</div>
-        //     <div className="mx-auto my-2">name</div>
-        //     <div className="">amount </div>
-        //     <div className="">type </div>
-        //     <div className=""> frequency</div>
-        //     <div className="">date </div>
-        //     <div className="">icon </div>
-        //     <div className="">subitems</div>
-        //   </div>
-        // </div>
         <ExpenseForm
           open={addModal}
           onOpenChange={(open) => {
             setAddModal(open);
-            //if (!open) setEditingTransaction(null)
           }}
-          //onSubmit={editingTransaction ? handleEditTransaction : handleAddTransaction}
           onSubmit={handleAddTransaction}
-          defaultValues={
-            // editingTransaction
-            //   ? {
-            //       name: editingTransaction.name,
-            //       category: editingTransaction.category,
-            //       amount: String(editingTransaction.amount),
-            //       type: editingTransaction.type,
-            //       frequency: editingTransaction.frequency,
-            //       date: editingTransaction.date,
-            //       icon: editingTransaction.icon,
-            //       subitems: editingTransaction.subitems.map((item) => ({
-            //         name: item.name,
-            //         amount: String(item.amount),
-            //       })),
-            //     }
-            //   :
-            undefined
-          }
+          defaultValues={undefined}
         />
       ) : null}
-      <div className="container flex flex-1 flex-col bg-background">
-        <div className="mx-auto mb-4 text-4xl font-bold sq:text-6xl">Budget</div>
+      <div className="bg-background container flex flex-1 flex-col">
+        <div className="sq:text-6xl mx-auto mb-4 text-4xl font-bold">Budget</div>
         <div className="grid grid-cols-3 gap-4">
           <Card>
             <CardHeader className="p-2">

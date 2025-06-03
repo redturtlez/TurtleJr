@@ -11,11 +11,11 @@ export const metadata = generateMetadata({});
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${GeistSans.className} flex h-[100dvh] flex-col fill-text text-text`}>
+      <body className={`${GeistSans.className} fill-text text-text flex h-[100dvh] flex-col`}>
         <ToastContainer />
         <ClerkProvider dynamic>
           <Navbar />
-          <main className="mt-16 flex w-full flex-1 justify-center overflow-hidden bg-background">{children}</main>
+          <main className="bg-background mt-16 flex w-full flex-1 justify-center overflow-hidden">{children}</main>
         </ClerkProvider>
       </body>
     </html>
