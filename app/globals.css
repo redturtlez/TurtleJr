@@ -4,6 +4,12 @@
 .flex-1 {
   flex: 1 1 0px !important;
 }
+@layer utilities {
+  .container {
+    padding: 1rem;
+    margin-inline: auto;
+  }
+}
 @layer base {
   /* --- Default border color compatibility (from Tailwind v3) --- */
   *,
