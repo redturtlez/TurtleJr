@@ -127,7 +127,6 @@ export default function BudgetSummary() {
     await saveAll(newItems);
     toast.success("Transaction deleted");
   };
-
   const tabs = [
     <>
       <Card className="my-4 flex flex-1 flex-col">
