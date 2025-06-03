@@ -40,7 +40,6 @@ export default function AddModal() {
       setDisableButton(false);
     }
   };
-
   useEffect(() => {}, []);
   return (
     <div className="text-text fixed top-0 left-0 z-5 flex h-screen w-screen">
