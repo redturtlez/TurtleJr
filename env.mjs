@@ -7,8 +7,9 @@ import { z } from "zod";
 const server = z.object({
   DATABASE_URL: z.string(),
   NODE_ENV: z.enum(["development", "test", "production"]),
-  CLERK_SECRET_KEY: z.string(),
+  DIRECT_DATABASE_URL: z.string(),
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
+  CLERK_SECRET_KEY: z.string(),
   // Add `.min(1) on ID and SECRET if you want to make sure they're not empty
 });
 
@@ -29,8 +30,9 @@ const client = z.object({
 const processEnv = {
   DATABASE_URL: process.env.DATABASE_URL,
   NODE_ENV: process.env.NODE_ENV,
-  CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
+  DIRECT_DATABASE_URL: process.env.DIRECT_DATABASE_URL,
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+  CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
 };
 
 // Don't touch the part below
