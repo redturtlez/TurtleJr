@@ -69,6 +69,7 @@ module.exports = {
   },
   plugins: [require("tailwindcss-animate")],
   safelist: [
+    // Dynamic classes for budgetSummary and other files
     "border-red-900",
     "bg-red-950",
     "border-green-900",
@@ -80,6 +81,10 @@ module.exports = {
     "bg-accent/80",
     "text-text",
     "text-accent",
-    // Add any other dynamic classes you use elsewhere
+    "data-[state=checked]:bg-accent/90",
+    "data-[state=checked]:bg-primary",
+    "data-[state=open]:bg-accent",
+    "data-[state=open]:text-muted-foreground",
+    // Add more if you use other dynamic bg/text/border classes
   ],
 };
