@@ -9,11 +9,6 @@
     padding: 1rem;
     margin-inline: auto;
   }
-  .truncate {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
 }
 @layer base {
   /* --- Default border color compatibility (from Tailwind v3) --- */
