@@ -68,4 +68,18 @@ module.exports = {
     },
   },
   plugins: [require("tailwindcss-animate")],
+  safelist: [
+    "border-red-900",
+    "bg-red-950",
+    "border-green-900",
+    "bg-green-950",
+    "bg-red-900",
+    "text-red-300",
+    "bg-green-900",
+    "text-green-300",
+    "bg-accent/80",
+    "text-text",
+    "text-accent",
+    // Add any other dynamic classes you use elsewhere
+  ],
 };
