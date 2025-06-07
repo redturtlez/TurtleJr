@@ -5,19 +5,27 @@ const jobs = [
   {
     title: "Mphasis - Fedex Ground",
     date: "Mar. 2021 - Present",
-    desc: "As a member of the DeepDive scrum team contracted by FedEx Ground, the primary goal was to develop Java Spring APIs adhering to industry standards for security and networking within a full-stack agile framework. This involved utilizing various tools such as Java with Spring Framework, Jenkins, SwaggerAPI, Splunk, AppDynamics, SonarQube/Jacoco test coverage, Redis Persistence, and Cassandra Datastax to ensure the creation of functional and well-tested builds following best coding practices. Microservices were employed for seamless data transfer using Java Message Service, while cloud deployments on secure FedEx hosted machines facilitated easy API access for other teams and services. Knowledge transfers and demos were provided for the developed applications, alongside cooperative system integration testing across testing and production environments with other teams.",
+    desc: `- Led development of 5+ enterprise-scale microservices using Java (Spring Boot), JMS, Redis, and Cassandra, powering logistics systems that processed up to 100M+ packages/day.
+- Architected queue-based messaging flows and caching layers to ensure reliable, scalable service communication across FedEx and USPS integrations.
+- Directed a team of 10 engineers for 6 months, mentoring junior devs, managing sprint planning, and collaborating with stakeholders to define technical strategy and delivery goals.
+- Drove CI/CD migration from Jenkins to GitHub Actions, optimizing cloud-based deployment and reducing operational costs.
+- Delivered integration-tested, production-grade APIs with full documentation, while coordinating with cross-functional teams to ensure end-to-end delivery and data integrity.`,
     url: "/about",
   },
   {
     title: "Infosys - AT&T",
-    date: "Jul. 2019 - Jan. 2020",
-    desc: "I participated in developing an electronic invoice system for a significant AT&T contract, ensuring compliance with industry networking and security standards within an agile scrum team environment. We utilized modern technologies including Java Spring, OracleSQL, and front-end tools to effectively modernize legacy applications as part of the project.",
+    date: "Jul. 2019 - Mar. 2020",
+    desc: `- Modernized legacy invoicing applications processing ~10K transactions daily by upgrading Java Spring 3 to Spring 5, refactored backend MVC components and unit tests for performance, readability, and maintainability.
+- Cleaned up outdated code patterns and replaced deprecated Java/Spring features with modern equivalents, leaving comprehensive inline documentation to support long-term scalability.
+- Collaborated within an Agile Scrum team using Angular (frontend) and Oracle SQL (data layer) to deliver secure, standards-aligned software for enterprise billing workflows.`,
     url: "/about",
   },
   {
     title: "Revature",
     date: "Feb. 2019 - Jul. 2019",
-    desc: "I was a key member in the development and deployment of RideForce, an internal ride-sharing platform for employees to easily find nearby commute options. This involved integrating Google Maps API for distance-based ride matching and collaborating with an agile team across multiple sprints. We utilized various tools like Slack, Gradle, Git, Jenkins, and AWS for streamlined communication, dependency management, version control, and deployments, ensuring efficient development and implementation processes.",
+    desc: `- Developed the backend of RideForce, an internal ride-sharing web app using Java (Spring Boot) and Oracle SQL. Enabled ~500 employees to coordinate commutes and optimized ride matches with Google Maps API integration.
+- Built MVC architecture and database access layers, and JUnit tests to ensure clean, reliable development, contributed to Angular UI and implemented logic for selecting least-deviation drivers.
+- Maintained CI/CD pipelines and cloud deployments using Jenkins, Git, Gradle, AWS, and Docker in an Agile team environment.`,
     url: "/about",
   },
 ];
@@ -25,7 +33,7 @@ const hobbies = [
   {
     title: "Turtle Jr",
     date: "Apr. 2023 - Present",
-    desc: "TurtleJr.dev is an all-in-one portfolio progressive web application created using NextJs, designed with a mobile-first approach. It features various self-made tools like a To-Do list, Calorie tracker, Budgeting tool, and more behind a secure login. Additionally, it doubles as a showcase of my programming skills and passion to potential employers, reflecting my self-learned and ambitious journey.",
+    desc: "TurtleJr.dev is a full-featured, mobile-first portfolio web app built with Next.js, TypeScript, and Tailwind CSS, and deployed on Vercel. More than just a resume site, it functions as a secure, progressive web application (PWA) housing a growing suite of personal productivity tools—including a To-Do list, Calorie Tracker, and Budgeting Assistant. The platform demonstrates not only my technical proficiency in building scalable, component-driven frontend architectures, but also my initiative, product thinking, and self-driven learning journey. Every feature is designed, developed, and refined by me to showcase real-world engineering skills and a passion for continuous improvement.",
     url: "/about",
   },
 ];
@@ -54,9 +62,9 @@ export default function Content() {
   return (
     <>
       <div className="flex w-screen flex-col">
-        <div className="flex h-14 w-72 justify-evenly self-center rounded-full bg-secondary py-2 text-lg">
+        <div className="bg-secondary flex h-14 w-72 justify-evenly self-center rounded-full py-2 text-lg">
           <div
-            className={"self-center rounded-full px-4 py-1 font-semibold " + (tab == 1 ? "bg-accent/80 font-semibold text-text" : " text-accent")}
+            className={"self-center rounded-full px-4 py-1 font-semibold " + (tab == 1 ? "bg-accent/80 text-text font-semibold" : " text-accent")}
             onClick={() => {
               setTab(1);
               setActiveList(jobs);
@@ -65,7 +73,7 @@ export default function Content() {
             Professional
           </div>
           <div
-            className={"self-center rounded-full px-4 py-1 font-semibold " + (tab == 2 ? "bg-accent/80 font-semibold text-text" : " text-accent")}
+            className={"self-center rounded-full px-4 py-1 font-semibold " + (tab == 2 ? "bg-accent/80 text-text font-semibold" : " text-accent")}
             onClick={() => {
               setTab(2);
               setActiveList(hobbies);
@@ -74,18 +82,18 @@ export default function Content() {
             Personal
           </div>
         </div>
-        <div className="m-auto mt-4 flex w-11/12 flex-col rounded-xl bg-secondary pt-4">
-          <div className="w-11/12 self-center pb-2 text-2xl font-bold text-accent"> {activeList.at(activePage())?.title}</div>
-          <div className="text-md w-11/12 self-center pb-2 font-bold italic text-text"> {activeList.at(activePage())?.date}</div>
-          <div className="text-md h-60 w-11/12 self-center overflow-y-auto">{activeList.at(activePage())?.desc}</div>
-          <a href={activeList.at(activePage())?.url} className="m-4 h-12 w-32 self-center rounded-lg bg-accent/80 p-3 text-center">
+        <div className="bg-secondary m-auto mt-4 flex w-11/12 flex-col rounded-xl pt-4">
+          <div className="text-accent w-11/12 self-center pb-2 text-2xl font-bold"> {activeList.at(activePage())?.title}</div>
+          <div className="text-md text-text w-11/12 self-center pb-2 font-bold italic"> {activeList.at(activePage())?.date}</div>
+          <div className="text-md h-60 w-11/12 self-center overflow-y-auto whitespace-pre-wrap">{activeList.at(activePage())?.desc}</div>
+          <a href={activeList.at(activePage())?.url} className="bg-accent/80 m-4 h-12 w-32 self-center rounded-lg p-3 text-center">
             Read More
           </a>
         </div>
       </div>
       <div className="m-auto flex w-full">
-        <Arrow className="ml-4 mr-auto h-10 w-auto -rotate-90 fill-accent" onClick={() => changePage(-1)} />
-        <Arrow className="ml-auto mr-4 h-10 w-auto rotate-90 fill-accent" onClick={() => changePage(1)} />
+        <Arrow className="fill-accent mr-auto ml-4 h-10 w-auto -rotate-90" onClick={() => changePage(-1)} />
+        <Arrow className="fill-accent mr-4 ml-auto h-10 w-auto rotate-90" onClick={() => changePage(1)} />
       </div>
     </>
   );

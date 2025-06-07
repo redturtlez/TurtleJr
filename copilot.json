@@ -1,0 +1,85 @@
+{
+  "$schema": "https://schemas.github.com/copilot.json",
+  "suggestionRules": [
+    {
+      "language": "typescript",
+      "rule": "Always use explicit TypeScript return types and avoid the 'any' type."
+    },
+    {
+      "language": "typescript",
+      "rule": "Prefer functional programming principles such as pure functions and immutability."
+    },
+    {
+      "language": "typescript",
+      "rule": "Use Next.js App Router with server components by default. Add 'use client' only when necessary."
+    },
+    {
+      "language": "typescript",
+      "rule": "Use async/await syntax for asynchronous logic. Avoid .then() chains."
+    },
+    {
+      "language": "typescript",
+      "rule": "Do not directly mutate req or res in Next.js route handlers."
+    },
+    {
+      "language": "typescript",
+      "rule": "Use Tailwind CSS utility classes only. Avoid custom CSS unless absolutely necessary."
+    },
+    {
+      "language": "typescript",
+      "rule": "Use Tailwind responsive prefixes like 'md:', 'lg:' and 'dark:' for adaptive design."
+    },
+    {
+      "language": "typescript",
+      "rule": "Use 'clsx' or 'classnames' for managing conditional class names."
+    },
+    {
+      "language": "typescript",
+      "rule": "Use Prisma Client with fully typed queries. Avoid raw SQL."
+    },
+    {
+      "language": "typescript",
+      "rule": "Always wrap Prisma queries in try/catch when used in API or Server Actions."
+    },
+    {
+      "language": "typescript",
+      "rule": "Keep Prisma schema logic clean. Do not write business logic in migration or schema files."
+    },
+    {
+      "language": "typescript",
+      "rule": "Separate data logic into services or repositories, not in pages or routes."
+    },
+    {
+      "language": "typescript",
+      "rule": "Use kebab-case for folder and file naming. Keep naming consistent across the codebase."
+    },
+    {
+      "language": "typescript",
+      "rule": "Organize files by feature (feature-first structure), not by file type."
+    },
+    {
+      "language": "typescript",
+      "rule": "Place reusable components in a /components or /ui directory with clear, self-descriptive names."
+    },
+    {
+      "language": "typescript",
+      "rule": "Validate all user inputs on the server side using Zod or similar schema validators."
+    },
+    {
+      "language": "typescript",
+      "rule": "Escape user-generated content when rendering HTML to prevent XSS."
+    },
+    {
+      "language": "typescript",
+      "rule": "Never hardcode secrets or environment values. Use environment variables and .env files."
+    },
+    {
+      "language": "typescript",
+      "rule": "Keep components modular and under 100 lines if possible. Break into subcomponents when needed."
+    },
+    {
+      "language": "typescript",
+      "rule": "Avoid unnecessary re-renders. Use useMemo, useCallback, and memoization appropriately."
+    }
+  ]
+}

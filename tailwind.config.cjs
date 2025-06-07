@@ -69,7 +69,6 @@ module.exports = {
   },
   plugins: [require("tailwindcss-animate")],
   safelist: [
-    // Dynamic classes for budgetSummary and other files
     "border-red-900",
     "bg-red-950",
     "border-green-900",
