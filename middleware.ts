@@ -1,18 +1,9 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 const isProtectedRoute = createRouteMatcher(["/todo", "/health"]);
 
-export default clerkMiddleware((auth, req) => {
-  if (isProtectedRoute(req)) auth.protect();
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtectedRoute(req)) await auth.protect();
 });
-//   {
-//   publicRoutes: ["/", "/about", "/contact", "/projects", "/happybirthdaymom"],
-//   afterAuth(auth, req) {
-//     if (!auth.userId && !auth.isPublicRoute) {
-//       const redirectToHome = new URL("/", req.url);
-//       return NextResponse.redirect(redirectToHome);
-//     }
-//   },
-// }
 
 export const config = {
   matcher: [

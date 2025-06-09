@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DatePicker } from "../_utilityComponents/datepicker";
 import { ScrollArea } from "../_utilityComponents/scrollarea";
 import { Button } from "../_utilityComponents/button";
@@ -16,20 +16,25 @@ import { useTodoStore } from "@/app/todo/todoStates";
 import { Input } from "app/_utilityComponents/inputComponent";
 import { Textarea } from "app/_utilityComponents/textarea";
 import { Switch } from "app/_utilityComponents/switch";
+import clsx from "clsx";
 
-export default function AddModal() {
+export default function AddModal(): JSX.Element {
   const todoStore = useTodoStore();
   const [disableButton, setDisableButton] = useState(false);
-  const addToDb = async () => {
-    if (todoStore.title.length == 0) {
-      toast.error("Title must be atlast 1 character");
-    } else {
-      setDisableButton(true);
+
+  // Add task to database with validation and error handling
+  const addToDb = useCallback(async (): Promise<void> => {
+    if (todoStore.title.length === 0) {
+      toast.error("Title must be at least 1 character");
+      return;
+    }
+    setDisableButton(true);
+    try {
       const save = await saveTodos({
         userid: todoStore.userid,
         todos: todoStore.pushTodo(),
       });
-      if (typeof save == "string") {
+      if (typeof save === "string") {
         toast.error(save);
       } else {
         toast.success("Successfully saved");
@@ -37,10 +42,15 @@ export default function AddModal() {
         todoStore.resetTodo();
         todoStore.flipModal();
       }
+    } catch (error) {
+      toast.error("An error occurred while saving");
+    } finally {
       setDisableButton(false);
     }
-  };
+  }, [todoStore]);
+
   useEffect(() => {}, []);
+
   return (
     <div className="text-text fixed top-0 left-0 z-5 flex h-screen w-screen">
       <div
@@ -61,18 +71,6 @@ export default function AddModal() {
         />
         <div className="m-auto flex w-4/5 flex-col">
           <div className="mt-6 mb-4 text-xl font-semibold">Add New Task</div>
-          {/* <TitleInput
-            placeholder="Title"
-            className="mx-auto h-14 text-3xl"
-            onChange={(e) => (todoStore.title = e.target.value)}
-            defaultValue={todoStore.title}
-            onKeyUp={(e) => {
-              if (e.key === "Enter") {
-                (e.target as HTMLTextAreaElement).blur();
-              }
-            }}
-          /> */}
-
           <label>Title</label>
           <Input
             placeholder="Enter task title"
@@ -88,7 +86,6 @@ export default function AddModal() {
             value={todoStore.tasksNew != null ? todoStore.tasksNew : ""}
             onChange={(e) => todoStore.updateTaskNew(e.target.value)}
           />
-
           <label> Priority</label>
           <Slider defaultValue={[todoStore.priority]} max={3} min={1} step={1} className="mt-2 mb-4" onValueChange={(e) => todoStore.setPriority(e[0])} />
           <div className="mb-4 flex h-8 items-center">
@@ -100,7 +97,7 @@ export default function AddModal() {
               </div>
             )}
           </div>
-          <div className={cn("mb-4 flex h-8", !todoStore.timed ? "opacity-30" : "")}>
+          <div className={clsx("mb-4 flex h-8", { "opacity-30": !todoStore.timed })}>
             <Switch
               className="mr-2"
               id="repeatable"
@@ -127,8 +124,8 @@ export default function AddModal() {
               </Select>
             )}
           </div>
-          <Button className="bg-accent text-background mb-4" onClick={() => addToDb()} disabled={disableButton}>
-            {todoStore.activeTodo == -1 ? "Add" : "Update"}
+          <Button className="bg-accent text-background mb-4" onClick={addToDb} disabled={disableButton}>
+            {todoStore.activeTodo === -1 ? "Add" : "Update"}
           </Button>
         </div>
       </div>

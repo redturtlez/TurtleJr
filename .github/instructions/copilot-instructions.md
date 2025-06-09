@@ -46,7 +46,7 @@ This project uses GitHub Copilot alongside Next.js (App Router), TypeScript, Tai
    Style exclusively with Tailwind CSS. Avoid custom CSS unless absolutely necessary.
 
 10. **Use responsive and dark mode prefixes**  
-    Utilize `sm:`, `md:`, `lg:`, and `dark:` to build adaptive, accessible interfaces.
+    Utilize `sq:` for desktop UI layout and `dark:` to build adaptive, accessible interfaces.
 
 11. **Use `clsx` or `classnames`**  
     For conditional class names, always use `clsx` or `classnames` libraries.
