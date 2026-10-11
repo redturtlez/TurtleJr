@@ -41,3 +41,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 .vscode/settings.json
+
+# Local-only calibration reference scans. Never serve or commit these by default.
+/references/local/
+
+# Private PSD sources and extraction outputs must not enter this repository.
+*.psd
+*.psb
+/private-input/
+/generated/psd/

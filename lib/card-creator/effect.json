@@ -1,0 +1,30 @@
+{
+  "id": "effect",
+  "label": "Effect Monster",
+  "frameId": "layer-044933f03b349cab7a75a372",
+  "description": {
+    "sourcePath": [
+      0,
+      7,
+      5
+    ],
+    "name": "Effect 1-2-3-4 Lines",
+    "font": "MatrixBook",
+    "maxSize": 29,
+    "horizontalScale": 0.9955,
+    "lineHeight": 1.086,
+    "typeSuffix": "EFFECT"
+  },
+  "asset": {
+    "url": "/card-creator/normal/layer-044933f03b349cab7a75a372.png",
+    "bounds": [
+      28,
+      28,
+      785,
+      1156
+    ],
+    "z": 8,
+    "opacity": 1,
+    "sha256": "2e643f2f31acd06dd7aee9da643bc9ecadc28b7238b0d05f9c7e13192ffd52cf"
+  }
+}

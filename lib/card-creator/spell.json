@@ -1,0 +1,204 @@
+{
+  "id": "spell",
+  "label": "Spell Card",
+  "frameId": "layer-822b57c0556a2164368bb29b",
+  "description": {
+    "sourcePath": [
+      0,
+      13,
+      0,
+      1
+    ],
+    "name": "3-4-5-6-7-8 Lines",
+    "font": "MatrixBook",
+    "maxSize": 29.46431,
+    "horizontalScale": 0.9876,
+    "lineHeight": 1.086,
+    "typeSuffix": "",
+    "effectRegion": [
+      65,
+      894,
+      746,
+      1090
+    ]
+  },
+  "asset": {
+    "url": "/card-creator/normal/layer-822b57c0556a2164368bb29b.png",
+    "bounds": [
+      28,
+      28,
+      785,
+      1156
+    ],
+    "z": 7,
+    "opacity": 1,
+    "sha256": "a64034430eaf8360110e971813a52136eedfe394d49b4823a50d91e00736bba8"
+  },
+  "cardType": {
+    "label": "SPELL CARD",
+    "normalRegion": [
+      445,
+      151,
+      727,
+      189
+    ],
+    "iconRegion": [
+      400,
+      151,
+      727,
+      189
+    ],
+    "options": [
+      {
+        "key": "normal",
+        "label": "Normal",
+        "icon": null
+      },
+      {
+        "key": "continuous",
+        "label": "Continuous",
+        "icon": {
+          "id": "layer-48a02c11697e5b93fb0e17dd",
+          "path": [
+            0,
+            13,
+            1,
+            3
+          ],
+          "sha256": "9bfb4d2b19777820cac29b9fd4c74109d367ebbbb063f405ef68e3878228a8c7"
+        }
+      },
+      {
+        "key": "equip",
+        "label": "Equip",
+        "icon": {
+          "id": "layer-1dc83a2d453e2b16dea7ead1",
+          "path": [
+            0,
+            13,
+            1,
+            1
+          ],
+          "sha256": "703801a0c0553d3f4ac7ddfb0eb989e8276cb3db46f0d44fb402828ab9ea645f"
+        }
+      },
+      {
+        "key": "field",
+        "label": "Field",
+        "icon": {
+          "id": "layer-4575cf9cae8917de694556bd",
+          "path": [
+            0,
+            13,
+            1,
+            5
+          ],
+          "sha256": "7f8949e52273bcf64f3759504b3ce5923cd6297e532dcd5ae27d11f319a1b54b"
+        }
+      },
+      {
+        "key": "quick-play",
+        "label": "Quick-Play",
+        "icon": {
+          "id": "layer-39db8d4d59c92f27c6e3e5d4",
+          "path": [
+            0,
+            13,
+            1,
+            4
+          ],
+          "sha256": "da727b2c77069748e24e7467e4a45fe55e92ebac898a7c7018c12cb87152ee2d"
+        }
+      },
+      {
+        "key": "ritual",
+        "label": "Ritual",
+        "icon": {
+          "id": "layer-0343af8ebfce1749bbb67c2f",
+          "path": [
+            0,
+            13,
+            1,
+            6
+          ],
+          "sha256": "dfcbd125c793d7c6ee59d0cd8268458d428e68395eea2fa51ea61e824f79af34"
+        }
+      }
+    ]
+  },
+  "attributeId": "layer-6d4630432daeb77e241d9e1a",
+  "extraAssets": {
+    "layer-6d4630432daeb77e241d9e1a": {
+      "url": "/card-creator/normal/layer-6d4630432daeb77e241d9e1a.png",
+      "bounds": [
+        680,
+        57,
+        754,
+        130
+      ],
+      "z": 204,
+      "opacity": 1,
+      "sha256": "033bab2e216a9ef81f381ee9c15c5d2c860968895c57732fbd7e9bec6fe85341"
+    },
+    "layer-48a02c11697e5b93fb0e17dd": {
+      "url": "/card-creator/normal/layer-48a02c11697e5b93fb0e17dd.png",
+      "bounds": [
+        669,
+        149,
+        713,
+        192
+      ],
+      "z": 190,
+      "opacity": 1,
+      "sha256": "9bfb4d2b19777820cac29b9fd4c74109d367ebbbb063f405ef68e3878228a8c7"
+    },
+    "layer-1dc83a2d453e2b16dea7ead1": {
+      "url": "/card-creator/normal/layer-1dc83a2d453e2b16dea7ead1.png",
+      "bounds": [
+        669,
+        148,
+        713,
+        192
+      ],
+      "z": 188,
+      "opacity": 1,
+      "sha256": "703801a0c0553d3f4ac7ddfb0eb989e8276cb3db46f0d44fb402828ab9ea645f"
+    },
+    "layer-4575cf9cae8917de694556bd": {
+      "url": "/card-creator/normal/layer-4575cf9cae8917de694556bd.png",
+      "bounds": [
+        670,
+        148,
+        713,
+        192
+      ],
+      "z": 192,
+      "opacity": 1,
+      "sha256": "7f8949e52273bcf64f3759504b3ce5923cd6297e532dcd5ae27d11f319a1b54b"
+    },
+    "layer-39db8d4d59c92f27c6e3e5d4": {
+      "url": "/card-creator/normal/layer-39db8d4d59c92f27c6e3e5d4.png",
+      "bounds": [
+        669,
+        148,
+        713,
+        192
+      ],
+      "z": 191,
+      "opacity": 1,
+      "sha256": "da727b2c77069748e24e7467e4a45fe55e92ebac898a7c7018c12cb87152ee2d"
+    },
+    "layer-0343af8ebfce1749bbb67c2f": {
+      "url": "/card-creator/normal/layer-0343af8ebfce1749bbb67c2f.png",
+      "bounds": [
+        669,
+        148,
+        713,
+        192
+      ],
+      "z": 193,
+      "opacity": 1,
+      "sha256": "dfcbd125c793d7c6ee59d0cd8268458d428e68395eea2fa51ea61e824f79af34"
+    }
+  }
+}

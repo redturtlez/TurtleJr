@@ -11,19 +11,25 @@ const Navbar = (): JSX.Element => {
   const { pathname, menuOpen, appsOpen, user, handleMenuToggle, handleAppsToggle, handleNavClick, handleAppNavClick } = useNavbar();
 
   return (
-    <div className="bg-background sq:flex-row fixed z-1 flex min-h-[64px] w-full flex-col justify-center text-center">
+    <div className="bg-background xl:flex-row fixed z-1 flex min-h-[64px] w-full flex-col justify-center text-center">
       <div className="flex h-16">
         <Link prefetch={false} href="/" className={clsx("m-auto ml-6 text-xl font-semibold text-[#def2de]", pathname === "/" ? "underline" : "no-underline")}>
           <Logo className="h-12 w-12" />
         </Link>
-        <div className="sq:hidden m-auto mr-6">
-          <Menu height={40} width={40} className={clsx("fill-text", menuOpen && "hidden")} onClick={handleMenuToggle} />
-          <Cross height={40} width={40} className={clsx("fill-text", !menuOpen && "hidden")} onClick={handleMenuToggle} />
-        </div>
+        <button
+          type="button"
+          className="xl:hidden m-auto mr-6"
+          aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={menuOpen}
+          onClick={handleMenuToggle}
+        >
+          <Menu height={40} width={40} className={clsx("fill-text", menuOpen && "hidden")} />
+          <Cross height={40} width={40} className={clsx("fill-text", !menuOpen && "hidden")} />
+        </button>
       </div>
       <div
         className={clsx(
-          "text-text decoration-accent sq:ml-auto sq:mr-6 sq:flex sq:w-fit sq:flex-row flex-col text-xl font-semibold decoration-2 underline-offset-8",
+          "text-text decoration-accent xl:ml-auto xl:mr-6 xl:flex xl:w-fit xl:flex-row flex-col text-xl font-semibold decoration-2 underline-offset-8",
           menuOpen ? "flex" : "hidden",
         )}
       >
@@ -33,6 +39,7 @@ const Navbar = (): JSX.Element => {
             { href: "/", label: "HOME" },
             { href: "/about", label: "ABOUT" },
             { href: "/projects", label: "PROJECTS" },
+            { href: "/card-creator", label: "CARD CREATOR" },
             { href: "/snake", label: "SNAKE GAME" },
             { href: "/proteincost", label: "PROTEIN COST" },
           ] as const
@@ -42,7 +49,7 @@ const Navbar = (): JSX.Element => {
             prefetch={false}
             href={href}
             className={clsx(
-              "border-accent decoration-accent sq:w-auto sq:border-y-0 flex h-16 items-center justify-center border-b-[1px] px-4 decoration-2 underline-offset-8 hover:underline",
+              "border-accent decoration-accent xl:w-auto xl:border-y-0 flex h-16 items-center justify-center border-b-[1px] px-4 decoration-2 underline-offset-8 hover:underline",
               pathname === href ? "underline" : "no-underline",
             )}
             onClick={handleNavClick}
@@ -51,7 +58,7 @@ const Navbar = (): JSX.Element => {
           </Link>
         ))}
         {/* Auth Buttons */}
-        <div className="border-accent sq:w-auto sq:border-y-0 h-16 border-b-[1px] px-4">
+        <div className="border-accent xl:w-auto xl:border-y-0 h-16 border-b-[1px] px-4">
           {!user.isSignedIn ? (
             <SignInButton mode="modal">
               <button className="decoration-accent h-16 decoration-2 underline-offset-8 hover:underline">LOG IN</button>
@@ -66,10 +73,10 @@ const Navbar = (): JSX.Element => {
         </div>
         {/* Apps Dropdown */}
         {user.isSignedIn && (
-          <div className="sq:w-auto relative flex h-16 w-full flex-col">
+          <div className="xl:w-auto relative flex h-16 w-full flex-col">
             <div
               className={clsx(
-                "border-accent decoration-accent sq:border-y-0 flex min-h-[64px] cursor-pointer items-center justify-center border-b-[1px] px-4 decoration-2 underline-offset-8 hover:underline",
+                "border-accent decoration-accent xl:border-y-0 flex min-h-[64px] cursor-pointer items-center justify-center border-b-[1px] px-4 decoration-2 underline-offset-8 hover:underline",
               )}
               onClick={handleAppsToggle}
             >
@@ -87,14 +94,14 @@ const Navbar = (): JSX.Element => {
               <div
                 key={href}
                 className={clsx(
-                  "border-secondary decoration-accent sq:border-y-0 relative min-h-[64px] w-full items-center justify-center border-b-[1px] bg-[#1f1f1f] px-4 decoration-2 underline-offset-8 hover:underline",
+                  "border-secondary decoration-accent xl:border-y-0 relative min-h-[64px] w-full items-center justify-center border-b-[1px] bg-[#1f1f1f] px-4 decoration-2 underline-offset-8 hover:underline",
                   appsOpen ? "flex" : "hidden",
                 )}
               >
                 <Link
                   prefetch={false}
                   href={href}
-                  className={clsx("sq:w-auto flex h-16 cursor-pointer items-center justify-center", pathname === href ? "underline" : "no-underline")}
+                  className={clsx("xl:w-auto flex h-16 cursor-pointer items-center justify-center", pathname === href ? "underline" : "no-underline")}
                   onClick={handleAppNavClick}
                 >
                   {label}

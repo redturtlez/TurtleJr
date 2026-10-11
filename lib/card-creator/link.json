@@ -1,0 +1,195 @@
+{
+  "id": "link",
+  "label": "Link Monster",
+  "frameId": "layer-22e32db54fb64905be0015ad",
+  "description": {
+    "sourcePath": [
+      0,
+      7,
+      3
+    ],
+    "name": "Effect 6-7 Lines",
+    "font": "MatrixBook",
+    "maxSize": 21,
+    "horizontalScale": 0.9876,
+    "lineHeight": 1.086,
+    "typeSuffix": "LINK / EFFECT",
+    "materialsRegion": [
+      65,
+      924,
+      748,
+      955
+    ],
+    "effectRegion": [
+      65,
+      956,
+      748,
+      1075
+    ]
+  },
+  "asset": {
+    "url": "/card-creator/normal/layer-22e32db54fb64905be0015ad.png",
+    "bounds": [
+      28,
+      28,
+      785,
+      1156
+    ],
+    "z": 21,
+    "opacity": 1,
+    "sha256": "5eaf913614bcf9ec8a6942600ff542b79c4b65245e5a03ae0127c474c6c9ca3a"
+  },
+  "linkLabelId": "layer-7edf104e8aa842593792db06",
+  "arrows": [
+    {
+      "key": "up-left",
+      "label": "Up-left",
+      "id": "layer-b7b8f27b5be936b95f17d494"
+    },
+    {
+      "key": "up-right",
+      "label": "Up-right",
+      "id": "layer-c55f6cb27ac907557128d52d"
+    },
+    {
+      "key": "down-right",
+      "label": "Down-right",
+      "id": "layer-cfc3c29a15947a83f8238cdd"
+    },
+    {
+      "key": "down-left",
+      "label": "Down-left",
+      "id": "layer-401875704cab5d9e5a5b0fd1"
+    },
+    {
+      "key": "down",
+      "label": "Down",
+      "id": "layer-6310d74f8ac168ed6104e840"
+    },
+    {
+      "key": "up",
+      "label": "Up",
+      "id": "layer-05d08df85b5aaf87a7378d91"
+    },
+    {
+      "key": "left",
+      "label": "Left",
+      "id": "layer-2a6ab7231fab3773b8b12074"
+    },
+    {
+      "key": "right",
+      "label": "Right",
+      "id": "layer-5ae907463beb8aa9317211c3"
+    }
+  ],
+  "extraAssets": {
+    "layer-7edf104e8aa842593792db06": {
+      "url": "/card-creator/normal/layer-7edf104e8aa842593792db06.png",
+      "bounds": [
+        601,
+        1084,
+        715,
+        1106
+      ],
+      "z": 76,
+      "opacity": 1,
+      "sha256": "2173b092b37407d8968862bea47c6ffed873591c8081433946e1db20403a616b"
+    },
+    "layer-b7b8f27b5be936b95f17d494": {
+      "url": "/card-creator/normal/layer-b7b8f27b5be936b95f17d494.png",
+      "bounds": [
+        71,
+        189,
+        141,
+        260
+      ],
+      "z": 24,
+      "opacity": 1,
+      "sha256": "9bf0802863733756c48af421544ff8a62385916d09615d1d9692d569f779dc74"
+    },
+    "layer-c55f6cb27ac907557128d52d": {
+      "url": "/card-creator/normal/layer-c55f6cb27ac907557128d52d.png",
+      "bounds": [
+        673,
+        189,
+        743,
+        260
+      ],
+      "z": 25,
+      "opacity": 1,
+      "sha256": "7df47529c39b39257e9ac66494eb2084027e5d30be152d3fcd0784bd0672fc81"
+    },
+    "layer-cfc3c29a15947a83f8238cdd": {
+      "url": "/card-creator/normal/layer-cfc3c29a15947a83f8238cdd.png",
+      "bounds": [
+        673,
+        793,
+        743,
+        862
+      ],
+      "z": 26,
+      "opacity": 1,
+      "sha256": "2e0bc40e69396e892ce5add2640309c952d099fd85d1f5648e170571b5fb35b6"
+    },
+    "layer-401875704cab5d9e5a5b0fd1": {
+      "url": "/card-creator/normal/layer-401875704cab5d9e5a5b0fd1.png",
+      "bounds": [
+        71,
+        790,
+        143,
+        862
+      ],
+      "z": 27,
+      "opacity": 1,
+      "sha256": "364a5d756883499704f8874171fdef0b495c2823d9169868de265ad6306a60d5"
+    },
+    "layer-6310d74f8ac168ed6104e840": {
+      "url": "/card-creator/normal/layer-6310d74f8ac168ed6104e840.png",
+      "bounds": [
+        335,
+        833,
+        479,
+        876
+      ],
+      "z": 28,
+      "opacity": 1,
+      "sha256": "39e88123628959b8a0b521f79cd4bb65cab0f476da6d2d060ed698530a3eff86"
+    },
+    "layer-05d08df85b5aaf87a7378d91": {
+      "url": "/card-creator/normal/layer-05d08df85b5aaf87a7378d91.png",
+      "bounds": [
+        335,
+        175,
+        479,
+        218
+      ],
+      "z": 29,
+      "opacity": 1,
+      "sha256": "df4aad28c6a40886f74a32615208e8527fb3fb78107845158deaa3235620b564"
+    },
+    "layer-2a6ab7231fab3773b8b12074": {
+      "url": "/card-creator/normal/layer-2a6ab7231fab3773b8b12074.png",
+      "bounds": [
+        56,
+        454,
+        99,
+        598
+      ],
+      "z": 30,
+      "opacity": 1,
+      "sha256": "554fb0d1a26f8124f0719c1c15c16a946e41dfd999b47d3acafc3fd26def0b96"
+    },
+    "layer-5ae907463beb8aa9317211c3": {
+      "url": "/card-creator/normal/layer-5ae907463beb8aa9317211c3.png",
+      "bounds": [
+        715,
+        454,
+        758,
+        598
+      ],
+      "z": 31,
+      "opacity": 1,
+      "sha256": "e263c65e0b3b8cdecbfcfc4af7d89e484d5f19ed6861d8f17d0978f11f4b4885"
+    }
+  }
+}

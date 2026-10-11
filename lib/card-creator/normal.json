@@ -1,0 +1,487 @@
+{
+  "id": "yugioh-normal-monster",
+  "sourceSha256": "8b0a0d322efb211c068eed7e4895aebc0dbbdedeeec53931d6c11116daa886b3",
+  "width": 813,
+  "height": 1185,
+  "fixed": [
+    {
+      "role": "border",
+      "layer_id": "layer-6878a7619b46a4c73cc68485"
+    },
+    {
+      "role": "frame",
+      "layer_id": "layer-1e64f78814002375df9da519"
+    },
+    {
+      "role": "def_label",
+      "layer_id": "layer-c397baf48a0c31783c9384b4"
+    },
+    {
+      "role": "atk_label",
+      "layer_id": "layer-892c22f305c6ba4c3562083d"
+    },
+    {
+      "role": "stats_divider",
+      "layer_id": "layer-259a84c81646119b0c566342"
+    }
+  ],
+  "attributes": {
+    "Fire": "layer-7c0587160f05b836638d7c1c",
+    "Water": "layer-7b7e5282f83683497d346277",
+    "Earth": "layer-6c7e5db09b09936c79102790",
+    "Wind": "layer-a6302503ef66d4ca32824531",
+    "Dark": "layer-0d03075944b0119e765d09d4",
+    "Divine": "layer-6de60b25729a7186e27f8d53",
+    "Light": "layer-d1e69ef0f8abd115ae1f1fc0"
+  },
+  "levels": [
+    "layer-3b86ab5f7c82af480dfa983a",
+    "layer-b5234d37c6823801db943a32",
+    "layer-4e4b000432b12f1c780880c0",
+    "layer-7756bdd9c3fc550eff3d9d17",
+    "layer-d7f4b57f4b92513044b7b459",
+    "layer-7cb50efea211519cfc66b4b3",
+    "layer-267d1d234128a0ff20227bdc",
+    "layer-e22863031e0c35876c9dd4f1",
+    "layer-75479fae50a06f4f1ef5a615",
+    "layer-ca0ea95635e0470680ec0051",
+    "layer-a6b656c8acad713e05c8a079",
+    "layer-4d177bc467c57fa1f3bccedf"
+  ],
+  "sticker": "layer-b10ffa23dd6efb8013a11643",
+  "artwork": [
+    99,
+    218,
+    715,
+    832
+  ],
+  "fields": [
+    {
+      "id": "name",
+      "bounds": [
+        62,
+        56,
+        670,
+        132
+      ],
+      "align": "left",
+      "maxLength": 80,
+      "default": "Custom Normal Monster",
+      "pattern": null
+    },
+    {
+      "id": "monster_type",
+      "bounds": [
+        65,
+        890,
+        749,
+        922
+      ],
+      "align": "left",
+      "maxLength": 60,
+      "default": "Warrior",
+      "pattern": null
+    },
+    {
+      "id": "lore",
+      "bounds": [
+        65,
+        924,
+        749,
+        1075
+      ],
+      "align": "justify_last_left",
+      "maxLength": 1000,
+      "default": "",
+      "pattern": null
+    },
+    {
+      "id": "attack",
+      "bounds": [
+        509,
+        1080,
+        582,
+        1109
+      ],
+      "align": "right",
+      "maxLength": 4,
+      "default": "0",
+      "pattern": "(?:[0-9]{1,4}|\\?)"
+    },
+    {
+      "id": "defense",
+      "bounds": [
+        674,
+        1080,
+        748,
+        1109
+      ],
+      "align": "right",
+      "maxLength": 4,
+      "default": "0",
+      "pattern": "(?:[0-9]{1,4}|\\?)"
+    },
+    {
+      "id": "set_id",
+      "bounds": [
+        500,
+        850,
+        729,
+        876
+      ],
+      "align": "right",
+      "maxLength": 24,
+      "default": "",
+      "pattern": null
+    },
+    {
+      "id": "serial",
+      "bounds": [
+        37,
+        1127,
+        154,
+        1153
+      ],
+      "align": "left",
+      "maxLength": 8,
+      "default": "",
+      "pattern": "[0-9]{0,8}"
+    },
+    {
+      "id": "edition",
+      "bounds": [
+        164,
+        1127,
+        365,
+        1153
+      ],
+      "align": "left",
+      "maxLength": 24,
+      "default": "",
+      "pattern": null
+    },
+    {
+      "id": "credit",
+      "bounds": [
+        450,
+        1127,
+        732,
+        1153
+      ],
+      "align": "right",
+      "maxLength": 50,
+      "default": "",
+      "pattern": null
+    }
+  ],
+  "goldSticker": "layer-95b63bee4e0f02838c20a5f2",
+  "catalog": {
+    "layer-95b63bee4e0f02838c20a5f2": {
+      "url": "/card-creator/normal/layer-95b63bee4e0f02838c20a5f2.png",
+      "bounds": [743,1114,785,1156],
+      "z": 129,
+      "opacity": 1,
+      "sha256": "54fb0fbc1c23c5a7668a18ebd008f91e87d1756cd86bce74183c22ce3923177d"
+    },
+    "layer-6878a7619b46a4c73cc68485": {
+      "url": "/card-creator/normal/layer-6878a7619b46a4c73cc68485.png",
+      "bounds": [
+        0,
+        0,
+        813,
+        1185
+      ],
+      "z": 1,
+      "opacity": 1,
+      "sha256": "749efaa52cc7e23d91db73f14efdec071401f7940830218576dfb601a7f0d8ef"
+    },
+    "layer-1e64f78814002375df9da519": {
+      "url": "/card-creator/normal/layer-1e64f78814002375df9da519.png",
+      "bounds": [
+        28,
+        28,
+        785,
+        1156
+      ],
+      "z": 13,
+      "opacity": 1,
+      "sha256": "ad753ab8c76a6e3b262d28bb5ddf59fa8c160051b2c4ccabf1e2abbda8dd8ec8"
+    },
+    "layer-c397baf48a0c31783c9384b4": {
+      "url": "/card-creator/normal/layer-c397baf48a0c31783c9384b4.png",
+      "bounds": [
+        600,
+        1083,
+        673,
+        1107
+      ],
+      "z": 74,
+      "opacity": 1,
+      "sha256": "4ebf2e008a4f079eac3b2e08ee55fd4f87a9dd009c4bf828e093f77b0208eeb0"
+    },
+    "layer-892c22f305c6ba4c3562083d": {
+      "url": "/card-creator/normal/layer-892c22f305c6ba4c3562083d.png",
+      "bounds": [
+        431,
+        1083,
+        508,
+        1107
+      ],
+      "z": 75,
+      "opacity": 1,
+      "sha256": "b73446d970f5c87901c814abf4dc263c8becee39feba3350b20a75890e7e610b"
+    },
+    "layer-259a84c81646119b0c566342": {
+      "url": "/card-creator/normal/layer-259a84c81646119b0c566342.png",
+      "bounds": [
+        65,
+        1076,
+        749,
+        1078
+      ],
+      "z": 77,
+      "opacity": 1,
+      "sha256": "3195b135effe581ed2d1bca64a110ff6e80a4f0ea28ee3d2fccf0af3c460c6de"
+    },
+    "layer-7c0587160f05b836638d7c1c": {
+      "url": "/card-creator/normal/layer-7c0587160f05b836638d7c1c.png",
+      "bounds": [
+        680,
+        56,
+        754,
+        131
+      ],
+      "z": 200,
+      "opacity": 1,
+      "sha256": "7d8f1662c7abc655f6a3ca7d8e3609e426bf5ea000b52037e7d5a6b7c15fe7bb"
+    },
+    "layer-7b7e5282f83683497d346277": {
+      "url": "/card-creator/normal/layer-7b7e5282f83683497d346277.png",
+      "bounds": [
+        681,
+        57,
+        754,
+        130
+      ],
+      "z": 201,
+      "opacity": 1,
+      "sha256": "4dd3231a96c667edc2f9f377e36d8cce8336678523a6fabc3f9866c901a23b03"
+    },
+    "layer-6c7e5db09b09936c79102790": {
+      "url": "/card-creator/normal/layer-6c7e5db09b09936c79102790.png",
+      "bounds": [
+        681,
+        57,
+        754,
+        130
+      ],
+      "z": 202,
+      "opacity": 1,
+      "sha256": "0768bd09a442003a1b032729e7a4168d3efffa8fc4faad8ed262c39bb0ff2e01"
+    },
+    "layer-a6302503ef66d4ca32824531": {
+      "url": "/card-creator/normal/layer-a6302503ef66d4ca32824531.png",
+      "bounds": [
+        680,
+        56,
+        754,
+        131
+      ],
+      "z": 203,
+      "opacity": 1,
+      "sha256": "a6c8d5db7ee0b310248162d5dc47c13f14c920d34ca08015b7122017f75efb24"
+    },
+    "layer-0d03075944b0119e765d09d4": {
+      "url": "/card-creator/normal/layer-0d03075944b0119e765d09d4.png",
+      "bounds": [
+        680,
+        56,
+        754,
+        130
+      ],
+      "z": 206,
+      "opacity": 1,
+      "sha256": "8bd5e521568cc639ee17b740b43971afb14459ff52d8c704b0301303fd877f34"
+    },
+    "layer-6de60b25729a7186e27f8d53": {
+      "url": "/card-creator/normal/layer-6de60b25729a7186e27f8d53.png",
+      "bounds": [
+        680,
+        56,
+        754,
+        131
+      ],
+      "z": 207,
+      "opacity": 1,
+      "sha256": "5ff641c8c89b709664d4da740527f5d823409018bbfb07f82e73174632eaa01e"
+    },
+    "layer-d1e69ef0f8abd115ae1f1fc0": {
+      "url": "/card-creator/normal/layer-d1e69ef0f8abd115ae1f1fc0.png",
+      "bounds": [
+        680,
+        56,
+        754,
+        131
+      ],
+      "z": 208,
+      "opacity": 1,
+      "sha256": "28f8215de1fabf0f46cd71f3b1c5d3d963e3a544453016347888668b1f064f82"
+    },
+    "layer-3b86ab5f7c82af480dfa983a": {
+      "url": "/card-creator/normal/layer-3b86ab5f7c82af480dfa983a.png",
+      "bounds": [
+        679,
+        145,
+        728,
+        194
+      ],
+      "z": 140,
+      "opacity": 1,
+      "sha256": "58c63edd193d3587b90ef57926779dd66b243b11c91f9efc3de8ecef7a6e7f69"
+    },
+    "layer-b5234d37c6823801db943a32": {
+      "url": "/card-creator/normal/layer-b5234d37c6823801db943a32.png",
+      "bounds": [
+        625,
+        145,
+        674,
+        194
+      ],
+      "z": 141,
+      "opacity": 1,
+      "sha256": "58c63edd193d3587b90ef57926779dd66b243b11c91f9efc3de8ecef7a6e7f69"
+    },
+    "layer-4e4b000432b12f1c780880c0": {
+      "url": "/card-creator/normal/layer-4e4b000432b12f1c780880c0.png",
+      "bounds": [
+        571,
+        145,
+        620,
+        194
+      ],
+      "z": 142,
+      "opacity": 1,
+      "sha256": "58c63edd193d3587b90ef57926779dd66b243b11c91f9efc3de8ecef7a6e7f69"
+    },
+    "layer-7756bdd9c3fc550eff3d9d17": {
+      "url": "/card-creator/normal/layer-7756bdd9c3fc550eff3d9d17.png",
+      "bounds": [
+        517,
+        145,
+        566,
+        194
+      ],
+      "z": 143,
+      "opacity": 1,
+      "sha256": "58c63edd193d3587b90ef57926779dd66b243b11c91f9efc3de8ecef7a6e7f69"
+    },
+    "layer-d7f4b57f4b92513044b7b459": {
+      "url": "/card-creator/normal/layer-d7f4b57f4b92513044b7b459.png",
+      "bounds": [
+        463,
+        145,
+        512,
+        194
+      ],
+      "z": 144,
+      "opacity": 1,
+      "sha256": "58c63edd193d3587b90ef57926779dd66b243b11c91f9efc3de8ecef7a6e7f69"
+    },
+    "layer-7cb50efea211519cfc66b4b3": {
+      "url": "/card-creator/normal/layer-7cb50efea211519cfc66b4b3.png",
+      "bounds": [
+        409,
+        145,
+        458,
+        194
+      ],
+      "z": 145,
+      "opacity": 1,
+      "sha256": "58c63edd193d3587b90ef57926779dd66b243b11c91f9efc3de8ecef7a6e7f69"
+    },
+    "layer-267d1d234128a0ff20227bdc": {
+      "url": "/card-creator/normal/layer-267d1d234128a0ff20227bdc.png",
+      "bounds": [
+        355,
+        145,
+        404,
+        194
+      ],
+      "z": 146,
+      "opacity": 1,
+      "sha256": "58c63edd193d3587b90ef57926779dd66b243b11c91f9efc3de8ecef7a6e7f69"
+    },
+    "layer-e22863031e0c35876c9dd4f1": {
+      "url": "/card-creator/normal/layer-e22863031e0c35876c9dd4f1.png",
+      "bounds": [
+        301,
+        145,
+        350,
+        194
+      ],
+      "z": 147,
+      "opacity": 1,
+      "sha256": "58c63edd193d3587b90ef57926779dd66b243b11c91f9efc3de8ecef7a6e7f69"
+    },
+    "layer-75479fae50a06f4f1ef5a615": {
+      "url": "/card-creator/normal/layer-75479fae50a06f4f1ef5a615.png",
+      "bounds": [
+        247,
+        145,
+        296,
+        194
+      ],
+      "z": 148,
+      "opacity": 1,
+      "sha256": "58c63edd193d3587b90ef57926779dd66b243b11c91f9efc3de8ecef7a6e7f69"
+    },
+    "layer-ca0ea95635e0470680ec0051": {
+      "url": "/card-creator/normal/layer-ca0ea95635e0470680ec0051.png",
+      "bounds": [
+        193,
+        145,
+        242,
+        194
+      ],
+      "z": 149,
+      "opacity": 1,
+      "sha256": "58c63edd193d3587b90ef57926779dd66b243b11c91f9efc3de8ecef7a6e7f69"
+    },
+    "layer-a6b656c8acad713e05c8a079": {
+      "url": "/card-creator/normal/layer-a6b656c8acad713e05c8a079.png",
+      "bounds": [
+        139,
+        145,
+        188,
+        194
+      ],
+      "z": 150,
+      "opacity": 1,
+      "sha256": "58c63edd193d3587b90ef57926779dd66b243b11c91f9efc3de8ecef7a6e7f69"
+    },
+    "layer-4d177bc467c57fa1f3bccedf": {
+      "url": "/card-creator/normal/layer-4d177bc467c57fa1f3bccedf.png",
+      "bounds": [
+        85,
+        145,
+        134,
+        194
+      ],
+      "z": 151,
+      "opacity": 1,
+      "sha256": "58c63edd193d3587b90ef57926779dd66b243b11c91f9efc3de8ecef7a6e7f69"
+    },
+    "layer-b10ffa23dd6efb8013a11643": {
+      "url": "/card-creator/normal/layer-b10ffa23dd6efb8013a11643.png",
+      "bounds": [
+        743,
+        1114,
+        785,
+        1156
+      ],
+      "z": 128,
+      "opacity": 1,
+      "sha256": "483095f48dd47e86c697d71293572b25ad338c342d6508611cca604b8c36c3a0"
+    }
+  }
+}

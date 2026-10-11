@@ -1,0 +1,30 @@
+{
+  "id": "ritual",
+  "label": "Ritual Monster",
+  "frameId": "layer-987f7a9b7af72ddc528ee76d",
+  "description": {
+    "sourcePath": [
+      0,
+      7,
+      4
+    ],
+    "name": "Effect 4-5-6 Lines",
+    "font": "MatrixBook",
+    "maxSize": 25,
+    "horizontalScale": 0.9933,
+    "lineHeight": 1.08,
+    "typeSuffix": "RITUAL / EFFECT"
+  },
+  "asset": {
+    "url": "/card-creator/normal/layer-987f7a9b7af72ddc528ee76d.png",
+    "bounds": [
+      28,
+      28,
+      785,
+      1156
+    ],
+    "z": 20,
+    "opacity": 1,
+    "sha256": "27e6f4936316115cad3adfa5513fcd1b53e6ab49702f32f0e41ae765308ac6dd"
+  }
+}

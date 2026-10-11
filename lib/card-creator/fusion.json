@@ -1,0 +1,42 @@
+{
+  "id": "fusion",
+  "label": "Fusion Monster",
+  "frameId": "layer-bb944d0ffd3d24059455a8ce",
+  "description": {
+    "sourcePath": [
+      0,
+      7,
+      3
+    ],
+    "name": "Effect 6-7 Lines",
+    "font": "MatrixBook",
+    "maxSize": 29,
+    "horizontalScale": 0.9876,
+    "lineHeight": 1.086,
+    "typeSuffix": "FUSION / EFFECT",
+    "materialsRegion": [
+      65,
+      924,
+      748,
+      955
+    ],
+    "effectRegion": [
+      65,
+      956,
+      748,
+      1075
+    ]
+  },
+  "asset": {
+    "url": "/card-creator/normal/layer-bb944d0ffd3d24059455a8ce.png",
+    "bounds": [
+      28,
+      28,
+      785,
+      1156
+    ],
+    "z": 11,
+    "opacity": 1,
+    "sha256": "684a64e17ebf4bcc2becf7a31d2b587808702c360eb1b513e04bea862eea0b9a"
+  }
+}

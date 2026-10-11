@@ -1,0 +1,126 @@
+{
+  "id": "trap",
+  "label": "Trap Card",
+  "frameId": "layer-f16f785fc630c5129ea6f899",
+  "description": {
+    "sourcePath": [
+      0,
+      13,
+      0,
+      1
+    ],
+    "name": "3-4-5-6-7-8 Lines",
+    "font": "MatrixBook",
+    "maxSize": 29.46431,
+    "horizontalScale": 0.9876,
+    "lineHeight": 1.086,
+    "typeSuffix": "",
+    "effectRegion": [
+      65,
+      894,
+      746,
+      1090
+    ]
+  },
+  "asset": {
+    "url": "/card-creator/normal/layer-f16f785fc630c5129ea6f899.png",
+    "bounds": [
+      28,
+      28,
+      785,
+      1156
+    ],
+    "z": 10,
+    "opacity": 1,
+    "sha256": "363428659a9af66c541366d75608ed67b9b1208e17063ff2cdb1d1e90887dc4c"
+  },
+  "cardType": {
+    "label": "TRAP CARD",
+    "normalRegion": [
+      454,
+      151,
+      727,
+      189
+    ],
+    "iconRegion": [
+      409,
+      151,
+      727,
+      189
+    ],
+    "options": [
+      {
+        "key": "normal",
+        "label": "Normal",
+        "icon": null
+      },
+      {
+        "key": "continuous",
+        "label": "Continuous",
+        "icon": {
+          "id": "layer-48a02c11697e5b93fb0e17dd",
+          "path": [
+            0,
+            13,
+            1,
+            3
+          ],
+          "sha256": "9bfb4d2b19777820cac29b9fd4c74109d367ebbbb063f405ef68e3878228a8c7"
+        }
+      },
+      {
+        "key": "counter",
+        "label": "Counter",
+        "icon": {
+          "id": "layer-5a0f25a024a9b4d7d7477c77",
+          "path": [
+            0,
+            13,
+            1,
+            0
+          ],
+          "sha256": "34fd22320a7ce74b2063e91e5d510043d538fffcc7ffe31f6b60547a2a5ef9ca"
+        }
+      }
+    ]
+  },
+  "attributeId": "layer-d2f91c9a6ad2250be7e9548b",
+  "extraAssets": {
+    "layer-d2f91c9a6ad2250be7e9548b": {
+      "url": "/card-creator/normal/layer-d2f91c9a6ad2250be7e9548b.png",
+      "bounds": [
+        681,
+        57,
+        754,
+        130
+      ],
+      "z": 205,
+      "opacity": 1,
+      "sha256": "ac52ad381d04cb5e97532dcb13aae23a147e45af39c0990f68c1f65428697b68"
+    },
+    "layer-48a02c11697e5b93fb0e17dd": {
+      "url": "/card-creator/normal/layer-48a02c11697e5b93fb0e17dd.png",
+      "bounds": [
+        669,
+        149,
+        713,
+        192
+      ],
+      "z": 190,
+      "opacity": 1,
+      "sha256": "9bfb4d2b19777820cac29b9fd4c74109d367ebbbb063f405ef68e3878228a8c7"
+    },
+    "layer-5a0f25a024a9b4d7d7477c77": {
+      "url": "/card-creator/normal/layer-5a0f25a024a9b4d7d7477c77.png",
+      "bounds": [
+        669,
+        148,
+        713,
+        192
+      ],
+      "z": 187,
+      "opacity": 1,
+      "sha256": "34fd22320a7ce74b2063e91e5d510043d538fffcc7ffe31f6b60547a2a5ef9ca"
+    }
+  }
+}

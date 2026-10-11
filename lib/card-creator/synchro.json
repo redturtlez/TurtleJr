@@ -1,0 +1,42 @@
+{
+  "id": "synchro",
+  "label": "Synchro Monster",
+  "frameId": "layer-2551f42feb31de951619cf47",
+  "description": {
+    "sourcePath": [
+      0,
+      7,
+      3
+    ],
+    "name": "Effect 6-7 Lines",
+    "font": "MatrixBook",
+    "maxSize": 21,
+    "horizontalScale": 0.9876,
+    "lineHeight": 1.086,
+    "typeSuffix": "SYNCHRO / EFFECT",
+    "materialsRegion": [
+      65,
+      924,
+      748,
+      955
+    ],
+    "effectRegion": [
+      65,
+      956,
+      748,
+      1075
+    ]
+  },
+  "asset": {
+    "url": "/card-creator/normal/layer-2551f42feb31de951619cf47.png",
+    "bounds": [
+      28,
+      28,
+      785,
+      1156
+    ],
+    "z": 16,
+    "opacity": 1,
+    "sha256": "893da3af18602485592478f60fe07a558bb73417bef23a4a773b4999c7bcf42f"
+  }
+}
