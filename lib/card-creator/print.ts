@@ -2,6 +2,9 @@ import { assets, template, type Card, type Issues } from './model';
 import { renderCard, type Images } from './render';
 import type { CardFonts } from './fonts';
 export type Bleed = 0 | 1 | 2;
+export type CornerStyle = 'square' | 'rounded';
+export const DIGITAL_CORNER_RADIUS_MM = 1;
+export function digitalCornerRadiusPixels(): number { return Math.round(DIGITAL_CORNER_RADIUS_MM*300/25.4); }
 export function printGeometry(bleed: Bleed) {
   if (![0,1,2].includes(bleed)) throw new Error('Unsupported bleed size.');
   const pixels = (mm: number) => Math.round(mm*300/25.4);
@@ -28,7 +31,17 @@ export function composePrint(target: HTMLCanvasElement, trim: HTMLCanvasElement,
   }
   ctx.drawImage(trim,g.left,g.top);
 }
-export function renderPrint(target: HTMLCanvasElement, card: Card, images: Images, artwork: ImageBitmap|null, bleed: Bleed, guides: boolean, fonts: CardFonts): Issues {
+function applyRoundedCorners(canvas: HTMLCanvasElement): void {
+  const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas unavailable.');
+  const radius=digitalCornerRadiusPixels(),width=canvas.width,height=canvas.height;
+  ctx.save();ctx.globalCompositeOperation='destination-in';ctx.beginPath();
+  ctx.moveTo(radius,0);ctx.lineTo(width-radius,0);ctx.quadraticCurveTo(width,0,width,radius);
+  ctx.lineTo(width,height-radius);ctx.quadraticCurveTo(width,height,width-radius,height);
+  ctx.lineTo(radius,height);ctx.quadraticCurveTo(0,height,0,height-radius);
+  ctx.lineTo(0,radius);ctx.quadraticCurveTo(0,0,radius,0);ctx.closePath();ctx.fill();ctx.restore();
+}
+export function renderPrint(target: HTMLCanvasElement, card: Card, images: Images, artwork: ImageBitmap|null, bleed: Bleed, guides: boolean, fonts: CardFonts, cornerStyle: CornerStyle='square'): Issues {
+  if(cornerStyle==='rounded'&&bleed!==0)throw new Error('Rounded digital export does not support print bleed.');
   const source=document.createElement('canvas');
   const issues=renderCard(source,card,images,artwork,guides,fonts);
   const g=printGeometry(bleed),trim=document.createElement('canvas'),border=document.createElement('canvas');
@@ -43,6 +56,7 @@ export function renderPrint(target: HTMLCanvasElement, card: Card, images: Image
   if(!image)throw new Error('Border graphic unavailable.');
   bg.drawImage(image,0,0,g.trimWidth,g.trimHeight);
   composePrint(target,trim,border,bleed);
+  if(cornerStyle==='rounded')applyRoundedCorners(target);
   return issues;
 }
 function crc32(bytes: Uint8Array): number {
@@ -70,10 +84,10 @@ export function pngWithPrintDensity(bytes: Uint8Array): Uint8Array {
   const output=new Uint8Array(parts.reduce((sum,p)=>sum+p.length,0));let position=0;
   for(const p of parts){output.set(p,position);position+=p.length;}return output;
 }
-export async function exportPng(card: Card, images: Images, artwork: ImageBitmap|null, bleed: Bleed, fonts: CardFonts): Promise<Blob> {
+export async function exportPng(card: Card, images: Images, artwork: ImageBitmap|null, bleed: Bleed, fonts: CardFonts, cornerStyle: CornerStyle='square'): Promise<Blob> {
   await document.fonts.ready;
   const canvas=document.createElement('canvas');
-  const issues=renderPrint(canvas,card,images,artwork,bleed,false,fonts);
+  const issues=renderPrint(canvas,card,images,artwork,bleed,false,fonts,cornerStyle);
   if(Object.keys(issues).length)throw new Error('Correct the highlighted fields before downloading.');
   const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error('PNG encoding failed.')),'image/png'));
   return new Blob([pngWithPrintDensity(new Uint8Array(await blob.arrayBuffer()))],{type:'image/png'});

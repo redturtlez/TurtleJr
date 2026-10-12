@@ -6,7 +6,7 @@ const ts = require('typescript');
 const root = path.resolve(__dirname, '..');
 const names = ['lib/card-creator/model','lib/card-creator/layout','lib/card-creator/artwork','lib/card-creator/render',
   'lib/card-creator/fonts','lib/card-creator/print',
-  'app/card-creator/CardEditor'];
+  'app/card-creator/yugioh/CardEditor'];
 function source(name) {
   const extension = name.endsWith('CardEditor') ? '.tsx' : '.ts';
   return ts.transpileModule(fs.readFileSync(path.join(root,name+extension),'utf8'), {
@@ -22,7 +22,7 @@ const xyzJson = fs.readFileSync(path.join(root,'lib/card-creator/xyz.json'),'utf
 const linkJson = fs.readFileSync(path.join(root,'lib/card-creator/link.json'),'utf8');
 const spellJson = fs.readFileSync(path.join(root,'lib/card-creator/spell.json'),'utf8');
 const trapJson = fs.readFileSync(path.join(root,'lib/card-creator/trap.json'),'utf8');
-const css = fs.readFileSync(path.join(root,'app/card-creator/editor.module.css'),'utf8');
+const css = fs.readFileSync(path.join(root,'app/card-creator/yugioh/editor.module.css'),'utf8');
 const classes = Object.fromEntries(Array.from(css.matchAll(/\.([A-Za-z][A-Za-z0-9_-]*)/g),match=>[match[1],match[1]]));
 const compiled = Object.fromEntries(names.map(name=>[name,source(name)]));
 function localModule(name) {
@@ -54,7 +54,7 @@ if (process.argv.includes('--serve')) {
     function req(p){if(p==='react')return window.React;const a=name.split('/');a.pop();for(const v of p.split('/')){if(v==='..')a.pop();else if(v!=='.')a.push(v);}const key=a.join('/');
     if(key.endsWith('normal.json'))return ${json};if(key.endsWith('effect.json'))return ${effectJson};if(key.endsWith('fusion.json'))return ${fusionJson};if(key.endsWith('ritual.json'))return ${ritualJson};if(key.endsWith('synchro.json'))return ${synchroJson};if(key.endsWith('xyz.json'))return ${xyzJson};if(key.endsWith('link.json'))return ${linkJson};if(key.endsWith('spell.json'))return ${spellJson};if(key.endsWith('trap.json'))return ${trapJson};if(key.endsWith('editor.module.css'))return {__esModule:true,default:${JSON.stringify(classes)}};return load(key);}
     modules[name](req,m,m.exports);return m.exports;}
-    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(load('app/card-creator/CardEditor').default));`;
+    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(load('app/card-creator/yugioh/CardEditor').default));`;
   const server = http.createServer((req,res)=>{
     const url = new URL(req.url ?? '/','http://127.0.0.1');
     if (url.pathname==='/') {
@@ -212,7 +212,7 @@ if (process.argv.includes('--serve')) {
   });
   const {wrapText,coverCrop} = localModule('lib/card-creator/layout');
   const {inspectImage,checkDimensions} = localModule('lib/card-creator/artwork');
-  const {printGeometry,pngWithPrintDensity} = localModule('lib/card-creator/print');
+  const {DIGITAL_CORNER_RADIUS_MM,digitalCornerRadiusPixels,printGeometry,pngWithPrintDensity} = localModule('lib/card-creator/print');
   test('print dimensions derive from millimetres; trim size is constant',()=>{
     for(const [bleed,width,height] of [[0,697,1016],[1,720,1039],[2,744,1063]]) {
       const g=printGeometry(bleed);assert.equal(g.width,width);assert.equal(g.height,height);
@@ -220,6 +220,7 @@ if (process.argv.includes('--serve')) {
       assert.ok(Math.abs((g.width-g.trimWidth)-g.left*2)<=1);
     }
     assert.throws(()=>printGeometry(3));
+    assert.equal(DIGITAL_CORNER_RADIUS_MM,1);assert.equal(digitalCornerRadiusPixels(),12);
   });
   test('PNG gets one explicit 300 PPI physical-density chunk',()=>{
     const asset=Object.values(assets)[0];
@@ -236,6 +237,9 @@ if (process.argv.includes('--serve')) {
   test('public route has no login guard; existing protected routes preserved',()=>{
     const page=fs.readFileSync(path.join(root,'app/card-creator/page.tsx'),'utf8');
     assert.doesNotMatch(page,/auth\(|auth\.protect|redirect\(|SignedIn/);
+    const yugioh=fs.readFileSync(path.join(root,'app/card-creator/yugioh/page.tsx'),'utf8');
+    const pokemon=fs.readFileSync(path.join(root,'app/card-creator/pokemon/page.tsx'),'utf8');
+    assert.doesNotMatch(yugioh+pokemon,/auth\(|auth\.protect|redirect\(|SignedIn/);
     const middleware=fs.readFileSync(path.join(root,'middleware.ts'),'utf8');
     assert.match(middleware,/createRouteMatcher\(\["\/todo", "\/health"\]\)/);
   });

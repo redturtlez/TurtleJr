@@ -11,7 +11,7 @@ export const metadata = generateMetadata({});
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${GeistSans.className} fill-text text-text flex h-[100dvh] flex-col`}>
+      <body suppressHydrationWarning className={`${GeistSans.className} fill-text text-text flex h-[100dvh] flex-col`}>
         <ToastContainer />
         <ClerkProvider dynamic>
           <Navbar />

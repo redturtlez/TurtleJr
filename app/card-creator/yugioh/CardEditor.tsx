@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { attributes, cardTemplate, defaults, editions, fields, labels, templates, titleColors, type Card, type FieldId, type Issues } from '../../lib/card-creator/model';
-import { decodeArtwork } from '../../lib/card-creator/artwork';
-import { loadGraphics, type Images } from '../../lib/card-creator/render';
-import { exportPng, printGeometry, renderPrint, type Bleed } from '../../lib/card-creator/print';
-import { loadBundledCardFonts, type CardFonts } from '../../lib/card-creator/fonts';
+import { attributes, cardTemplate, defaults, editions, fields, labels, templates, titleColors, type Card, type FieldId, type Issues } from '../../../lib/card-creator/model';
+import { decodeArtwork } from '../../../lib/card-creator/artwork';
+import { loadGraphics, type Images } from '../../../lib/card-creator/render';
+import { DIGITAL_CORNER_RADIUS_MM, exportPng, printGeometry, renderPrint, type Bleed, type CornerStyle } from '../../../lib/card-creator/print';
+import { loadBundledCardFonts, type CardFonts } from '../../../lib/card-creator/fonts';
 import styles from './editor.module.css';
 
 export default function CardEditor() {
@@ -20,6 +20,7 @@ export default function CardEditor() {
   const [overlay, setOverlay] = useState(false);
   const [retry, setRetry] = useState(0);
   const [bleed,setBleed]=useState<Bleed>(0);
+  const [cornerStyle,setCornerStyle]=useState<CornerStyle>('square');
   const [fonts,setFonts]=useState<CardFonts>({});
   const [fontStatus,setFontStatus]=useState('Loading bundled card fonts…');
   const [fontBusy,setFontBusy]=useState(true);
@@ -56,17 +57,18 @@ export default function CardEditor() {
   },[]);
   useEffect(() => {
     if (!images || !canvas.current) return;
-    try { setIssues(renderPrint(canvas.current,card,images,artwork,bleed,overlay,fonts)); }
+    try { setIssues(renderPrint(canvas.current,card,images,artwork,bleed,overlay,fonts,cornerStyle)); }
     catch (error: unknown) { setFailure(error instanceof Error ? error.message : 'Preview failed.'); }
-  }, [images,card,artwork,overlay,bleed,fonts]);
+  }, [images,card,artwork,overlay,bleed,fonts,cornerStyle]);
 
   async function download() {
     if(!images)return;
     setExportBusy(true);setExportStatus('Preparing PNG…');
     try{
-      const blob=await exportPng(card,images,artwork,bleed,fonts);
+      const blob=await exportPng(card,images,artwork,bleed,fonts,cornerStyle);
       const url=URL.createObjectURL(blob);downloadUrls.current.push(url);
-      const link=document.createElement('a');link.href=url;link.download=`${card.templateId}-card-300ppi-${bleed}mm-bleed.png`;
+      const link=document.createElement('a');link.href=url;link.download=cornerStyle==='rounded'
+        ? `${card.templateId}-card-300ppi-rounded.png` : `${card.templateId}-card-300ppi-${bleed}mm-bleed.png`;
       document.body.appendChild(link);link.click();link.remove();
       window.setTimeout(()=>{URL.revokeObjectURL(url);downloadUrls.current=downloadUrls.current.filter(item=>item!==url);},30000);
       setExportStatus('PNG prepared. Check your browser downloads.');
@@ -234,10 +236,15 @@ export default function CardEditor() {
           <p className={styles.note}>Fonts load from this site automatically. Layout remains an approximation where the PSD used unavailable font weights or Photoshop-only rendering.</p>
         </details>
         <div className={styles.field}><label htmlFor="card-bleed">Print bleed</label>
-          <select id="card-bleed" value={bleed} onChange={event=>setBleed(Number(event.target.value) as Bleed)}>
+          <select id="card-bleed" value={bleed} disabled={cornerStyle==='rounded'} onChange={event=>setBleed(Number(event.target.value) as Bleed)}>
             <option value={0}>None — 59 × 86 mm</option><option value={1}>1 mm per edge — 61 × 88 mm</option><option value={2}>2 mm per edge — 63 × 90 mm</option>
           </select></div>
+        <div className={styles.field}><label htmlFor="card-corners">Corner style</label>
+          <select id="card-corners" value={cornerStyle} onChange={event=>{
+            const value=event.target.value as CornerStyle;setCornerStyle(value);if(value==='rounded')setBleed(0);
+          }}><option value="square">Square — print ready</option><option value="rounded">Rounded — digital use</option></select></div>
         <p className={styles.note}>{geometry.width} × {geometry.height} pixels · 300 PPI. Trim size: 59 × 86 mm.</p>
+        {cornerStyle==='rounded'&&<p className={styles.note}>Transparent {DIGITAL_CORNER_RADIUS_MM} mm corners are intended for screen use. Bleed is unavailable in this mode.</p>}
         {bleed>0&&<p className={styles.note}>Bleed repeats the outer border’s edge pixels; it is not original extended artwork and may show streaks. Card contents stay the same size.</p>}
         <button type="button" disabled={!images||!!failure||uploading||fontBusy||exportBusy||Object.keys(issues).length>0} onClick={()=>void download()}>{exportBusy?'Preparing PNG…':'Download PNG'}</button>
         <p className={styles.note} role="status">{exportStatus}</p>

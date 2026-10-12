@@ -5,7 +5,8 @@ The route has been verified in the real Next.js development runtime and with
 write to `.next`, so running them together can temporarily remove the development
 server's generated CSS.
 
-The public `/card-creator` page requires no login. Existing Clerk middleware still
+The public `/card-creator/yugioh` page requires no login. `/card-creator` is now the
+shared creator chooser. Existing Clerk middleware still
 protects `/todo` and `/health`; no authentication infrastructure was changed.
 
 The page uses the site's shared CSS color variables and is linked from primary
@@ -26,7 +27,7 @@ drafts or field values are sent to a server or persisted in browser storage.
 
 ## Files and verification
 
-- [Page](../app/card-creator/page.tsx) and [editor](../app/card-creator/CardEditor.tsx).
+- [Page](../app/card-creator/yugioh/page.tsx) and [editor](../app/card-creator/yugioh/CardEditor.tsx).
 - [Rendering](../lib/card-creator/render.ts), [text/crop layout](../lib/card-creator/layout.ts),
   [upload validation](../lib/card-creator/artwork.ts) and [model](../lib/card-creator/model.ts).
 - [Prepared manifest](../lib/card-creator/normal.json), 63 selected PNGs in
@@ -57,6 +58,11 @@ No deployment or asset publication was performed. Source artwork and all alterna
 templates remain private in the independent extractor.
 
 ## PNG export and bleed
+
+The Yu-Gi-Oh editor also offers a digital-use export with transparent 1 mm
+rounded corners (12 px at 300 PPI). Rounded mode uses the 59 × 86 mm trim canvas
+without bleed. Print exports remain square so the printer or physical corner die
+can perform the cut.
 
 [Print module](../lib/card-creator/print.ts) uses the same draw path as preview.
 At 300 PPI, dimensions are rounded from millimetres using 25.4 mm/inch:
