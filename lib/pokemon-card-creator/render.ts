@@ -325,17 +325,19 @@ export async function renderPokemon(canvas: HTMLCanvasElement, card: PokemonCard
   if (card.supertype === "trainer") artRegion = fullArt ? [0, 0, width, height] : [62, 146, 626, 392];
   if (card.supertype === "energy") artRegion = card.energyCardType === "base" ? [33, 72, 681, 891] : [35, 141, 677, 80];
   const [artX, artY, artW, artH] = artRegion;
+  const clipScarletFullCard = card.supertype === "pokemon" && card.era === "scarletAndViolet" && artX === 0 && artY === 0 && artW === width && artH === height;
+  ctx.save();
+  ctx.beginPath();
+  if (clipScarletFullCard) ctx.roundRect(1, 1, width - 2, height - 2, 35);
+  else ctx.rect(artX, artY, artW, artH);
+  ctx.clip();
   if (art) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(artX, artY, artW, artH);
-    ctx.clip();
     cover(ctx, art, artX, artY, artW, artH, card.artX, card.artY, card.artZoom);
-    ctx.restore();
   } else {
     ctx.fillStyle = "#496e53";
     ctx.fillRect(artX, artY, artW, artH);
   }
+  ctx.restore();
   if (card.supertype === "pokemon" && isExStage(card.stage) && card.illustrationStyle !== "fullArt") {
     const texture = await image(exTexturePath(card));
     ctx.drawImage(texture, 31, 513, 685, 376, 31, 513, 685, 376);
@@ -707,7 +709,7 @@ async function drawMove(
 }
 
 function drawBorderBleed(ctx: CanvasRenderingContext2D, trim: HTMLCanvasElement, g: ReturnType<typeof pokemonPrintGeometry>) {
-  const edge = Math.round(g.trimWidth * 0.018),
+  const edge = Math.max(2, Math.round(g.trimWidth * 0.003)),
     corner = Math.round(g.trimWidth * 0.055),
     right = g.width - g.left - g.trimWidth,
     bottom = g.height - g.top - g.trimHeight,
@@ -722,6 +724,42 @@ function drawBorderBleed(ctx: CanvasRenderingContext2D, trim: HTMLCanvasElement,
   ctx.drawImage(trim, corner, g.trimHeight - edge - 1, g.trimWidth - corner * 2, 1, g.left, g.top + g.trimHeight - corner, g.trimWidth, bottom + corner);
   ctx.drawImage(trim, edge, corner, 1, g.trimHeight - corner * 2, 0, g.top, g.left + corner, g.trimHeight);
   ctx.drawImage(trim, g.trimWidth - edge - 1, corner, 1, g.trimHeight - corner * 2, g.left + g.trimWidth - corner, g.top, right + corner, g.trimHeight);
+}
+
+function normalizeBleedEdgeColors(trim: HTMLCanvasElement) {
+  const ctx = trim.getContext("2d");
+  if (!ctx) throw new Error("Canvas unavailable.");
+  const imageData = ctx.getImageData(0, 0, trim.width, trim.height),
+    original = new Uint8ClampedArray(imageData.data),
+    index = (x: number, y: number) => (y * trim.width + x) * 4;
+  for (let y = 0; y < trim.height; y++) {
+    for (let x = 0; x < trim.width; x++) {
+      const pixel = index(x, y),
+        alpha = original[pixel + 3]!;
+      if (alpha === 0 || alpha === 255) continue;
+      let match = -1;
+      for (let radius = 1; radius <= 8 && match < 0; radius++) {
+        for (let offsetY = -radius; offsetY <= radius && match < 0; offsetY++) {
+          for (let offsetX = -radius; offsetX <= radius; offsetX++) {
+            if (Math.abs(offsetX) !== radius && Math.abs(offsetY) !== radius) continue;
+            const sampleX = x + offsetX,
+              sampleY = y + offsetY;
+            if (sampleX < 0 || sampleY < 0 || sampleX >= trim.width || sampleY >= trim.height) continue;
+            const sample = index(sampleX, sampleY);
+            if (original[sample + 3] === 255) {
+              match = sample;
+              break;
+            }
+          }
+        }
+      }
+      if (match < 0) continue;
+      imageData.data[pixel] = original[match]!;
+      imageData.data[pixel + 1] = original[match + 1]!;
+      imageData.data[pixel + 2] = original[match + 2]!;
+    }
+  }
+  ctx.putImageData(imageData, 0, 0);
 }
 
 export async function exportPokemon(card: PokemonCard, art: ImageBitmap | null, bleed: PokemonBleed, evolutionArt: ImageBitmap | null = null) {
@@ -740,7 +778,19 @@ export async function exportPokemon(card: PokemonCard, art: ImageBitmap | null, 
   canvas.height = g.height;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas unavailable.");
-  if (bleed) drawBorderBleed(ctx, trim, g);
+  if (bleed) {
+    normalizeBleedEdgeColors(trim);
+    const bleedSource = document.createElement("canvas"),
+      cleanTrim = document.createElement("canvas");
+    await renderPokemon(bleedSource, { ...card, copyrightText: "" }, art, evolutionArt);
+    cleanTrim.width = g.trimWidth;
+    cleanTrim.height = g.trimHeight;
+    const cleanCtx = cleanTrim.getContext("2d");
+    if (!cleanCtx) throw new Error("Canvas unavailable.");
+    cleanCtx.imageSmoothingQuality = "high";
+    cleanCtx.drawImage(bleedSource, 0, 0, g.trimWidth, g.trimHeight);
+    drawBorderBleed(ctx, cleanTrim, g);
+  }
   ctx.drawImage(trim, g.left, g.top);
   const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((value) => (value ? resolve(value) : reject(new Error("PNG encoding failed."))), "image/png"));
   return new Blob([pngWithPrintDensity(new Uint8Array(await blob.arrayBuffer()))], { type: "image/png" });

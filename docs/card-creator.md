@@ -294,6 +294,15 @@ repair region to remove the additional pale imprint embedded beside the source t
 This processing happens before collector fields are drawn, so set and regulation data
 remain intact.
 
+Scarlet & Violet ex and Full Art artwork is clipped beneath the opaque rounded frame,
+preventing fallback or uploaded artwork from showing through its antialiased outer
+corners. For bleed output, semitransparent frame-edge pixels inherit the nearest opaque
+silver tone, preserving their smooth alpha edge without creating a light or colored
+halo against the grayscale extension. The extension samples just inside the opaque
+frame so local light and dark silver gradients continue naturally. Bleed exports use a
+second copyright-free render only for their edge extension; the centered trim card
+retains the user's copyright line without repeating it through the bottom bleed.
+
 Collector and flavor placement follows separate source-derived recipes rather than one
 shared footer. Sword & Shield places its set mark at the start of the collector row;
 Scarlet & Violet standard places the regulation mark before the set mark, while ex
