@@ -215,3 +215,89 @@ Credit automatically receives one copyright symbol when nonempty. Under Edition 
 finishing details, choose bottom placement or the set-ID line below artwork.
 The alternate region is inferred editor geometry. Preview, guides and PNG export
 share the selected placement; the source PSD and raw manifest are unchanged.
+
+## Pokémon eras
+
+The Pokémon editor supports Sword & Shield and Scarlet & Violet as explicit eras.
+Sword & Shield retains Basic, Stage 1, Stage 2, V, and VMAX plus the existing
+Trainer and Energy families. Scarlet & Violet currently supports the standard
+Basic, Stage 1, and Stage 2 Pokémon templates for all eleven selectable types.
+
+Scarlet & Violet uses its native 745 × 1040 frame sources and dedicated layout
+coordinates. Its attack, weakness, resistance, and retreat symbols use the local
+Scarlet & Violet icon set. Export still scales the composed trim card to the shared
+63.5 × 88.9 mm, 300 PPI output before optional bleed is added.
+
+Only the 33 frames and 11 type icons required by these templates are deployed.
+The complete authorized source mirror remains a local inventory and must not be
+copied wholesale into the application's public assets.
+
+### Scarlet & Violet Pokémon ex
+
+Scarlet & Violet also supports Pokémon ex, Stage 1 ex, and Stage 2 ex for all
+eleven selectable types. These templates use full-card artwork beneath transparent
+745 × 1040 overlays, the local Scarlet & Violet ex name symbol, their dedicated
+attack geometry, and the printed two-Prize rule panel. Pokédex statistics and flavor
+text are omitted because these frames do not provide those regions.
+
+Only 33 ex frames and the one ex name symbol were copied from the authorized local
+inventory. Mega ex, Stellar Tera, Ancient/Future, and full-art ex variants remain separate
+future templates because they require different overlays and layout recipes.
+
+Standard Tera ex is now available as an ex-frame style for Basic ex, Stage 1 ex,
+and Stage 2 ex across all eleven types. The 33 selected Tera overlays add the crystal
+border and printed Tera rule while sharing the verified standard ex typography and
+attack geometry. Stellar Tera and Tera full-art/golden variants remain deferred.
+
+The ex overlays make their attack panel partially transparent. The renderer places
+the matching type-specific Scarlet & Violet paper texture beneath that panel before
+drawing the ex overlay, so Standard and Tera ex retain visible grain even when no
+artwork is uploaded. Full-card artwork remains visible outside the textured panel.
+
+Mega ex is available as Basic Mega ex, Stage 1 Mega ex, and Stage 2 Mega ex across
+all eleven types. These 33 overlays share the textured ex attack layout and add the
+three-Prize Mega Evolution rule. The renderer supplies the yellow outlined “Mega”
+name treatment, the dedicated Mega ex symbol, and the top-right Mega-Evolved-form
+banner. The Standard/Tera selector is intentionally unavailable on Mega stages.
+
+Standard Pokémon, Pokémon ex, and Mega ex also offer Full Art illustration frames
+for Basic, Stage 1, and Stage 2 across all eleven types (99 selected overlays). Full
+Art extends uploaded artwork across the entire card and uses outlined dynamic text
+for readability. It omits Pokédex/flavor controls and the ex paper-panel texture.
+Tera Full Art, golden rarities, and other specialty treatments are not included.
+
+Scarlet & Violet cards use the recovered ability badge and dedicated attack geometry.
+The renderer automatically reflows one or two attacks around the optional ability:
+two-attack layouts use a divider and shorter description limits so text stays above
+the weakness, resistance, and retreat bar. Standard and Full Art cards share this
+layout behavior, with outlined text enabled where the artwork treatment requires it.
+
+Canvas rendering explicitly waits for every bundled Pokémon font family it uses.
+The first preview therefore uses the same typography as later edits and downloaded
+exports instead of briefly drawing and retaining browser fallback fonts.
+
+Stage 1 and Stage 2 cards, including their supported ex and Mega variants, accept an
+optional pre-evolution portrait. The portrait has independent horizontal, vertical,
+and zoom controls and is clipped to the native Stage window for its era. Omitting the
+portrait preserves the source placeholder and the text-only “Evolves from” fallback.
+
+Collector details support optional common, uncommon, and rare symbols plus an optional
+era mark. Pokémon cards use the selected Sword & Shield or Scarlet & Violet mark;
+Trainer and Energy templates use the Sword & Shield mark that matches their current
+frame family. Both symbol controls include a None choice, and all images are bundled
+locally with the editor.
+
+The copyright line is editable for every supported card family. Before drawing the
+replacement, the renderer reconstructs the affected border pixels from the surrounding
+frame; leaving the field blank produces a clean border. Scarlet & Violet uses a wider
+repair region to remove the additional pale imprint embedded beside the source text.
+This processing happens before collector fields are drawn, so set and regulation data
+remain intact.
+
+Collector and flavor placement follows separate source-derived recipes rather than one
+shared footer. Sword & Shield places its set mark at the start of the collector row;
+Scarlet & Violet standard places the regulation mark before the set mark, while ex
+places the set mark before regulation. The custom set code and bundled era mark share
+the native set-icon slot, preventing either from displacing the anchored card numerals.
+Regulation marks use the source 26 px height and era-specific shape. Standard Pokemon flavor text is vertically
+centered in the era-specific lower-right text box; ex, Mega, and Full Art frames omit it.
