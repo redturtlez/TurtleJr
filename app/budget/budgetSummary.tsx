@@ -1,345 +1,91 @@
 "use client";
 
+import { useAuth } from "@clerk/nextjs";
+import { ArrowDownRight, ArrowUpRight, Landmark, MoreHorizontal, Pencil, Plus, ReceiptText, Trash2, WalletCards } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@radix-ui/react-scroll-area";
-import { useState, useEffect } from "react";
-import { PieChart, Pie, ResponsiveContainer, Cell, Legend, LabelList } from "recharts";
-import { BadgeCheck, Coffee, CreditCard, Edit, Home, MoreVertical, Plus, ShoppingBag, Trash2, Wallet } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../_utilityComponents/dropdownmenu";
 import { formatCurrency } from "@/lib/utils";
 import { ExpenseForm, getIconComponent } from "./budgetForm";
-import { toast } from "react-toastify";
 import { getBudgets, saveBudgets } from "./budgetServer";
+import styles from "./budget.module.css";
+
+interface Transaction {
+  id: number; name?: string; category: string; amount: number; type: "expense" | "income"; icon: string; frequency?: string; date?: Date; subitems?: { name: string; amount: number }[];
+}
+type Filter = "all" | "expense" | "income";
+const COLORS = ["#55e6ae", "#60a5fa", "#f59e0b", "#f472b6", "#a78bfa", "#fb7185", "#22d3ee", "#94a3b8"];
+
+const normalize = (items: Awaited<ReturnType<typeof getBudgets>> | undefined): Transaction[] => (items ?? []).map((item, index) => ({
+  ...item,
+  id: typeof item.id === "number" ? item.id : index + 1,
+  category: item.category || "uncategorized",
+  type: item.type === "income" ? "income" : "expense",
+  date: typeof item.date === "string" ? new Date(item.date) : item.date ?? undefined,
+})) as Transaction[];
 
 export default function BudgetSummary() {
-  const [sumTab, setSumTab] = useState(true);
-  const [addModal, setAddModal] = useState(false);
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-  const [activeTab, setActiveTab] = useState(1);
-  const [activeIndex, setActiveIndex] = useState(-1);
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#A259F7", "#F76E6C", "#43BCCD", "#F7C46C"];
-
-  interface Transaction {
-    id: number;
-    name?: string;
-    category: string;
-    amount: number;
-    type: "expense" | "income";
-    icon: string;
-    frequency?: string;
-    date?: Date;
-    subitems?: { name: string; amount: number }[];
-  }
-
-  // REMOVE test data, start with empty array and load from server
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  // TODO: Load transactions from server on mount and after CRUD
+  const [filter, setFilter] = useState<Filter>("all");
+  const [addModal, setAddModal] = useState(false);
+  const [editing, setEditing] = useState<Transaction | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const { isLoaded, userId } = useAuth();
 
-  // Replace with your auth logic
-  const userId = typeof window !== "undefined" ? localStorage.getItem("userId") || "turtle" : "turtle";
+  useEffect(() => { if (!isLoaded || !userId) return; let cancelled = false; setLoading(true); void getBudgets().then((items) => { if (!cancelled) setTransactions(normalize(items)); }).catch(() => toast.error("Could not load your budget")).finally(() => { if (!cancelled) setLoading(false); }); return () => { cancelled = true; }; }, [isLoaded, userId]);
 
-  // Load transactions from server
-  useEffect(() => {
-    async function load() {
-      const items = await getBudgets(userId);
-      // Normalize: ensure id and type are present and valid
-      const normalized = (items || []).map((item: any, idx: number) => ({
-        ...item,
-        id: typeof item.id === "number" ? item.id : idx + 1,
-        type: item.type === "income" ? "income" : "expense",
+  const totals = useMemo(() => {
+    const income = transactions.filter((item) => item.type === "income").reduce((sum, item) => sum + item.amount, 0);
+    const expenses = transactions.filter((item) => item.type === "expense").reduce((sum, item) => sum + item.amount, 0);
+    return { income, expenses, balance: income - expenses };
+  }, [transactions]);
+  const pieData = useMemo(() => Object.values(transactions.filter((item) => item.type === "expense").reduce((groups, item) => {
+    const key = item.category || "uncategorized";
+    groups[key] ??= { name: key, value: 0 };
+    groups[key].value += item.amount;
+    return groups;
+  }, {} as Record<string, { name: string; value: number }>)), [transactions]);
+  const visible = transactions.filter((item) => filter === "all" || item.type === filter);
 
-        date: typeof item.date === "string" ? new Date(item.date) : item.date,
-      }));
-      setTransactions(normalized);
-    }
-    load();
-  }, [userId]);
-
-  // Save all transactions to server and reload
-  async function saveAll(newItems: Transaction[]) {
-    await saveBudgets({ userid: userId, budgetItems: newItems });
-    // Reload from server to ensure UI is in sync
-    const items = await getBudgets(userId);
-    const normalized = (items || []).map((item: any, idx: number) => ({
-      ...item,
-      id: typeof item.id === "number" ? item.id : idx + 1,
-      type: item.type === "income" ? "income" : "expense",
-
-      date: typeof item.date === "string" ? new Date(item.date) : item.date,
-    }));
-    setTransactions(normalized);
-  }
-
-  // Calculate summary values
-  const totalExpenses = transactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
-  const totalIncomes = transactions.filter((t) => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
-  const balance = totalIncomes - totalExpenses;
-
-  // Checkbox state for pie chart filtering
-  const [showExpenses, setShowExpenses] = useState(true);
-  const [showIncomes, setShowIncomes] = useState(true);
-
-  // Pie chart data by category/type, filtered by checkboxes
-  const pieData = Object.values(
-    transactions
-      .filter((t) => (showExpenses && t.type === "expense") || (showIncomes && t.type === "income"))
-      .reduce(
-        (acc, t) => {
-          const key = t.category + "-" + t.type;
-          if (!acc[key]) {
-            acc[key] = {
-              name: t.category,
-              value: 0,
-              type: t.type,
-            };
-          }
-          acc[key].value += t.amount;
-          return acc;
-        },
-        {} as Record<string, { name: string; value: number; type: string }>,
-      ),
-  );
-
-  const onPieEnter = (_: any, index: number) => {
-    setActiveIndex(index);
+  const saveAll = async (items: Transaction[]) => {
+    setSaving(true);
+    try {
+      const result = await saveBudgets({ budgetItems: items });
+      if (typeof result === "string") throw new Error(result);
+      setTransactions(normalize(result?.budgetItems));
+    } finally { setSaving(false); }
   };
-
-  // Add or edit transaction
-  const handleAddOrEditTransaction = async (values: any) => {
-    let newItems;
-    if (editingTransaction) {
-      newItems = transactions.map((t) => (t.id === editingTransaction.id ? { ...t, ...values, amount: Number(values.amount) } : t));
-    } else {
-      const nextId = transactions.length ? Math.max(...transactions.map((t) => t.id || 0)) + 1 : 1;
-      newItems = [...transactions, { ...values, id: nextId, amount: Number(values.amount) }];
-    }
-    await saveAll(newItems);
-    setAddModal(false);
-    setEditingTransaction(null);
-    toast.success(editingTransaction ? "Transaction updated successfully" : "Transaction added successfully");
+  const submit = async (values: any) => {
+    const converted = { ...values, amount: Number(values.amount), subitems: values.subitems?.map((item: { name: string; amount: string }) => ({ ...item, amount: Number(item.amount) })) };
+    const items = editing ? transactions.map((item) => item.id === editing.id ? { ...item, ...converted } : item) : [...transactions, { ...converted, id: transactions.length ? Math.max(...transactions.map((item) => item.id)) + 1 : 1 }];
+    try { await saveAll(items); toast.success(editing ? "Transaction updated" : "Transaction added"); setAddModal(false); setEditing(null); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Could not save transaction"); }
   };
-
-  // Delete transaction
-  const handleDeleteTransaction = async (id: number) => {
-    const newItems = transactions.filter((t) => t.id !== id);
-    await saveAll(newItems);
-    toast.success("Transaction deleted");
-  };
-  const tabs = [
-    <>
-      <Card className="my-4 flex flex-1 flex-col">
-        <CardHeader className="z-10 p-2 pb-0">
-          <CardTitle className="px-4 text-center text-lg font-bold">
-            <div className="pb-2 text-2xl">Summary</div>
-            <div className="grid grid-cols-2 items-center gap-4">
-              <div className="">
-                <Checkbox id="expenses" checked={showExpenses} onCheckedChange={(v) => setShowExpenses(!!v)} className="data-[state=checked]:bg-accent/90 align-middle" />
-                <label htmlFor="expenses" className="pl-2">
-                  Expenses
-                </label>
-              </div>
-              <div className="">
-                <Checkbox id="incomes" checked={showIncomes} onCheckedChange={(v) => setShowIncomes(!!v)} className="data-[state=checked]:bg-accent/90 align-middle" />
-                <label htmlFor="incomes" className="pl-2">
-                  Incomes
-                </label>
-              </div>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="-mt-4 flex-1 p-0">
-          <ResponsiveContainer className="text-wrap">
-            <PieChart>
-              <Pie
-                activeIndex={activeIndex}
-                data={pieData}
-                dataKey="value"
-                nameKey="name"
-                onMouseEnter={onPieEnter}
-                style={{ cursor: "pointer", outline: "none" }}
-                isAnimationActive={false}
-              >
-                <LabelList dataKey={"value"} />
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>{" "}
-      <Button className="border-primary bg-accent/90 mb-4 h-12 w-full border text-xl" onClick={() => setSumTab((prev) => !prev)}>
-        View/Edit Items
-      </Button>
-    </>,
-    <>
-      <div className="bg-background my-4 flex flex-1 flex-col rounded-none border-none">
-        <div className="bg-secondary mb-4 flex h-14 w-full justify-evenly self-center rounded-full py-2 text-lg">
-          <div
-            className={"self-center rounded-full px-4 py-1 font-semibold " + (activeTab === 1 ? "bg-accent/80 text-text font-semibold" : "text-accent")}
-            onClick={() => setActiveTab(1)}
-          >
-            <p className="m-auto">All</p>
-          </div>
-          <div
-            className={"self-center rounded-full px-4 py-1 font-semibold " + (activeTab === 2 ? "bg-accent/80 text-text font-semibold" : "text-accent")}
-            onClick={() => setActiveTab(2)}
-          >
-            <p className="m-auto">Expenses</p>
-          </div>
-          <div
-            className={"self-center rounded-full px-4 py-1 font-semibold " + (activeTab === 3 ? "bg-accent/80 text-text font-semibold" : "text-accent")}
-            onClick={() => setActiveTab(3)}
-          >
-            <p className="m-auto">Incomes</p>
-          </div>
-        </div>
-
-        <ScrollArea className="flex flex-1 flex-col gap-2 overflow-y-scroll p-0">
-          {transactions
-            .filter((transaction) => (activeTab === 1 ? true : activeTab === 2 ? transaction.type === "expense" : transaction.type === "income"))
-            .map((transaction, index) => (
-              <Card
-                key={transaction.id}
-                className={`mr-2 flex items-center justify-between p-3 ${transaction.type === "expense" ? "border-red-900 bg-red-950" : "border-green-900 bg-green-950"}`}
-              >
-                <div className="mr-2 flex min-w-0 items-center gap-2">
-                  <div className={`shrink-0 rounded-full p-2 ${transaction.type === "expense" ? "bg-red-900 text-red-300" : "bg-green-900 text-green-300"}`}>
-                    {getIconComponent(transaction.icon)}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate font-bold capitalize">{transaction.name || "(No Name)"}</p>
-                    <div className="text-muted-foreground flex flex-row gap-2 text-xs">
-                      <span className="capitalize">{transaction.category}</span>
-                      <span className={transaction.type === "expense" ? "text-red-300" : "text-green-300"}>
-                        {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <p className={`w-fit text-sm font-semibold ${transaction.type === "expense" ? "text-red-300" : "text-green-300"}`}>
-                    {transaction.type === "expense" ? "-" : "+"}
-                    {formatCurrency(transaction.amount)}
-                  </p>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setEditingTransaction(transaction);
-                          setAddModal(true);
-                        }}
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-400" onClick={() => handleDeleteTransaction(transaction.id)}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </Card>
-            ))}
-        </ScrollArea>
-      </div>
-      <div className="flex gap-4">
-        <Button className="border-primary bg-accent/90 mb-4 h-12 w-3/4 border text-xl" onClick={() => setSumTab((prev) => !prev)}>
-          View Summary
-        </Button>
-        <Button
-          className="border-primary bg-accent/90 mb-4 h-12 w-1/4 border text-xl"
-          onClick={() => {
-            setEditingTransaction(null);
-            setAddModal(true);
-          }}
-        >
-          Add
-        </Button>
-      </div>
-    </>,
-  ];
-
-  // Unified close handler for modal
-  const handleModalClose = () => {
-    setAddModal(false);
-    setEditingTransaction(null);
-    document.body.style.overflow = "auto";
-  };
+  const remove = async (id: number) => { try { await saveAll(transactions.filter((item) => item.id !== id)); toast.success("Transaction deleted"); } catch { toast.error("Could not delete transaction"); } };
 
   return (
-    <>
-      {addModal && (
-        <ExpenseForm
-          open={addModal}
-          onOpenChange={(open) => {
-            if (!open) handleModalClose();
-          }}
-          onSubmit={async (values) => {
-            await handleAddOrEditTransaction(values);
-            handleModalClose();
-          }}
-          defaultValues={
-            editingTransaction
-              ? {
-                  name: editingTransaction.name,
-                  category: editingTransaction.category,
-                  amount: String(editingTransaction.amount),
-                  type: editingTransaction.type,
-                  frequency: editingTransaction.frequency,
-                  date: editingTransaction.date,
-                  icon: editingTransaction.icon,
-                  subitems:
-                    editingTransaction.subitems?.map((item) => ({
-                      name: item.name,
-                      amount: String(item.amount),
-                    })) || [],
-                }
-              : undefined
-          }
-        />
-      )}
-      <div className="bg-background container flex flex-1 flex-col">
-        <div className="sq:text-6xl mx-auto mb-4 text-4xl font-bold">Budget</div>
-        <div className="grid grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="p-2">
-              <CardTitle className="text-md mx-auto">Balance</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 pb-2">
-              <div className="text-center text-sm font-bold">{formatCurrency(balance)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="p-2">
-              <CardTitle className="text-md mx-auto">Expenses</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 pb-2">
-              <div className="text-center text-sm font-bold">{formatCurrency(totalExpenses)}</div>
-            </CardContent>
-          </Card>
-          <Card className="">
-            <CardHeader className="p-2">
-              <CardTitle className="text-md mx-auto">Income</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 pb-2">
-              <div className="text-center text-sm font-bold">{formatCurrency(totalIncomes)}</div>
-            </CardContent>
-          </Card>
+    <main className={styles.page}>
+      {addModal ? <ExpenseForm open onOpenChange={(open) => { setAddModal(open); if (!open) setEditing(null); }} onSubmit={submit} defaultValues={editing ? { ...editing, amount: String(editing.amount), date: editing.date ?? new Date(), frequency: editing.frequency ?? "one-time", subitems: editing.subitems?.map((item) => ({ ...item, amount: String(item.amount) })) ?? [] } : undefined} /> : null}
+      <header className={styles.header}><p>Money workspace</p><div><h1>A clearer view <span>of your money.</span></h1><p className={styles.intro}>Track income and spending, understand category pressure, and keep each transaction easy to find.</p></div></header>
+      <section className={styles.metrics}>
+        <article className={styles.balance}><span><WalletCards />Available balance</span><strong>{formatCurrency(totals.balance)}</strong><small>{transactions.length} recorded transactions</small></article>
+        <article><span><ArrowUpRight />Income</span><strong>{formatCurrency(totals.income)}</strong><small>Across all entries</small></article>
+        <article><span><ArrowDownRight />Expenses</span><strong>{formatCurrency(totals.expenses)}</strong><small>{totals.income ? `${Math.round((totals.expenses / totals.income) * 100)}% of income` : "Add income to compare"}</small></article>
+      </section>
+      <section className={styles.workspace}>
+        <div className={styles.transactions}>
+          <div className={styles.panelHeader}><div><small>Ledger</small><h2>Transactions</h2></div><button type="button" onClick={() => { setEditing(null); setAddModal(true); }}><Plus />Add transaction</button></div>
+          <div className={styles.filters}>{(["all", "expense", "income"] as Filter[]).map((value) => <button type="button" key={value} className={filter === value ? styles.activeFilter : ""} onClick={() => setFilter(value)}>{value === "all" ? "All" : `${value}s`}<b>{value === "all" ? transactions.length : transactions.filter((item) => item.type === value).length}</b></button>)}</div>
+          <div className={styles.transactionList}>{loading ? <div className={styles.empty}>Loading transactions…</div> : visible.length ? visible.map((item) => <article className={styles.transaction} key={item.id}><div className={`${styles.icon} ${item.type === "income" ? styles.incomeIcon : styles.expenseIcon}`}>{getIconComponent(item.icon)}</div><div className={styles.transactionName}><strong>{item.name || "Untitled transaction"}</strong><span>{item.category} · {item.frequency || "one-time"}</span></div><div className={item.type === "income" ? styles.positive : styles.negative}>{item.type === "income" ? "+" : "−"}{formatCurrency(item.amount)}</div><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={`Actions for ${item.name}`}><MoreHorizontal /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => { setEditing(item); setAddModal(true); }}><Pencil />Edit</DropdownMenuItem><DropdownMenuItem className="text-red-400" disabled={saving} onClick={() => void remove(item.id)}><Trash2 />Delete</DropdownMenuItem></DropdownMenuContent></DropdownMenu></article>) : <div className={styles.empty}><ReceiptText /><strong>No transactions here</strong><span>Add an entry to begin your budget.</span></div>}</div>
         </div>
-
-        {sumTab ? tabs[0] : tabs[1]}
-      </div>
-    </>
+        <aside className={styles.breakdown}>
+          <div className={styles.panelHeader}><div><small>Spending mix</small><h2>By category</h2></div><Landmark /></div>
+          {pieData.length ? <><div className={styles.chart}><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={pieData} dataKey="value" nameKey="name" innerRadius="58%" outerRadius="82%" paddingAngle={3}>{pieData.map((entry, index) => <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />)}</Pie><Tooltip formatter={(value) => formatCurrency(Number(value))} /></PieChart></ResponsiveContainer><div><strong>{formatCurrency(totals.expenses)}</strong><span>Total spent</span></div></div><div className={styles.legend}>{pieData.map((entry, index) => <div key={entry.name}><i style={{ background: COLORS[index % COLORS.length] }} /><span>{entry.name}</span><b>{formatCurrency(entry.value)}</b></div>)}</div></> : <div className={styles.empty}><Landmark /><strong>No spending data</strong><span>Expense categories will appear here.</span></div>}
+        </aside>
+      </section>
+    </main>
   );
 }

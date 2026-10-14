@@ -67,7 +67,7 @@ const isCollision = (snake: Point[], next: Point): boolean => {
 };
 
 // Main component
-const SnakeGame: React.FC = (): JSX.Element => {
+const SnakeGame: React.FC = (): React.JSX.Element => {
   // State
   const [snake, setSnake] = useState<Point[]>(INIT_SNAKE);
   const [direction, setDirection] = useState<Direction>(INIT_DIRECTION);
@@ -148,8 +148,8 @@ const SnakeGame: React.FC = (): JSX.Element => {
   };
 
   // Render board
-  const renderBoard = useCallback((): JSX.Element[] => {
-    const cells: JSX.Element[] = [];
+  const renderBoard = useCallback((): React.JSX.Element[] => {
+    const cells: React.JSX.Element[] = [];
     for (let y = 0; y < BOARD_SIZE; y++) {
       for (let x = 0; x < BOARD_SIZE; x++) {
         const isHead = snake[0] ? snake[0].x === x && snake[0].y === y : false;

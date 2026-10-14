@@ -1,7 +1,5 @@
 import { create } from "zustand";
-import TodoItem from "app/todo/TodoItem";
 import { Todo, Todos, userTodo } from "app/todo/todoServer";
-import type { JSX } from "react";
 
 type State = userTodo &
   Todo & {
@@ -11,9 +9,6 @@ type State = userTodo &
     tasks: string[];
     tasksNew: string;
     nextShow: Date;
-    today: Array<JSX.Element>;
-    general: Array<JSX.Element>;
-    overall: Array<JSX.Element>;
     modal: boolean;
   };
 
@@ -29,9 +24,6 @@ const initialState: State = {
   repeatable: false,
   nextShow: new Date(),
   frequency: "Daily",
-  today: new Array(),
-  general: new Array(),
-  overall: new Array(),
   modal: false,
 };
 
@@ -106,44 +98,8 @@ export const useTodoStore = create<State & Actions>()((set, get) => ({
     set((state) => ({ tasks: [...state.tasks, ""] }));
   },
   setTodos: (input) => {
-    const temp = input != undefined ? input.toSorted((a, b) => b.priority - a.priority) : new Array<Todo>();
-
-    set({ today: new Array(), general: new Array(), overall: new Array() });
-    temp.map((item, i) => {
-      if (item.nextShow == undefined) {
-        set((state) => ({ general: state.general.concat(<TodoItem item={item} key={i} id={i} />) }));
-      } else {
-        let itemdate = new Date(new Date(item.nextShow).setHours(0, 0, 0, 0));
-        const today = new Date(new Date().setHours(0, 0, 0, 0));
-        if (itemdate.getTime() < today.getTime() && item.frequency != undefined) {
-          switch (item.frequency) {
-            case "Daily":
-              item.nextShow = today;
-              break;
-            case "Weekly":
-              item.nextShow = new Date(itemdate.setDate(itemdate.getDate() + 7));
-              break;
-            case "Monthly":
-              item.nextShow = new Date(itemdate.setMonth(itemdate.getMonth() + 1));
-              break;
-            case "Yearly":
-              item.nextShow = new Date(itemdate.setFullYear(itemdate.getFullYear() + 1));
-              break;
-            default:
-              break;
-          }
-          itemdate = item.nextShow;
-        }
-
-        if (itemdate.getTime() == today.getTime()) {
-          set((state) => ({ today: state.today.concat(<TodoItem item={item} key={i} id={i} />) }));
-          //else if date is less than today AND repeatable, update date
-        }
-      }
-
-      set((state) => ({ overall: state.overall.concat(<TodoItem item={item} key={i} id={i} />) }));
-    });
-    set({ todos: temp });
+    const sorted = input != undefined ? input.toSorted((a, b) => b.priority - a.priority) : [];
+    set({ todos: sorted });
   },
   setPriority: (input) => {
     set({ priority: input });
@@ -191,5 +147,6 @@ export const useTodoStore = create<State & Actions>()((set, get) => ({
       repeatable: initialState.repeatable,
       nextShow: initialState.nextShow,
       frequency: initialState.frequency,
+      tasksNew: initialState.tasksNew,
     }),
 }));

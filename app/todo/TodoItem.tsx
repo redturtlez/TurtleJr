@@ -1,113 +1,38 @@
+import { CalendarDays, Check, ChevronDown, Circle, Pencil, Repeat2, Trash2 } from "lucide-react";
 import { useState } from "react";
-
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "../_utilityComponents/alertDialog";
-import AddModal from "./AddModal";
-import { CaretDown, CheckFilled, CheckUnfilled, Edit, Trash } from "public/svg";
-import { Todo, Todos, saveTodos } from "./todoServer";
 import { toast } from "react-toastify";
-import { cn } from "@/lib/utils";
 import { useTodoStore } from "@/app/todo/todoStates";
+import { Todo, Todos, saveTodos } from "./todoServer";
+import styles from "./todo.module.css";
 
-export default function TodoItem(props: { item: Todo; id: number }) {
+export default function TodoItem({ item, id }: { item: Todo; id: number }) {
   const todoStore = useTodoStore();
-  const item = props.item;
-  const [flipCaret, setFlipCaret] = useState(false);
-  const [crossed, setCrossed] = useState(false);
-  const crossout = () => {
-    setCrossed((prev) => !prev);
+  const [expanded, setExpanded] = useState(false);
+  const [complete, setComplete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const details = item.tasks?.filter(Boolean) ?? [];
+
+  const deleteItem = async () => {
+    setDeleting(true);
+    const remaining = (todoStore.todos ?? []).filter((_, index) => index !== id);
+    try {
+      const saved = await saveTodos({ userid: todoStore.userid, todos: remaining });
+      if (typeof saved === "string") toast.error(saved);
+      else { todoStore.setTodos(saved?.todos as Todos); todoStore.resetTodo(); toast.success("Task deleted"); }
+    } catch { toast.error("Could not delete the task"); }
+    finally { setDeleting(false); }
   };
-  const deleteItem = async (id) => {
-    todoStore.setActiveTodo(props.id);
-    todoStore.deleteTodo(id);
-    const save = await saveTodos({
-      userid: todoStore.userid,
-      todos: todoStore.todos,
-    });
-    if (typeof save == "string") {
-      toast.error(save);
-    } else {
-      toast.success("Successfully Deleted", {
-        autoClose: 1000,
-      });
-      todoStore.setTodos(save?.todos as Todos);
-      todoStore.resetTodo();
-    }
-  };
+
+  const due = item.nextShow ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(item.nextShow)) : null;
   return (
-    <div className={"relative m-2 flex rounded-2xl bg-secondary fill-accent p-3 text-3xl font-semibold text-text " + (crossed ? " line-through" : " ")}>
-      <div className={"flex w-full"}>
-        <div className={"my-auto flex text-xl"}>
-          {crossed ? (
-            <CheckFilled alt="" className={"my-auto mr-2 min-w-[26px] hover:cursor-pointer"} onClick={() => crossout()} height={28} width={28} />
-          ) : (
-            <CheckUnfilled alt="" className={"my-auto mr-2 min-w-[26px] hover:cursor-pointer"} onClick={() => crossout()} height={28} width={28} />
-          )}
-          <div
-            className={cn("w-full overflow-hidden", flipCaret ? "w-[100vw] grow basis-0" : "")}
-            onClick={() => {
-              setFlipCaret(!flipCaret);
-            }}
-          >
-            {item.title}
-            {flipCaret
-              ? item.tasks?.map((i, index) => (
-                  <label key={index} className="flex whitespace-pre-wrap text-balance bg-transparent font-normal text-text">
-                    {"-" + i}
-                  </label>
-                ))
-              : null}
-          </div>
-        </div>
-        {item.tasks != null && item.tasks.length != 0 ? (
-          <CaretDown
-            height={24}
-            width={24}
-            onClick={() => {
-              setFlipCaret(!flipCaret);
-            }}
-            className={"h-full min-w-[25px] fill-text " + (flipCaret ? "rotate-180" : "")}
-          />
-        ) : null}
+    <article className={`${styles.taskCard} ${complete ? styles.complete : ""}`}>
+      <button type="button" className={styles.completeButton} onClick={() => setComplete((value) => !value)} aria-label={complete ? "Mark task incomplete" : "Mark task complete"}>{complete ? <Check /> : <Circle />}</button>
+      <div className={styles.taskBody}>
+        <button type="button" className={styles.taskHeading} onClick={() => details.length && setExpanded((value) => !value)} aria-expanded={expanded}><strong>{item.title}</strong>{details.length ? <ChevronDown className={expanded ? styles.expanded : ""} /> : null}</button>
+        <div className={styles.meta}><span className={styles[`priority${item.priority}`]}>{item.priority === 3 ? "High" : item.priority === 2 ? "Medium" : "Low"}</span>{due ? <span><CalendarDays />{due}</span> : <span>Anytime</span>}{item.frequency ? <span><Repeat2 />{item.frequency}</span> : null}</div>
+        {expanded ? <ul className={styles.details}>{details.map((detail, index) => <li key={`${detail}-${index}`}>{detail}</li>)}</ul> : null}
       </div>
-      <div className="static float-right flex min-w-fit">
-        <Edit
-          alt=""
-          className={"mx-1 my-auto fill-accent/70 hover:cursor-pointer"}
-          height={26}
-          width={26}
-          onClick={() => {
-            todoStore.setActiveTodo(props.id);
-            todoStore.flipModal();
-          }}
-        />
-        <AlertDialog>
-          <AlertDialogTrigger>
-            <Trash alt="" className={"my-auto fill-red-500 hover:cursor-pointer"} height={26} width={26} />
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-              <AlertDialogDescription>This action cannot be undone. This will permanently delete your item series.</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction className="bg-accent" onClick={() => deleteItem(props.id)}>
-                Continue
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-    </div>
+      <div className={styles.actions}><button type="button" onClick={() => { todoStore.setActiveTodo(id); todoStore.flipModal(); }} aria-label={`Edit ${item.title}`}><Pencil /></button><button type="button" className={styles.danger} disabled={deleting} onClick={() => void deleteItem()} aria-label={`Delete ${item.title}`}><Trash2 /></button></div>
+    </article>
   );
 }

@@ -793,5 +793,8 @@ export async function exportPokemon(card: PokemonCard, art: ImageBitmap | null, 
   }
   ctx.drawImage(trim, g.left, g.top);
   const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((value) => (value ? resolve(value) : reject(new Error("PNG encoding failed."))), "image/png"));
-  return new Blob([pngWithPrintDensity(new Uint8Array(await blob.arrayBuffer()))], { type: "image/png" });
+  const png = pngWithPrintDensity(new Uint8Array(await blob.arrayBuffer()));
+  const bytes = new ArrayBuffer(png.byteLength);
+  new Uint8Array(bytes).set(png);
+  return new Blob([bytes], { type: "image/png" });
 }
