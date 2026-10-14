@@ -26,4 +26,5 @@ const MyCheckbox = React.forwardRef<HTMLInputElement, InputProps>(({ className, 
     </>
   );
 });
+MyCheckbox.displayName = "MyCheckbox";
 export default MyCheckbox;

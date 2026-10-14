@@ -241,7 +241,10 @@ if (process.argv.includes('--serve')) {
     const pokemon=fs.readFileSync(path.join(root,'app/card-creator/pokemon/page.tsx'),'utf8');
     assert.doesNotMatch(yugioh+pokemon,/auth\(|auth\.protect|redirect\(|SignedIn/);
     const middleware=fs.readFileSync(path.join(root,'middleware.ts'),'utf8');
-    assert.match(middleware,/createRouteMatcher\(\["\/todo", "\/health"\]\)/);
+    assert.match(middleware,/"\/todo\(\.\*\)"/);
+    assert.match(middleware,/"\/budget\(\.\*\)"/);
+    assert.match(middleware,/"\/health\(\.\*\)"/);
+    assert.doesNotMatch(middleware,/"\/card-creator/);
   });
   test('card values and extreme levels are validated',()=>{
     assert.deepEqual(validateCard(defaults),{});

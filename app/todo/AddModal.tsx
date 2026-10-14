@@ -1,134 +1,45 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
-import { DatePicker } from "../_utilityComponents/datepicker";
-import { ScrollArea } from "../_utilityComponents/scrollarea";
-import { Button } from "../_utilityComponents/button";
-import { TitleInput } from "../_utilityComponents/titleinput";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../_utilityComponents/select";
-import { Todos, saveTodos } from "./todoServer";
 
-import { Cross, Plus } from "public/svg";
-import MyCheckbox from "app/_utilityComponents/mycheckbox";
-import { Slider } from "app/_utilityComponents/slider";
-import { cn } from "@/lib/utils";
+import { X } from "lucide-react";
+import { useState } from "react";
 import { toast } from "react-toastify";
 import { useTodoStore } from "@/app/todo/todoStates";
-import { Input } from "app/_utilityComponents/inputComponent";
-import { Textarea } from "app/_utilityComponents/textarea";
-import { Switch } from "app/_utilityComponents/switch";
-import clsx from "clsx";
+import { Todos, saveTodos } from "./todoServer";
+import styles from "./todo.module.css";
 
-export default function AddModal(): JSX.Element {
+export default function AddModal() {
   const todoStore = useTodoStore();
-  const [disableButton, setDisableButton] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const editing = todoStore.activeTodo !== -1;
 
-  // Add task to database with validation and error handling
-  const addToDb = useCallback(async (): Promise<void> => {
-    if (todoStore.title.length === 0) {
-      toast.error("Title must be at least 1 character");
-      return;
-    }
-    setDisableButton(true);
+  const save = async () => {
+    if (!todoStore.title.trim()) { toast.error("Give the task a title"); return; }
+    setSaving(true);
     try {
-      const save = await saveTodos({
-        userid: todoStore.userid,
-        todos: todoStore.pushTodo(),
-      });
-      if (typeof save === "string") {
-        toast.error(save);
-      } else {
-        toast.success("Successfully saved");
-        todoStore.setTodos(save?.todos as Todos);
-        todoStore.resetTodo();
-        todoStore.flipModal();
-      }
-    } catch (error) {
-      toast.error("An error occurred while saving");
-    } finally {
-      setDisableButton(false);
-    }
-  }, [todoStore]);
+      const result = await saveTodos({ userid: todoStore.userid, todos: todoStore.pushTodo() });
+      if (typeof result === "string") toast.error(result);
+      else { todoStore.setTodos(result?.todos as Todos); todoStore.resetTodo(); todoStore.flipModal(); toast.success(editing ? "Task updated" : "Task added"); }
+    } catch { toast.error("Could not save the task"); }
+    finally { setSaving(false); }
+  };
 
-  useEffect(() => {}, []);
-
+  const dateValue = todoStore.nextShow ? new Date(todoStore.nextShow).toISOString().slice(0, 10) : "";
   return (
-    <div className="text-text fixed top-0 left-0 z-5 flex h-screen w-screen">
-      <div
-        className="bg-opacity-70 fixed top-0 left-0 h-screen w-screen bg-black"
-        onClick={() => {
-          todoStore.flipModal();
-        }}
-      ></div>
-      <div className="bg-secondary relative m-auto flex max-h-[80%] w-[90%] flex-col rounded-xl sm:w-3/5">
-        <Cross
-          alt={""}
-          width={24}
-          height={24}
-          className="fill-text absolute top-4 right-4"
-          onClick={() => {
-            todoStore.flipModal();
-          }}
-        />
-        <div className="m-auto flex w-4/5 flex-col">
-          <div className="mt-6 mb-4 text-xl font-semibold">Add New Task</div>
-          <label>Title</label>
-          <Input
-            placeholder="Enter task title"
-            defaultValue={todoStore.title}
-            className="border-primary/70 placeholder:text-primary/70 mt-2 mb-4 pr-10"
-            onChange={(e) => (todoStore.title = e.target.value)}
-          />
-          <label>Details</label>
-          <Textarea
-            rows={3}
-            placeholder="Add task details"
-            className="border-primary/70 placeholder:text-primary/70 mt-2 mb-4 resize-none rounded-md border-1 bg-transparent whitespace-pre-wrap"
-            value={todoStore.tasksNew != null ? todoStore.tasksNew : ""}
-            onChange={(e) => todoStore.updateTaskNew(e.target.value)}
-          />
-          <label> Priority</label>
-          <Slider defaultValue={[todoStore.priority]} max={3} min={1} step={1} className="mt-2 mb-4" onValueChange={(e) => todoStore.setPriority(e[0])} />
-          <div className="mb-4 flex h-8 items-center">
-            <Switch className="mr-2" id="timed" checked={todoStore.timed} onClick={() => todoStore.flipTimed()} />
-            <label>Timed?</label>
-            {todoStore.timed && (
-              <div className="mr-0 ml-2 grow">
-                <DatePicker />
-              </div>
-            )}
+    <div className={styles.modalBackdrop} role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) todoStore.flipModal(); }}>
+      <section className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="task-dialog-title">
+        <header className={styles.modalHeader}><div><small>{editing ? "Update task" : "New task"}</small><h2 id="task-dialog-title">{editing ? "Refine the details" : "What needs doing?"}</h2></div><button type="button" className={styles.closeButton} onClick={() => todoStore.flipModal()} aria-label="Close"><X /></button></header>
+        <div className={styles.modalBody}>
+          <label className={styles.formField}><span>Title</span><input autoFocus value={todoStore.title} onChange={(event) => todoStore.setTitle(event.target.value)} placeholder="e.g. Send the revised proposal" /></label>
+          <label className={styles.formField}><span>Details · one item per line</span><textarea value={(todoStore.tasks ?? []).join("\n")} onChange={(event) => todoStore.setTasks(event.target.value.split("\n"))} placeholder={"Add context or a short checklist\nReview final numbers\nSend to the team"} /></label>
+          <div className={styles.settings}>
+            <div className={styles.setting}><span className={styles.settingTitle}>Priority</span><div className={styles.priorityButtons}>{[1, 2, 3].map((priority) => <button type="button" key={priority} className={todoStore.priority === priority ? styles.selected : ""} onClick={() => todoStore.setPriority(priority)}>{priority === 1 ? "Low" : priority === 2 ? "Medium" : "High"}</button>)}</div></div>
+            <div className={styles.setting}><span className={styles.settingTitle}>Schedule</span><label className={styles.settingRow}><span>Use a due date</span><input type="checkbox" checked={todoStore.timed} onChange={() => todoStore.flipTimed()} /></label></div>
           </div>
-          <div className={clsx("mb-4 flex h-8", { "opacity-30": !todoStore.timed })}>
-            <Switch
-              className="mr-2"
-              id="repeatable"
-              checked={todoStore.repeatable}
-              onClick={() => {
-                todoStore.flipRepeatable();
-              }}
-              disabled={!todoStore.timed}
-            />
-            <label>Repeatable?</label>
-            {todoStore.repeatable && (
-              <Select onValueChange={(e) => todoStore.setFrequency(e)} value={todoStore.frequency == null ? "Daily" : todoStore.frequency}>
-                <SelectTrigger className="ml-2 h-full w-1/3 grow">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-secondary text-text" ref={(ref) => ref?.addEventListener("touchend", (e) => e.preventDefault())}>
-                  <SelectGroup>
-                    <SelectItem value="Daily">Daily</SelectItem>
-                    <SelectItem value="Weekly">Weekly</SelectItem>
-                    <SelectItem value="Monthly">Monthly</SelectItem>
-                    <SelectItem value="Yearly">Yearly</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-          <Button className="bg-accent text-background mb-4" onClick={addToDb} disabled={disableButton}>
-            {todoStore.activeTodo === -1 ? "Add" : "Update"}
-          </Button>
+          {todoStore.timed ? <label className={styles.formField}><span>Due date</span><input type="date" value={dateValue} onChange={(event) => todoStore.setNextShow(new Date(`${event.target.value}T12:00:00`))} /></label> : null}
+          {todoStore.timed ? <div className={styles.settings}><div className={styles.setting}><span className={styles.settingTitle}>Repeat</span><label className={styles.settingRow}><span>Recurring task</span><input type="checkbox" checked={todoStore.repeatable} onChange={() => todoStore.flipRepeatable()} /></label></div>{todoStore.repeatable ? <label className={styles.formField}><span>Frequency</span><select className={styles.select} value={todoStore.frequency ?? "Daily"} onChange={(event) => todoStore.setFrequency(event.target.value)}><option>Daily</option><option>Weekly</option><option>Monthly</option><option>Yearly</option></select></label> : null}</div> : null}
         </div>
-      </div>
+        <footer className={styles.modalFooter}><button type="button" className={styles.secondaryButton} onClick={() => todoStore.flipModal()}>Cancel</button><button type="button" className={styles.primaryButton} disabled={saving} onClick={() => void save()}>{saving ? "Saving…" : editing ? "Save changes" : "Add task"}</button></footer>
+      </section>
     </div>
   );
 }

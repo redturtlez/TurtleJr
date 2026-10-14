@@ -3,6 +3,7 @@
 import { SignInButton, SignOutButton } from "@clerk/nextjs";
 import clsx from "clsx";
 import Link from "next/link";
+import type { JSX } from "react";
 import { CaretDown, Cross, Logo, Menu } from "public/svg";
 import styles from "./navbar.module.css";
 import { useNavbar } from "./use-navbar";

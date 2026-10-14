@@ -1,7 +1,8 @@
 "use server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/database";
-import z, { ZodError } from "zod";
+import { auth } from "@clerk/nextjs/server";
+import z from "zod";
 
 export type userBudget = z.infer<typeof budgetSchema>;
 export type BudgetItems = userBudget["budgetItems"];
@@ -33,37 +34,44 @@ const budgetSchema = z.object({
   budgetItems: z.array(itemSchema),
 });
 
-export async function getBudgets(input) {
-  z.string().safeParse(input);
+async function authenticatedUserId() {
+  const { userId } = await auth();
+  if (!userId) throw new Error("You must be signed in to manage a budget");
+  return userId;
+}
+
+export async function getBudgets() {
+  const userId = await authenticatedUserId();
   const output = await prisma.budget.findMany({
-    where: { userid: input },
+    where: { userid: userId },
   });
   return output[0]?.budgetItems as BudgetItems;
 }
 export async function saveBudgets(input) {
-  const valid = budgetSchema.safeParse(input);
+  const userId = await authenticatedUserId();
+  const valid = budgetSchema.pick({ budgetItems: true }).safeParse(input);
   if (!valid.success) {
     return valid.error.issues[0]?.message;
   } else {
     const output = await prisma.budget.upsert({
       where: {
-        userid: valid.data.userid,
+        userid: userId,
       },
       update: {
         budgetItems: valid.data.budgetItems as Prisma.JsonArray,
       },
       create: {
-        userid: valid.data.userid,
+        userid: userId,
         budgetItems: valid.data.budgetItems as Prisma.JsonArray,
       },
     });
     return output as userBudget;
   }
 }
-export async function deleteBudgets(input) {
-  z.string().safeParse(input);
+export async function deleteBudgets() {
+  const userId = await authenticatedUserId();
   const output = await prisma.budget.deleteMany({
-    where: { userid: input },
+    where: { userid: userId },
   });
   return output;
 }

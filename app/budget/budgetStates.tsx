@@ -7,7 +7,7 @@ type State = userBudget & {
 
 const initialState: State = {
   userid: "",
-  budgetItems: new Array(),
+  budgetItems: [],
   activeTab: 1,
 };
 

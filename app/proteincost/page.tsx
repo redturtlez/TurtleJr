@@ -1,13 +1,17 @@
 import { generateMetadata } from "../../lib/server";
 import Content from "./content";
+import styles from "./protein-cost.module.css";
 
-export const metadata = generateMetadata({ title: "Protein Cost" });
+export const metadata = generateMetadata({ title: "Protein Cost", description: "Compare foods and supplements by protein value." });
 
-export default async function ProteinCostPage() {
+export default function ProteinCostPage() {
   return (
-    <div className="animate__animated animate__fadeIn flex h-full w-full flex-col">
-      <div className="mx-auto mt-4 text-4xl font-extrabold sq:text-6xl">Protein Cost</div>
+    <section className={styles.page}>
+      <header className={styles.header}>
+        <p>Nutrition utility</p>
+        <div><h1>Protein<br /><span>value calculator.</span></h1><p className={styles.intro}>Compare foods and supplements by how many grams of protein each dollar buys.</p></div>
+      </header>
       <Content />
-    </div>
+    </section>
   );
 }
