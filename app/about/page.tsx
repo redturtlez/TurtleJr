@@ -1,19 +1,28 @@
 import { generateMetadata } from "../../lib/server";
 import Resume from "./resume";
+import styles from "./about.module.css";
 
 export const metadata = generateMetadata({ title: "About" });
 
-export default async function AboutPage() {
+export default function AboutPage() {
   return (
-    <div className="animate__animated animate__fadeIn flex w-full flex-col">
-      <div className="sq:text-6xl mx-auto mb-6 text-4xl font-bold">About</div>
-      <div className="bg-secondary sq:text-center mx-auto mb-4 w-11/12 rounded-xl p-4 text-lg text-balance">
-        TurtleJr.dev is an all-in-one portfolio progressive web application created using NextJs, designed with a mobile-first approach. It features various self-made tools like a
-        To-Do list, Calorie tracker, Budgeting tool, and more behind a secure login. Additionally, it doubles as a showcase of my programming skills and passion to potential
-        employers, reflecting my self-learned and ambitious journey.
+    <section className={styles.page}>
+      <header className={styles.header}><p>About Turtle Jr</p><h1>One site.<br /><span>Useful ideas, shipped.</span></h1></header>
+      <div className={styles.layout}>
+        <article className={styles.story}>
+          <span className={styles.number}>01 / The platform</span>
+          <h2>A portfolio that works like a product.</h2>
+          <p>TurtleJr.dev is a mobile-first progressive web app built with Next.js. It combines a professional portfolio with practical tools, experiments, and creative projects in one evolving platform.</p>
+          <p>The signed-in workspace includes productivity tools for tasks, health, and budgeting. Public experiences such as the card creators show the same focus on useful software, careful details, and hands-on problem solving.</p>
+        </article>
+        <aside className={styles.details}>
+          <div><small>Focus</small><strong>Full-stack engineering</strong></div>
+          <div><small>Approach</small><strong>Mobile-first & practical</strong></div>
+          <div><small>Stack</small><strong>Next.js · TypeScript · Java</strong></div>
+          <div className={styles.resume}><small>Experience</small><Resume /></div>
+        </aside>
       </div>
-      <Resume />
-      <div className="mx-auto text-sm">contact me at: simone.mineo424@gmail.com</div>
-    </div>
+      <footer className={styles.contact}><span>Have a project or opportunity in mind?</span><a href="mailto:simone.mineo424@gmail.com">simone.mineo424@gmail.com <b aria-hidden="true">↗</b></a></footer>
+    </section>
   );
 }

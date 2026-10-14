@@ -1,10 +1,13 @@
 {
   "name": "Turtle Jr",
-  "short_name": "Turtle",
+  "short_name": "Turtle Jr",
+  "description": "A portfolio and personal toolkit by Simonè Mineo.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "scope": "/",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#0f1312",
+  "theme_color": "#0f1312",
   "icons": [
     {
       "src": "/logo.png",

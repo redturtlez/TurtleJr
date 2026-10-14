@@ -1,9 +1,16 @@
-import { Metadata } from "next";
+import type { Metadata } from "next";
 
-export async function generateMetadata(params): Promise<Metadata> {
+interface MetadataParams {
+  title?: string;
+  description?: string;
+}
+
+export async function generateMetadata(params: MetadataParams): Promise<Metadata> {
   return {
-    title: params.title != undefined ? params.title + " | Turtle Jr" : "Default",
-    description: params.description != undefined ? params.description : "Default Metadata",
+    title: params.title ? `${params.title} | Turtle Jr` : "Turtle Jr | Software, tools, and experiments",
+    description: params.description ?? "The portfolio and personal software workshop of Simonè Mineo.",
+    applicationName: "Turtle Jr",
+    appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Turtle Jr" },
     icons: {
       icon: [
         {

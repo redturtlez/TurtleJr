@@ -31,13 +31,13 @@ export const useNavbar = (): UseNavbarReturn => {
   }, []);
 
   const handleNavClick = useCallback((): void => {
-    setMenuOpen((prev) => !prev);
+    setMenuOpen(false);
     setAppsOpen(false);
   }, []);
 
   const handleAppNavClick = useCallback((): void => {
-    setMenuOpen((prev) => !prev);
-    setAppsOpen((prev) => !prev);
+    setMenuOpen(false);
+    setAppsOpen(false);
   }, []);
 
   return {
