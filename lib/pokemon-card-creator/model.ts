@@ -1,5 +1,5 @@
 ﻿export const pokemonTypes = ["colorless", "dark", "dragon", "fairy", "fighting", "fire", "grass", "lightning", "metal", "psychic", "water"] as const;
-export const stages = ["basic", "stage1", "stage2", "v", "vmax", "exBasic", "exStage1", "exStage2", "exMegaBasic", "exMegaStage1", "exMegaStage2"] as const;
+export const stages = ["basic", "stage1", "stage2", "gxBasic", "gxStage1", "gxStage2", "gxTagTeam", "v", "vmax", "vstar", "exBasic", "exStage1", "exStage2", "exMegaBasic", "exMegaStage1", "exMegaStage2"] as const;
 export type PokemonType = (typeof pokemonTypes)[number];
 export type Stage = (typeof stages)[number];
 export type EnergyCost = PokemonType[];
@@ -7,7 +7,14 @@ export type DexMode = "imperial" | "metric" | "custom";
 export type CardSupertype = "pokemon" | "trainer" | "energy";
 export type TrainerType = "item" | "tool" | "supporter" | "stadium";
 export type EnergyCardType = "base" | "special";
-export type CardEra = "swordAndShield" | "scarletAndViolet";
+export type CardEra = "swordAndShield" | "scarletAndViolet" | "sunAndMoon" | "xAndYBlackAndWhite";
+export type ScarletVariation = "standard" | "ancient" | "future" | "stellarTera";
+export const copyrightDefaults: Record<CardEra, string> = {
+  swordAndShield: "©2026 Pokémon / Nintendo / Creatures / GAME FREAK",
+  scarletAndViolet: "©2026 Pokémon / Nintendo / Creatures / GAME FREAK",
+  sunAndMoon: "©2017 Pokémon",
+  xAndYBlackAndWhite: "©2013 Pokémon / Nintendo / Creatures / GAME FREAK",
+};
 
 export interface PokemonCard {
   era: CardEra;
@@ -29,9 +36,17 @@ export interface PokemonCard {
   type: PokemonType;
   stage: Stage;
   illustrationStyle: "standard" | "fullArt";
+  scarletVariation: ScarletVariation;
+  gxStyle: "standard" | "fullArt";
   exVariation: "standard" | "tera";
   vStyle: "fullArt" | "goldenFullArt";
   vmaxVariation: "dynamax" | "gigantamax";
+  vstarStyle: "standard" | "fullArt";
+  vstarPowerType: "ability" | "attack";
+  vstarPowerName: string;
+  vstarPowerText: string;
+  vstarPowerDamage: string;
+  vstarPowerEnergy: EnergyCost;
   evolvesFrom: string;
   abilityName: string;
   abilityText: string;
@@ -43,6 +58,10 @@ export interface PokemonCard {
   move2Text: string;
   move2Damage: string;
   move2Energy: EnergyCost;
+  gxMoveName: string;
+  gxMoveText: string;
+  gxMoveDamage: string;
+  gxMoveEnergy: EnergyCost;
   weakness: PokemonType;
   weaknessAmount: string;
   resistance: PokemonType | "none";
@@ -93,9 +112,17 @@ export const defaults: PokemonCard = {
   type: "grass",
   stage: "basic",
   illustrationStyle: "standard",
+  scarletVariation: "standard",
+  gxStyle: "standard",
   exVariation: "standard",
   vStyle: "fullArt",
   vmaxVariation: "dynamax",
+  vstarStyle: "standard",
+  vstarPowerType: "ability",
+  vstarPowerName: "Verdant Star",
+  vstarPowerText: "Once during your turn, heal 30 damage from this Pokémon.",
+  vstarPowerDamage: "",
+  vstarPowerEnergy: ["grass"],
   evolvesFrom: "",
   abilityName: "",
   abilityText: "",
@@ -107,6 +134,10 @@ export const defaults: PokemonCard = {
   move2Text: "",
   move2Damage: "",
   move2Energy: [],
+  gxMoveName: "Solar Bloom",
+  gxMoveText: "Heal all damage from this Pokémon.",
+  gxMoveDamage: "100",
+  gxMoveEnergy: ["grass", "colorless"],
   weakness: "fire",
   weaknessAmount: "×2",
   resistance: "water",
@@ -128,7 +159,7 @@ export const defaults: PokemonCard = {
   showRegulation: true,
   setMark: "none",
   rarity: "common",
-  copyrightText: "©2026 Pokémon / Nintendo / Creatures / GAME FREAK",
+  copyrightText: copyrightDefaults.swordAndShield,
   artX: 0.5,
   artY: 0.5,
   artZoom: 1,
@@ -159,8 +190,13 @@ export const stageLabels: Record<Stage, string> = {
   basic: "Basic",
   stage1: "Stage 1",
   stage2: "Stage 2",
+  gxBasic: "Pokémon-GX",
+  gxStage1: "Stage 1 GX",
+  gxStage2: "Stage 2 GX",
+  gxTagTeam: "TAG TEAM GX",
   v: "Pokémon V",
   vmax: "Pokémon VMAX",
+  vstar: "Pokémon VSTAR",
   exBasic: "Pokémon ex",
   exStage1: "Stage 1 ex",
   exStage2: "Stage 2 ex",
@@ -171,38 +207,76 @@ export const stageLabels: Record<Stage, string> = {
 export const supertypeLabels: Record<CardSupertype, string> = { pokemon: "Pokémon", trainer: "Trainer", energy: "Energy" };
 export const trainerTypeLabels: Record<TrainerType, string> = { item: "Item", tool: "Pokémon Tool", supporter: "Supporter", stadium: "Stadium" };
 export const energyCardTypeLabels: Record<EnergyCardType, string> = { base: "Basic Energy", special: "Special Energy" };
-export const eraLabels: Record<CardEra, string> = { swordAndShield: "Sword & Shield", scarletAndViolet: "Scarlet & Violet" };
+export const eraLabels: Record<CardEra, string> = {
+  swordAndShield: "Sword & Shield",
+  scarletAndViolet: "Scarlet & Violet",
+  sunAndMoon: "Sun & Moon",
+  xAndYBlackAndWhite: "X & Y / Black & White",
+};
 export const vTypes: readonly PokemonType[] = ["colorless", "dark", "fighting", "fire", "grass", "lightning", "metal", "psychic", "water"];
-export const availableTypes = (stage: Stage) => (stage === "v" ? vTypes : pokemonTypes);
+export const vstarTypes: readonly PokemonType[] = ["colorless", "dark", "dragon", "fighting", "fire", "grass", "lightning", "metal", "psychic", "water"];
+export const stellarTeraTypes: readonly PokemonType[] = vstarTypes;
+export const availableTypes = (stage: Stage, scarletVariation: ScarletVariation = "standard") =>
+  scarletVariation === "stellarTera" ? stellarTeraTypes : stage === "v" ? vTypes : stage === "vstar" ? vstarTypes : pokemonTypes;
 export const scarletAndVioletStages: readonly Stage[] = ["basic", "stage1", "stage2", "exBasic", "exStage1", "exStage2", "exMegaBasic", "exMegaStage1", "exMegaStage2"];
-export const swordAndShieldStages: readonly Stage[] = ["basic", "stage1", "stage2", "v", "vmax"];
-export const availableStages = (era: CardEra): readonly Stage[] => (era === "scarletAndViolet" ? scarletAndVioletStages : swordAndShieldStages);
+export const swordAndShieldStages: readonly Stage[] = ["basic", "stage1", "stage2", "v", "vmax", "vstar"];
+export const sunAndMoonStages: readonly Stage[] = ["basic", "stage1", "stage2", "gxBasic", "gxStage1", "gxStage2", "gxTagTeam"];
+export const xAndYBlackAndWhiteStages: readonly Stage[] = ["basic", "stage1", "stage2"];
+export const availableStages = (era: CardEra): readonly Stage[] =>
+  era === "scarletAndViolet" ? scarletAndVioletStages : era === "sunAndMoon" ? sunAndMoonStages : era === "xAndYBlackAndWhite" ? xAndYBlackAndWhiteStages : swordAndShieldStages;
 export const isStandardExStage = (stage: Stage) => stage === "exBasic" || stage === "exStage1" || stage === "exStage2";
 export const isMegaExStage = (stage: Stage) => stage === "exMegaBasic" || stage === "exMegaStage1" || stage === "exMegaStage2";
 export const isExStage = (stage: Stage) => isStandardExStage(stage) || isMegaExStage(stage);
+export const scarletVariationsForStage = (stage: Stage): readonly ScarletVariation[] =>
+  stage === "basic" ? ["standard", "ancient", "future"] : stage === "exBasic" ? ["standard", "ancient", "future", "stellarTera"] : stage === "exStage1" || stage === "exStage2" ? ["standard", "stellarTera"] : ["standard"];
+export const supportsScarletVariation = (card: PokemonCard) =>
+  card.supertype === "pokemon" && card.era === "scarletAndViolet" && scarletVariationsForStage(card.stage).length > 1;
+export const isGxStage = (stage: Stage) => stage === "gxBasic" || stage === "gxStage1" || stage === "gxStage2" || stage === "gxTagTeam";
 export const isEvolvedStage = (stage: Stage) =>
-  stage === "stage1" || stage === "stage2" || stage === "exStage1" || stage === "exStage2" || stage === "exMegaStage1" || stage === "exMegaStage2";
+  stage === "stage1" || stage === "stage2" || stage === "gxStage1" || stage === "gxStage2" || stage === "vstar" || stage === "exStage1" || stage === "exStage2" || stage === "exMegaStage1" || stage === "exMegaStage2";
 export const supportsFullArt = (card: PokemonCard) =>
-  card.supertype === "pokemon" && card.era === "scarletAndViolet" && !(isStandardExStage(card.stage) && card.exVariation === "tera");
+  card.supertype === "pokemon" &&
+  card.era === "scarletAndViolet" &&
+  !(isStandardExStage(card.stage) && card.exVariation === "tera" && card.scarletVariation === "standard");
 export const framePath = (card: PokemonCard) =>
   card.supertype === "trainer"
     ? `/pokemon-card-creator/frames/trainer/${card.trainerType === "supporter" && card.supporterStyle === "fullArt" ? "supporter-full-art" : card.trainerType}.png`
     : card.supertype === "energy"
       ? `/pokemon-card-creator/frames/energy/${card.energyCardType}.png`
       : card.era === "scarletAndViolet"
-        ? `/pokemon-card-creator/frames/scarlet-violet/${card.type}-${card.stage}${supportsFullArt(card) && card.illustrationStyle === "fullArt" ? "-fullArt" : isStandardExStage(card.stage) && card.exVariation === "tera" ? "-tera" : ""}.png`
+        ? `/pokemon-card-creator/frames/scarlet-violet/${card.type}-${card.stage}${
+            supportsScarletVariation(card) && card.scarletVariation !== "standard"
+              ? `-${card.scarletVariation}${card.illustrationStyle === "fullArt" ? "-fullArt" : ""}`
+              : supportsFullArt(card) && card.illustrationStyle === "fullArt"
+                ? "-fullArt"
+                : isStandardExStage(card.stage) && card.exVariation === "tera"
+                  ? "-tera"
+                  : ""
+          }.png`
+        : card.era === "sunAndMoon"
+          ? `/pokemon-card-creator/frames/sun-and-moon/${card.type}-${card.stage}${isGxStage(card.stage) && card.gxStyle === "fullArt" ? "-fullArt" : ""}.png`
+          : card.era === "xAndYBlackAndWhite"
+            ? `/pokemon-card-creator/frames/x-and-y-black-white/${card.type}-${card.stage}.png`
+        : card.stage === "vstar"
+          ? `/pokemon-card-creator/frames/${card.type}-vstar${card.vstarStyle === "fullArt" ? "-fullArt" : ""}.png`
         : card.stage === "v"
           ? `/pokemon-card-creator/frames/${card.type}-v${card.vStyle === "goldenFullArt" ? "-golden" : ""}.png`
           : card.stage === "vmax"
             ? `/pokemon-card-creator/frames/${card.type}-vmax-${card.vmaxVariation}.png`
             : `/pokemon-card-creator/frames/${card.type}-${card.stage}.png`;
 export const typeIconPath = (type: PokemonType, era: CardEra = "swordAndShield") =>
-  era === "scarletAndViolet" ? `/pokemon-card-creator/icons/types/scarlet-violet/${type}.webp` : `/pokemon-card-creator/icons/types/${type}.png`;
+  era === "scarletAndViolet"
+    ? `/pokemon-card-creator/icons/types/scarlet-violet/${type}.webp`
+    : era === "sunAndMoon"
+      ? `/pokemon-card-creator/icons/types/sun-and-moon/${type}.webp`
+      : era === "xAndYBlackAndWhite"
+        ? `/pokemon-card-creator/icons/types/x-and-y-black-white/${type}.webp`
+      : `/pokemon-card-creator/icons/types/${type}.png`;
 export const frameSourceSize = (card: PokemonCard) =>
-  card.supertype === "pokemon" && card.era === "scarletAndViolet" ? { width: 745, height: 1040 } : { width: 747, height: 1038 };
+  card.supertype === "pokemon" && (card.era === "scarletAndViolet" || card.era === "sunAndMoon" || card.era === "xAndYBlackAndWhite" || card.stage === "vstar") ? { width: 745, height: 1040 } : { width: 747, height: 1038 };
 export const rarityPath = (rarity: PokemonCard["rarity"]) => `/pokemon-card-creator/icons/rarities/${rarity}.png`;
 export const setMarkPath = (card: PokemonCard) =>
-  `/pokemon-card-creator/icons/sets/${card.supertype === "pokemon" && card.era === "scarletAndViolet" ? "scarlet-and-violet" : "sword-and-shield"}.png`;
+  `/pokemon-card-creator/icons/sets/${card.supertype === "pokemon" && card.era === "scarletAndViolet" ? "scarlet-and-violet" : card.supertype === "pokemon" && card.era === "sunAndMoon" ? "sun-and-moon" : card.supertype === "pokemon" && card.era === "xAndYBlackAndWhite" ? "x-and-y-black-white" : "sword-and-shield"}.png`;
 export function pokemonDownloadFilename(card: PokemonCard, bleed: 0 | 1 | 2) {
   const safe = (value: string) =>
     value

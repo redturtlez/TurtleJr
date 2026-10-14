@@ -4,23 +4,37 @@ import { decodeArtwork } from "../../../lib/card-creator/artwork";
 import {
   availableStages,
   availableTypes,
+  copyrightDefaults,
   defaults,
   energyCardTypeLabels,
   eraLabels,
   isEvolvedStage,
   isExStage,
+  isGxStage,
   isStandardExStage,
   labels,
   pokemonDownloadFilename,
   pokemonTypes,
+  scarletVariationsForStage,
   stageLabels,
   supertypeLabels,
   supportsFullArt,
+  supportsScarletVariation,
   trainerTypeLabels,
   type PokemonCard,
 } from "../../../lib/pokemon-card-creator/model";
 import { exportPokemon, pokemonPrintGeometry, renderPokemon, type PokemonBleed } from "../../../lib/pokemon-card-creator/render";
 import styles from "./pokemon.module.css";
+
+function pokemonPreviewSuffix(card: PokemonCard) {
+  const variationLabel = card.scarletVariation === "ancient" ? "Ancient" : card.scarletVariation === "future" ? "Future" : "Stellar Tera";
+  const variation = supportsScarletVariation(card) && card.scarletVariation !== "standard" ? ` · ${variationLabel}` : isStandardExStage(card.stage) && card.exVariation === "tera" ? " · Tera" : "";
+  const fullArt =
+    (supportsFullArt(card) && card.illustrationStyle === "fullArt") ||
+    (isGxStage(card.stage) && card.gxStyle === "fullArt") ||
+    (card.stage === "vstar" && card.vstarStyle === "fullArt");
+  return variation + (fullArt ? " · Full Art" : "");
+}
 
 export default function PokemonEditor() {
   const [card, setCard] = useState<PokemonCard>({ ...defaults });
@@ -132,7 +146,7 @@ export default function PokemonEditor() {
         <div>
           <p className={styles.eyebrow}>THE CARD WORKSHOP</p>
           <h1>Pokémon Card Creator</h1>
-          <p>Create a modern custom card. Artwork remains on your device.</p>
+          <p>Create a custom card across classic and modern eras. Artwork remains on your device.</p>
         </div>
         <span>No sign-in needed</span>
       </header>
@@ -158,10 +172,16 @@ export default function PokemonEditor() {
                   value={card.era}
                   onChange={(e) => {
                     const era = e.target.value as PokemonCard["era"];
-                    setCard((old) => ({ ...old, era, stage: availableStages(era).includes(old.stage) ? old.stage : "basic" }));
+                    setCard((old) => ({
+                      ...old,
+                      era,
+                      stage: availableStages(era).includes(old.stage) ? old.stage : "basic",
+                      scarletVariation: era === "scarletAndViolet" ? old.scarletVariation : "standard",
+                      copyrightText: Object.values(copyrightDefaults).includes(old.copyrightText) ? copyrightDefaults[era] : old.copyrightText,
+                    }));
                   }}
                 >
-                  {(["swordAndShield", "scarletAndViolet"] as const).map((value) => (
+                  {(["swordAndShield", "scarletAndViolet", "sunAndMoon", "xAndYBlackAndWhite"] as const).map((value) => (
                     <option key={value} value={value}>
                       {eraLabels[value]}
                     </option>
@@ -172,7 +192,7 @@ export default function PokemonEditor() {
                 <div className={styles.field}>
                   <label htmlFor="pk-type">Energy type</label>
                   <select id="pk-type" value={card.type} onChange={(e) => set("type", e.target.value as PokemonCard["type"])}>
-                    {availableTypes(card.stage).map((v) => (
+                    {availableTypes(card.stage, card.scarletVariation).map((v) => (
                       <option key={v} value={v}>
                         {labels[v]}
                       </option>
@@ -186,7 +206,11 @@ export default function PokemonEditor() {
                     value={card.stage}
                     onChange={(e) => {
                       const stage = e.target.value as PokemonCard["stage"];
-                      setCard((old) => ({ ...old, stage, type: availableTypes(stage).includes(old.type) ? old.type : "colorless" }));
+                      setCard((old) => {
+                        const scarletVariation = scarletVariationsForStage(stage).includes(old.scarletVariation) ? old.scarletVariation : "standard";
+                        const types = availableTypes(stage, scarletVariation);
+                        return { ...old, stage, scarletVariation, type: types.includes(old.type) ? old.type : "colorless" };
+                      });
                     }}
                   >
                     {availableStages(card.era).map((v) => (
@@ -197,12 +221,44 @@ export default function PokemonEditor() {
                   </select>
                 </div>
               </div>
+              {supportsScarletVariation(card) && (
+                <div className={styles.field}>
+                  <label htmlFor="pk-scarlet-variation">Era variation</label>
+                  <select
+                    id="pk-scarlet-variation"
+                    value={card.scarletVariation}
+                    onChange={(e) => {
+                      const scarletVariation = e.target.value as PokemonCard["scarletVariation"];
+                      setCard((old) => ({
+                        ...old,
+                        scarletVariation,
+                        exVariation: scarletVariation === "standard" ? old.exVariation : "standard",
+                        type: availableTypes(old.stage, scarletVariation).includes(old.type) ? old.type : "colorless",
+                      }));
+                    }}
+                  >
+                    <option value="standard">Standard</option>
+                    {(card.stage === "basic" || card.stage === "exBasic") && <option value="ancient">Ancient</option>}
+                    {(card.stage === "basic" || card.stage === "exBasic") && <option value="future">Future</option>}
+                    {isStandardExStage(card.stage) && <option value="stellarTera">Stellar Tera</option>}
+                  </select>
+                </div>
+              )}
               {supportsFullArt(card) && (
                 <div className={styles.field}>
                   <label htmlFor="pk-illustration-style">Artwork frame</label>
                   <select id="pk-illustration-style" value={card.illustrationStyle} onChange={(e) => set("illustrationStyle", e.target.value as PokemonCard["illustrationStyle"])}>
                     <option value="standard">Standard</option>
                     <option value="fullArt">Full Art illustration</option>
+                  </select>
+                </div>
+              )}
+              {isGxStage(card.stage) && (
+                <div className={styles.field}>
+                  <label htmlFor="pk-gx-style">GX frame style</label>
+                  <select id="pk-gx-style" value={card.gxStyle} onChange={(e) => set("gxStyle", e.target.value as PokemonCard["gxStyle"])}>
+                    <option value="standard">Standard GX</option>
+                    <option value="fullArt">Full Art GX</option>
                   </select>
                 </div>
               )}
@@ -224,7 +280,16 @@ export default function PokemonEditor() {
                   </select>
                 </div>
               )}
-              {isStandardExStage(card.stage) && (
+              {card.stage === "vstar" && (
+                <div className={styles.field}>
+                  <label htmlFor="pk-vstar-style">VSTAR frame style</label>
+                  <select id="pk-vstar-style" value={card.vstarStyle} onChange={(e) => set("vstarStyle", e.target.value as PokemonCard["vstarStyle"])}>
+                    <option value="standard">Standard VSTAR</option>
+                    <option value="fullArt">Full Art VSTAR</option>
+                  </select>
+                </div>
+              )}
+              {isStandardExStage(card.stage) && card.scarletVariation === "standard" && (
                 <div className={styles.field}>
                   <label htmlFor="pk-ex-variation">ex frame style</label>
                   <select
@@ -232,7 +297,7 @@ export default function PokemonEditor() {
                     value={card.exVariation}
                     onChange={(e) => {
                       const exVariation = e.target.value as PokemonCard["exVariation"];
-                      setCard((old) => ({ ...old, exVariation, illustrationStyle: exVariation === "tera" ? "standard" : old.illustrationStyle }));
+                      setCard((old) => ({ ...old, exVariation, scarletVariation: "standard", illustrationStyle: exVariation === "tera" ? "standard" : old.illustrationStyle }));
                     }}
                   >
                     <option value="standard">Standard ex</option>
@@ -319,6 +384,8 @@ export default function PokemonEditor() {
               {text("abilityText", "Ability text", true)}
               <MoveFields number={1} card={card} set={set} />
               <MoveFields number={2} card={card} set={set} />
+              {isGxStage(card.stage) && <GxMoveFields card={card} set={set} />}
+              {card.stage === "vstar" && <VstarPowerFields card={card} set={set} />}
               <h2>Card details</h2>
               <div className={styles.row}>
                 <TypeSelect label="Weakness" value={card.weakness} onChange={(v) => set("weakness", v)} />
@@ -351,7 +418,7 @@ export default function PokemonEditor() {
                 </div>
                 <TypeSelect label="Retreat energy" value={card.retreatType} onChange={(v) => set("retreatType", v)} />
               </div>
-              {card.stage !== "v" && card.stage !== "vmax" && !isExStage(card.stage) && card.illustrationStyle !== "fullArt" && (
+              {card.stage !== "v" && card.stage !== "vmax" && card.stage !== "vstar" && !isExStage(card.stage) && !isGxStage(card.stage) && card.illustrationStyle !== "fullArt" && (
                 <>
                   <DexFields card={card} set={set} />
                   {text("flavorText", "Flavor text", true)}
@@ -381,7 +448,7 @@ export default function PokemonEditor() {
             <h2>Live preview</h2>
             <span>
               {card.supertype === "pokemon"
-                ? `${eraLabels[card.era]} · ${labels[card.type]} · ${stageLabels[card.stage]}${isStandardExStage(card.stage) && card.exVariation === "tera" ? " · Tera" : supportsFullArt(card) && card.illustrationStyle === "fullArt" ? " · Full Art" : ""}`
+                ? `${eraLabels[card.era]} · ${labels[card.type]} · ${stageLabels[card.stage]}${pokemonPreviewSuffix(card)}`
                 : card.supertype === "trainer"
                   ? trainerTypeLabels[card.trainerType] + (card.trainerType === "supporter" && card.supporterStyle === "fullArt" ? " · Full Art" : "")
                   : energyCardTypeLabels[card.energyCardType]}
@@ -766,6 +833,115 @@ function MoveFields({ number, card, set }: { number: 1 | 2; card: PokemonCard; s
       <div className={styles.field}>
         <label>Description</label>
         <textarea rows={2} value={card[`${prefix}Text`]} onChange={(e) => set(`${prefix}Text`, e.target.value)} />
+      </div>
+    </fieldset>
+  );
+}
+
+function GxMoveFields({ card, set }: { card: PokemonCard; set: Setter }) {
+  function setEnergy(index: number, value: string) {
+    const next = [...card.gxMoveEnergy];
+    if (value === "none") next.splice(index, 1);
+    else next[index] = value as PokemonCard["type"];
+    set("gxMoveEnergy", next);
+  }
+  return (
+    <fieldset>
+      <legend>GX attack</legend>
+      <div className={styles.row}>
+        <div className={styles.field}>
+          <label htmlFor="pk-gx-move-name">Name (GX symbol added automatically)</label>
+          <input id="pk-gx-move-name" value={card.gxMoveName} onChange={(e) => set("gxMoveName", e.target.value)} />
+        </div>
+        <div className={styles.field}>
+          <label htmlFor="pk-gx-move-damage">Damage</label>
+          <input id="pk-gx-move-damage" value={card.gxMoveDamage} onChange={(e) => set("gxMoveDamage", e.target.value)} />
+        </div>
+      </div>
+      <div className={styles.field}>
+        <span className={styles.fieldLabel}>Energy cost</span>
+        <div className={styles.energySlots}>
+          {[0, 1, 2, 3].map((index) => (
+            <select
+              key={index}
+              aria-label={`GX attack energy ${index + 1}`}
+              value={card.gxMoveEnergy[index] ?? "none"}
+              disabled={index > card.gxMoveEnergy.length}
+              onChange={(e) => setEnergy(index, e.target.value)}
+            >
+              <option value="none">None</option>
+              {pokemonTypes.map((type) => (
+                <option key={type} value={type}>
+                  {labels[type]}
+                </option>
+              ))}
+            </select>
+          ))}
+        </div>
+      </div>
+      <div className={styles.field}>
+        <label htmlFor="pk-gx-move-text">Description</label>
+        <textarea id="pk-gx-move-text" rows={2} value={card.gxMoveText} onChange={(e) => set("gxMoveText", e.target.value)} />
+      </div>
+    </fieldset>
+  );
+}
+
+function VstarPowerFields({ card, set }: { card: PokemonCard; set: Setter }) {
+  function setEnergy(index: number, value: string) {
+    const next = [...card.vstarPowerEnergy];
+    if (value === "none") next.splice(index, 1);
+    else next[index] = value as PokemonCard["type"];
+    set("vstarPowerEnergy", next);
+  }
+  return (
+    <fieldset>
+      <legend>VSTAR Power</legend>
+      <div className={styles.field}>
+        <label htmlFor="pk-vstar-power-type">Power type</label>
+        <select id="pk-vstar-power-type" value={card.vstarPowerType} onChange={(e) => set("vstarPowerType", e.target.value as PokemonCard["vstarPowerType"])}>
+          <option value="ability">Ability</option>
+          <option value="attack">Attack</option>
+        </select>
+      </div>
+      <div className={styles.row}>
+        <div className={styles.field}>
+          <label htmlFor="pk-vstar-power-name">Name</label>
+          <input id="pk-vstar-power-name" value={card.vstarPowerName} onChange={(e) => set("vstarPowerName", e.target.value)} />
+        </div>
+        {card.vstarPowerType === "attack" && (
+          <div className={styles.field}>
+            <label htmlFor="pk-vstar-power-damage">Damage</label>
+            <input id="pk-vstar-power-damage" value={card.vstarPowerDamage} onChange={(e) => set("vstarPowerDamage", e.target.value)} />
+          </div>
+        )}
+      </div>
+      {card.vstarPowerType === "attack" && (
+        <div className={styles.field}>
+          <span className={styles.fieldLabel}>Energy cost</span>
+          <div className={styles.energySlots}>
+            {[0, 1, 2, 3].map((index) => (
+              <select
+                key={index}
+                aria-label={`VSTAR Power energy ${index + 1}`}
+                value={card.vstarPowerEnergy[index] ?? "none"}
+                disabled={index > card.vstarPowerEnergy.length}
+                onChange={(e) => setEnergy(index, e.target.value)}
+              >
+                <option value="none">None</option>
+                {pokemonTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {labels[type]}
+                  </option>
+                ))}
+              </select>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className={styles.field}>
+        <label htmlFor="pk-vstar-power-text">Description</label>
+        <textarea id="pk-vstar-power-text" rows={3} value={card.vstarPowerText} onChange={(e) => set("vstarPowerText", e.target.value)} />
       </div>
     </fieldset>
   );

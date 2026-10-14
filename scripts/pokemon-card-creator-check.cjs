@@ -72,7 +72,12 @@ test("every supported frame mapping exists at its era source size", () => {
     for (const type of model.pokemonTypes) {
       cards.push({ ...model.defaults, supertype: "pokemon", stage, type });
       cards.push({ ...model.defaults, era: "scarletAndViolet", supertype: "pokemon", stage, type });
+      cards.push({ ...model.defaults, era: "sunAndMoon", supertype: "pokemon", stage, type });
+      cards.push({ ...model.defaults, era: "xAndYBlackAndWhite", supertype: "pokemon", stage, type });
     }
+  for (const stage of ["gxBasic", "gxStage1", "gxStage2", "gxTagTeam"])
+    for (const type of model.pokemonTypes)
+      for (const gxStyle of ["standard", "fullArt"]) cards.push({ ...model.defaults, era: "sunAndMoon", supertype: "pokemon", stage, type, gxStyle });
   for (const stage of ["exBasic", "exStage1", "exStage2"])
     for (const type of model.pokemonTypes)
       for (const exVariation of ["standard", "tera"]) cards.push({ ...model.defaults, era: "scarletAndViolet", supertype: "pokemon", stage, type, exVariation });
@@ -80,25 +85,36 @@ test("every supported frame mapping exists at its era source size", () => {
     for (const type of model.pokemonTypes) cards.push({ ...model.defaults, era: "scarletAndViolet", supertype: "pokemon", stage, type });
   for (const stage of ["basic", "stage1", "stage2", "exBasic", "exStage1", "exStage2", "exMegaBasic", "exMegaStage1", "exMegaStage2"])
     for (const type of model.pokemonTypes) cards.push({ ...model.defaults, era: "scarletAndViolet", supertype: "pokemon", stage, type, illustrationStyle: "fullArt" });
+  for (const stage of ["basic", "exBasic"])
+    for (const type of model.pokemonTypes)
+      for (const scarletVariation of ["ancient", "future"])
+        for (const illustrationStyle of ["standard", "fullArt"])
+          cards.push({ ...model.defaults, era: "scarletAndViolet", supertype: "pokemon", stage, type, scarletVariation, illustrationStyle });
+  for (const stage of ["exBasic", "exStage1", "exStage2"])
+    for (const type of model.stellarTeraTypes)
+      for (const illustrationStyle of ["standard", "fullArt"])
+        cards.push({ ...model.defaults, era: "scarletAndViolet", supertype: "pokemon", stage, type, scarletVariation: "stellarTera", illustrationStyle });
   for (const vStyle of ["fullArt", "goldenFullArt"]) for (const type of model.vTypes) cards.push({ ...model.defaults, supertype: "pokemon", stage: "v", type, vStyle });
   for (const vmaxVariation of ["dynamax", "gigantamax"])
     for (const type of model.pokemonTypes) cards.push({ ...model.defaults, supertype: "pokemon", stage: "vmax", type, vmaxVariation });
+  for (const vstarStyle of ["standard", "fullArt"])
+    for (const type of model.vstarTypes) cards.push({ ...model.defaults, supertype: "pokemon", stage: "vstar", type, vstarStyle });
   for (const trainerType of ["item", "tool", "supporter", "stadium"]) cards.push({ ...model.defaults, supertype: "trainer", trainerType, supporterStyle: "standard" });
   cards.push({ ...model.defaults, supertype: "trainer", trainerType: "supporter", supporterStyle: "fullArt" });
   for (const energyCardType of ["base", "special"]) cards.push({ ...model.defaults, supertype: "energy", energyCardType });
   const urls = new Set(cards.map(model.framePath));
-  assert.equal(cards.length, 311);
-  assert.equal(urls.size, 311);
+  assert.equal(cards.length, 633);
+  assert.equal(urls.size, 633);
   for (const card of cards) {
     const url = model.framePath(card),
       file = publicFile(url);
     assert.ok(fs.existsSync(file), url);
     assert.deepEqual(
       imageSize(file),
-      card.supertype === "pokemon" && card.era === "scarletAndViolet" ? [745, 1040] : url.endsWith("/supporter-full-art.png") ? [748, 1038] : [747, 1038],
+      card.supertype === "pokemon" && (["scarletAndViolet", "sunAndMoon", "xAndYBlackAndWhite"].includes(card.era) || card.stage === "vstar") ? [745, 1040] : url.endsWith("/supporter-full-art.png") ? [748, 1038] : [747, 1038],
       url,
     );
-    assert.deepEqual(model.frameSourceSize(card), card.supertype === "pokemon" && card.era === "scarletAndViolet" ? { width: 745, height: 1040 } : { width: 747, height: 1038 });
+    assert.deepEqual(model.frameSourceSize(card), card.supertype === "pokemon" && (["scarletAndViolet", "sunAndMoon", "xAndYBlackAndWhite"].includes(card.era) || card.stage === "vstar") ? { width: 745, height: 1040 } : { width: 747, height: 1038 });
   }
 });
 test("all selectable energy and rarity icons are local valid images", () => {
@@ -114,7 +130,16 @@ test("all selectable energy and rarity icons are local valid images", () => {
   const abilitySymbol = publicFile("/pokemon-card-creator/icons/ability-scarlet-violet.webp");
   assert.ok(fs.existsSync(abilitySymbol));
   assert.deepEqual(imageSize(abilitySymbol), [183, 39]);
-  for (const era of ["swordAndShield", "scarletAndViolet"])
+  const sunMoonAbilitySymbol = publicFile("/pokemon-card-creator/icons/ability-sun-and-moon.webp");
+  assert.ok(fs.existsSync(sunMoonAbilitySymbol));
+  assert.deepEqual(imageSize(sunMoonAbilitySymbol), [161, 34]);
+  const gxNameSymbol = publicFile("/pokemon-card-creator/icons/gx-sun-and-moon.webp");
+  assert.ok(fs.existsSync(gxNameSymbol));
+  assert.ok(imageSize(gxNameSymbol)[0] > 0);
+  const gxMoveBackground = publicFile("/pokemon-card-creator/icons/gx-move-sun-and-moon.png");
+  assert.ok(fs.existsSync(gxMoveBackground));
+  assert.deepEqual(imageSize(gxMoveBackground), [698, 59]);
+  for (const era of ["swordAndShield", "scarletAndViolet", "sunAndMoon"])
     for (const type of model.pokemonTypes) {
       const url = model.typeIconPath(type, era),
         file = publicFile(url);
@@ -134,6 +159,7 @@ test("modern set marks follow the selected card era", () => {
   for (const [card, size] of [
     [{ ...model.defaults }, [40, 40]],
     [{ ...model.defaults, era: "scarletAndViolet" }, [40, 23]],
+    [{ ...model.defaults, era: "sunAndMoon" }, [500, 500]],
     [{ ...model.defaults, supertype: "trainer", era: "scarletAndViolet" }, [40, 40]],
   ]) {
     const url = model.setMarkPath(card),
@@ -143,23 +169,31 @@ test("modern set marks follow the selected card era", () => {
   }
   assert.equal(model.defaults.setMark, "none");
   assert.equal(model.defaults.copyrightText, "©2026 Pokémon / Nintendo / Creatures / GAME FREAK");
+  assert.equal(model.copyrightDefaults.sunAndMoon, "©2017 Pokémon");
   assert.equal(model.rarityPath("none"), "/pokemon-card-creator/icons/rarities/none.png");
 });
 test("type availability matches supplied V assets", () => {
   assert.deepEqual(model.availableTypes("v"), model.vTypes);
   assert.equal(model.availableTypes("v").includes("dragon"), false);
   assert.equal(model.availableTypes("v").includes("fairy"), false);
-  for (const stage of ["basic", "stage1", "stage2", "vmax", "exBasic", "exStage1", "exStage2", "exMegaBasic", "exMegaStage1", "exMegaStage2"])
+  assert.equal(model.availableTypes("vstar").includes("dragon"), true);
+  assert.equal(model.availableTypes("vstar").includes("fairy"), false);
+  assert.deepEqual(model.availableTypes("exBasic", "stellarTera"), model.stellarTeraTypes);
+  assert.equal(model.availableTypes("exBasic", "stellarTera").includes("fairy"), false);
+  for (const stage of ["basic", "stage1", "stage2", "gxBasic", "gxStage1", "gxStage2", "gxTagTeam", "vmax", "exBasic", "exStage1", "exStage2", "exMegaBasic", "exMegaStage1", "exMegaStage2"])
     assert.deepEqual(model.availableTypes(stage), model.pokemonTypes);
 });
-test("era availability exposes only implemented Scarlet and Violet stages", () => {
+test("era availability exposes only implemented stages", () => {
   assert.deepEqual(model.availableStages("scarletAndViolet"), ["basic", "stage1", "stage2", "exBasic", "exStage1", "exStage2", "exMegaBasic", "exMegaStage1", "exMegaStage2"]);
-  assert.deepEqual(model.availableStages("swordAndShield"), ["basic", "stage1", "stage2", "v", "vmax"]);
+  assert.deepEqual(model.availableStages("swordAndShield"), ["basic", "stage1", "stage2", "v", "vmax", "vstar"]);
+  assert.deepEqual(model.availableStages("sunAndMoon"), ["basic", "stage1", "stage2", "gxBasic", "gxStage1", "gxStage2", "gxTagTeam"]);
+  assert.deepEqual(model.availableStages("xAndYBlackAndWhite"), ["basic", "stage1", "stage2"]);
 });
 test("evolution portraits have centered crop defaults and evolved-stage eligibility", () => {
   assert.deepEqual([model.defaults.evolutionArtX, model.defaults.evolutionArtY, model.defaults.evolutionArtZoom], [0.5, 0.5, 1]);
-  for (const stage of ["stage1", "stage2", "exStage1", "exStage2", "exMegaStage1", "exMegaStage2"]) assert.equal(model.isEvolvedStage(stage), true, stage);
-  for (const stage of ["basic", "v", "vmax", "exBasic", "exMegaBasic"]) assert.equal(model.isEvolvedStage(stage), false, stage);
+  for (const stage of ["stage1", "stage2", "gxStage1", "gxStage2", "vstar", "exStage1", "exStage2", "exMegaStage1", "exMegaStage2"]) assert.equal(model.isEvolvedStage(stage), true, stage);
+  for (const stage of ["basic", "gxBasic", "gxTagTeam", "v", "vmax", "exBasic", "exMegaBasic"]) assert.equal(model.isEvolvedStage(stage), false, stage);
+  for (const stage of ["gxBasic", "gxStage1", "gxStage2", "gxTagTeam"]) assert.equal(model.isGxStage(stage), true, stage);
 });
 test("download filenames are family-aware and filesystem-safe", () => {
   assert.equal(model.pokemonDownloadFilename({ ...model.defaults, name: "Flabébé / Test" }, 0), "pokemon-flabebe-test-300ppi-0mm-bleed.png");
