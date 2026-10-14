@@ -8,10 +8,14 @@ import {
   defaults,
   energyCardTypeLabels,
   eraLabels,
+  exEraVariationsForStage,
   isEvolvedStage,
   isExStage,
   isGxStage,
+  isLegacyExStage,
   isStandardExStage,
+  isXyBlackWhiteExStage,
+  isXyBlackWhiteMegaStage,
   labels,
   pokemonDownloadFilename,
   pokemonTypes,
@@ -29,11 +33,25 @@ import styles from "./pokemon.module.css";
 function pokemonPreviewSuffix(card: PokemonCard) {
   const variationLabel = card.scarletVariation === "ancient" ? "Ancient" : card.scarletVariation === "future" ? "Future" : "Stellar Tera";
   const variation = supportsScarletVariation(card) && card.scarletVariation !== "standard" ? ` · ${variationLabel}` : isStandardExStage(card.stage) && card.exVariation === "tera" ? " · Tera" : "";
+  const xyVariation = isXyBlackWhiteExStage(card.stage) && card.xyBlackWhiteVariation === "teamPlasma" ? " · Team Plasma" : "";
+  const legacyVariationLabels: Record<PokemonCard["exEraVariation"], string> = {
+    standard: "",
+    deltaSpecies: "Delta Species",
+    goldStar: "Gold Star",
+    deltaGoldStar: "Delta Gold Star",
+    holonEnergy: "Holon Energy",
+    holonRainbow: "Holon Rainbow",
+    teamAqua: "Team Aqua",
+    teamMagma: "Team Magma",
+    teamRocket: "Team Rocket",
+  };
+  const legacyVariation = card.era === "ex" && card.exEraVariation !== "standard" ? ` · ${legacyVariationLabels[card.exEraVariation]}` : "";
+  const legacySecondary = card.era === "ex" && card.exSecondaryType !== "none" ? ` / ${labels[card.exSecondaryType]}` : "";
   const fullArt =
     (supportsFullArt(card) && card.illustrationStyle === "fullArt") ||
     (isGxStage(card.stage) && card.gxStyle === "fullArt") ||
     (card.stage === "vstar" && card.vstarStyle === "fullArt");
-  return variation + (fullArt ? " · Full Art" : "");
+  return legacySecondary + variation + xyVariation + legacyVariation + (fullArt ? " · Full Art" : "");
 }
 
 export default function PokemonEditor() {
@@ -177,11 +195,14 @@ export default function PokemonEditor() {
                       era,
                       stage: availableStages(era).includes(old.stage) ? old.stage : "basic",
                       scarletVariation: era === "scarletAndViolet" ? old.scarletVariation : "standard",
+                      xyBlackWhiteVariation: era === "xAndYBlackAndWhite" ? old.xyBlackWhiteVariation : "standard",
+                      exEraVariation: era === "ex" ? old.exEraVariation : "standard",
+                      exSecondaryType: era === "ex" && (old.stage === "basic" || old.stage === "stage1" || old.stage === "stage2") ? old.exSecondaryType : "none",
                       copyrightText: Object.values(copyrightDefaults).includes(old.copyrightText) ? copyrightDefaults[era] : old.copyrightText,
                     }));
                   }}
                 >
-                  {(["swordAndShield", "scarletAndViolet", "sunAndMoon", "xAndYBlackAndWhite"] as const).map((value) => (
+                  {(["swordAndShield", "scarletAndViolet", "sunAndMoon", "xAndYBlackAndWhite", "ex", "exECard"] as const).map((value) => (
                     <option key={value} value={value}>
                       {eraLabels[value]}
                     </option>
@@ -192,7 +213,7 @@ export default function PokemonEditor() {
                 <div className={styles.field}>
                   <label htmlFor="pk-type">Energy type</label>
                   <select id="pk-type" value={card.type} onChange={(e) => set("type", e.target.value as PokemonCard["type"])}>
-                    {availableTypes(card.stage, card.scarletVariation).map((v) => (
+                    {availableTypes(card.stage, card.scarletVariation, card.xyBlackWhiteVariation, card.era, card.exEraVariation, card.exSecondaryType).map((v) => (
                       <option key={v} value={v}>
                         {labels[v]}
                       </option>
@@ -208,8 +229,10 @@ export default function PokemonEditor() {
                       const stage = e.target.value as PokemonCard["stage"];
                       setCard((old) => {
                         const scarletVariation = scarletVariationsForStage(stage).includes(old.scarletVariation) ? old.scarletVariation : "standard";
-                        const types = availableTypes(stage, scarletVariation);
-                        return { ...old, stage, scarletVariation, type: types.includes(old.type) ? old.type : "colorless" };
+                        const exSecondaryType = old.era === "ex" && (stage === "basic" || stage === "stage1" || stage === "stage2") ? old.exSecondaryType : "none";
+                        const exEraVariation = old.era === "ex" && exEraVariationsForStage(stage, exSecondaryType).includes(old.exEraVariation) ? old.exEraVariation : "standard";
+                        const types = availableTypes(stage, scarletVariation, old.xyBlackWhiteVariation, old.era, exEraVariation, exSecondaryType);
+                        return { ...old, stage, scarletVariation, exEraVariation, exSecondaryType, type: types.includes(old.type) ? old.type : (types[0] ?? "colorless") };
                       });
                     }}
                   >
@@ -233,7 +256,7 @@ export default function PokemonEditor() {
                         ...old,
                         scarletVariation,
                         exVariation: scarletVariation === "standard" ? old.exVariation : "standard",
-                        type: availableTypes(old.stage, scarletVariation).includes(old.type) ? old.type : "colorless",
+                        type: availableTypes(old.stage, scarletVariation, old.xyBlackWhiteVariation, old.era, old.exEraVariation, old.exSecondaryType).includes(old.type) ? old.type : "colorless",
                       }));
                     }}
                   >
@@ -241,6 +264,79 @@ export default function PokemonEditor() {
                     {(card.stage === "basic" || card.stage === "exBasic") && <option value="ancient">Ancient</option>}
                     {(card.stage === "basic" || card.stage === "exBasic") && <option value="future">Future</option>}
                     {isStandardExStage(card.stage) && <option value="stellarTera">Stellar Tera</option>}
+                  </select>
+                </div>
+              )}
+              {isXyBlackWhiteExStage(card.stage) && (
+                <div className={styles.field}>
+                  <label htmlFor="pk-xybw-variation">Pokémon-EX variation</label>
+                  <select
+                    id="pk-xybw-variation"
+                    value={card.xyBlackWhiteVariation}
+                    onChange={(e) => {
+                      const xyBlackWhiteVariation = e.target.value as PokemonCard["xyBlackWhiteVariation"];
+                      setCard((old) => ({
+                        ...old,
+                        xyBlackWhiteVariation,
+                        type: availableTypes(old.stage, old.scarletVariation, xyBlackWhiteVariation, old.era, old.exEraVariation, old.exSecondaryType).includes(old.type) ? old.type : "colorless",
+                      }));
+                    }}
+                  >
+                    <option value="standard">Standard Pokémon-EX</option>
+                    <option value="teamPlasma">Team Plasma Pokémon-EX</option>
+                  </select>
+                </div>
+              )}
+              {card.era === "ex" && (card.stage === "basic" || card.stage === "stage1" || card.stage === "stage2") && (
+                <div className={styles.field}>
+                  <label htmlFor="pk-ex-secondary-type">Secondary type</label>
+                  <select
+                    id="pk-ex-secondary-type"
+                    value={card.exSecondaryType}
+                    onChange={(e) => {
+                      const exSecondaryType = e.target.value as PokemonCard["exSecondaryType"];
+                      setCard((old) => {
+                        const exEraVariation = exEraVariationsForStage(old.stage, exSecondaryType).includes(old.exEraVariation) ? old.exEraVariation : "standard";
+                        const types = availableTypes(old.stage, old.scarletVariation, old.xyBlackWhiteVariation, old.era, exEraVariation, exSecondaryType);
+                        return { ...old, exSecondaryType, exEraVariation, type: types.includes(old.type) ? old.type : (types[0] ?? "colorless") };
+                      });
+                    }}
+                  >
+                    <option value="none">None</option>
+                    <option value="dark">Darkness</option>
+                    <option value="metal">Metal</option>
+                  </select>
+                </div>
+              )}
+              {card.era === "ex" && (
+                <div className={styles.field}>
+                  <label htmlFor="pk-ex-era-variation">EX-era variation</label>
+                  <select
+                    id="pk-ex-era-variation"
+                    value={card.exEraVariation}
+                    onChange={(e) => {
+                      const exEraVariation = e.target.value as PokemonCard["exEraVariation"];
+                      setCard((old) => {
+                        const types = availableTypes(old.stage, old.scarletVariation, old.xyBlackWhiteVariation, old.era, exEraVariation, old.exSecondaryType);
+                        return { ...old, exEraVariation, type: types.includes(old.type) ? old.type : (types[0] ?? "colorless") };
+                      });
+                    }}
+                  >
+                    {exEraVariationsForStage(card.stage, card.exSecondaryType).map((value) => (
+                      <option key={value} value={value}>
+                        {{
+                          standard: "Standard",
+                          deltaSpecies: "Delta Species",
+                          goldStar: "Gold Star",
+                          deltaGoldStar: "Delta Gold Star",
+                          holonEnergy: "Holon Energy",
+                          holonRainbow: "Holon Rainbow",
+                          teamAqua: "Team Aqua",
+                          teamMagma: "Team Magma",
+                          teamRocket: "Team Rocket",
+                        }[value]}
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}
@@ -289,7 +385,7 @@ export default function PokemonEditor() {
                   </select>
                 </div>
               )}
-              {isStandardExStage(card.stage) && card.scarletVariation === "standard" && (
+              {card.era === "scarletAndViolet" && isStandardExStage(card.stage) && card.scarletVariation === "standard" && (
                 <div className={styles.field}>
                   <label htmlFor="pk-ex-variation">ex frame style</label>
                   <select
@@ -418,7 +514,17 @@ export default function PokemonEditor() {
                 </div>
                 <TypeSelect label="Retreat energy" value={card.retreatType} onChange={(v) => set("retreatType", v)} />
               </div>
-              {card.stage !== "v" && card.stage !== "vmax" && card.stage !== "vstar" && !isExStage(card.stage) && !isGxStage(card.stage) && card.illustrationStyle !== "fullArt" && (
+              {card.stage !== "v" &&
+                card.stage !== "vmax" &&
+                card.stage !== "vstar" &&
+                !isExStage(card.stage) &&
+                !isLegacyExStage(card.stage) &&
+                !isXyBlackWhiteExStage(card.stage) &&
+                !isXyBlackWhiteMegaStage(card.stage) &&
+                !isGxStage(card.stage) &&
+                card.era !== "ex" &&
+                card.era !== "exECard" &&
+                card.illustrationStyle !== "fullArt" && (
                 <>
                   <DexFields card={card} set={set} />
                   {text("flavorText", "Flavor text", true)}
