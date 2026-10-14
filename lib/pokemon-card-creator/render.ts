@@ -732,8 +732,22 @@ async function renderSunMoonGxPokemon(ctx: CanvasRenderingContext2D, card: Pokem
   ].filter(([moveName]) => Boolean(moveName));
   const firstY = card.abilityName ? 645 : regularMoves.length > 1 ? 610 : 665;
   const gap = card.abilityName && regularMoves.length > 1 ? 80 : 90;
+  const outlineRegularAttackText = fullArt || !darkness;
   for (const [index, move] of regularMoves.entries())
-    await drawMove(ctx, move[0], move[1], move[2], move[3], firstY + index * gap, ink, true, card.era, regularMoves.length > 1 || card.abilityName ? 1 : 2, true);
+    await drawMove(
+      ctx,
+      move[0],
+      move[1],
+      move[2],
+      move[3],
+      firstY + index * gap,
+      ink,
+      outlineRegularAttackText,
+      card.era,
+      regularMoves.length > 1 || card.abilityName ? 1 : 2,
+      outlineRegularAttackText,
+      true,
+    );
   await drawSunMoonGxMove(ctx, card);
 
   ctx.fillStyle = "#111";
