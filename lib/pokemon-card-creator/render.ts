@@ -66,6 +66,7 @@ export async function preload(card: PokemonCard) {
   }
   paths.push(typeIconPath(card.weakness, card.era), typeIconPath(card.retreatType, card.era));
   if (card.era === "scarletAndViolet" && card.abilityName) paths.push("/pokemon-card-creator/icons/ability-scarlet-violet.webp");
+  if (card.era === "swordAndShield" && card.abilityName) paths.push("/pokemon-card-creator/icons/ability-sword-and-shield.webp");
   if (card.era === "sunAndMoon" && card.abilityName) paths.push("/pokemon-card-creator/icons/ability-sun-and-moon.webp");
   if (card.era === "xAndYBlackAndWhite" && card.abilityName) paths.push("/pokemon-card-creator/icons/ability-x-and-y-black-white.webp");
   if ((card.era === "ex" || card.era === "exECard") && card.abilityName) paths.push("/pokemon-card-creator/icons/poke-power-legacy.webp");
@@ -467,10 +468,10 @@ function drawEvolutionArt(ctx: CanvasRenderingContext2D, card: PokemonCard, art:
     xyBlackWhite = card.era === "xAndYBlackAndWhite",
     legacy = card.era === "ex" || card.era === "exECard",
     vstar = card.stage === "vstar",
-    x = scarlet ? 27 : sunMoon ? 32 : xyBlackWhite ? 32 : legacy ? 32 : vstar ? 31 : 36,
-    y = scarlet ? 74 : sunMoon ? 77 : xyBlackWhite ? 68 : legacy ? 436 : vstar ? 80 : 84,
-    w = scarlet ? 94 : sunMoon ? 81 : xyBlackWhite ? 105 : legacy ? 105 : vstar ? 87 : 80,
-    h = scarlet ? 90 : sunMoon ? 82 : xyBlackWhite ? 93 : legacy ? 105 : vstar ? 82 : 80;
+    x = scarlet ? 27 : sunMoon ? 32 : xyBlackWhite ? 32 : legacy ? 38 : vstar ? 31 : 36,
+    y = scarlet ? 74 : sunMoon ? 77 : xyBlackWhite ? 68 : legacy ? 472 : vstar ? 80 : 84,
+    w = scarlet ? 94 : sunMoon ? 81 : xyBlackWhite ? 105 : legacy ? 94 : vstar ? 87 : 80,
+    h = scarlet ? 90 : sunMoon ? 82 : xyBlackWhite ? 93 : legacy ? 78 : vstar ? 82 : 80;
   ctx.save();
   ctx.beginPath();
   if (scarlet || xyBlackWhite || legacy) ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
@@ -585,7 +586,7 @@ async function renderXyBlackWhitePokemon(ctx: CanvasRenderingContext2D, card: Po
   for (let index = 0; index < Math.min(5, card.retreat); index++) drawIcon(ctx, await image(typeIconPath(card.retreatType, card.era)), 152 + index * 32, 954, 30);
 
   ctx.fillStyle = ink;
-  drawCenteredFlavor(ctx, card.flavorText, 353, 888, 300, 85, 19, 19, "left");
+  drawCenteredFlavor(ctx, card.flavorText, 371, 888, 264, 85, 19, 19, "left");
   ctx.font = "italic 700 13.4px PokemonFuturaOblique,Arial,sans-serif";
   ctx.fillText(`Illus. ${card.illustrator}`, 421, 1001, 155);
   await drawSetSlot(ctx, card, 671, 971, 28, 28, ink);
@@ -1024,7 +1025,8 @@ async function drawSunMoonGxMove(ctx: CanvasRenderingContext2D, card: PokemonCar
 async function renderSunMoonGxPokemon(ctx: CanvasRenderingContext2D, card: PokemonCard) {
   const fullArt = card.gxStyle === "fullArt",
     darkness = card.type === "dark",
-    ink = fullArt ? "#111" : darkness ? "#fff" : "#111";
+    ink = fullArt ? "#111" : darkness ? "#fff" : "#111",
+    outlineRegularAttackText = fullArt || !darkness;
   ctx.textBaseline = "alphabetic";
   ctx.lineJoin = "round";
   ctx.strokeStyle = "#fff";
@@ -1078,13 +1080,13 @@ async function renderSunMoonGxPokemon(ctx: CanvasRenderingContext2D, card: Pokem
     ctx.lineWidth = 4;
     ctx.fillStyle = "#a30000";
     ctx.font = "700 27px PokemonGillCondensed,PokemonGill,Arial,sans-serif";
-    if (fullArt) ctx.strokeText(card.abilityName, 240, 568);
+    if (outlineRegularAttackText) ctx.strokeText(card.abilityName, 240, 568);
     ctx.fillText(card.abilityName, 240, 568);
     ctx.fillStyle = ink;
     ctx.font = "400 18px PokemonGill,Arial,sans-serif";
     for (const [index, line] of lineWrap(ctx, card.abilityText, 625, 2).entries()) {
       const y = 600 + index * 21;
-      if (fullArt) ctx.strokeText(line, 59, y);
+      if (outlineRegularAttackText) ctx.strokeText(line, 59, y);
       ctx.fillText(line, 59, y);
     }
     ctx.restore();
@@ -1096,7 +1098,6 @@ async function renderSunMoonGxPokemon(ctx: CanvasRenderingContext2D, card: Pokem
   ].filter(([moveName]) => Boolean(moveName));
   const firstY = card.abilityName ? 645 : regularMoves.length > 1 ? 610 : 665;
   const gap = card.abilityName && regularMoves.length > 1 ? 80 : 90;
-  const outlineRegularAttackText = fullArt || !darkness;
   for (const [index, move] of regularMoves.entries())
     await drawMove(
       ctx,
@@ -1303,13 +1304,20 @@ export async function renderPokemon(canvas: HTMLCanvasElement, card: PokemonCard
     return;
   }
   const ink = card.type === "dark" && !fullArt ? "#fff" : "#111",
-    titleInk = card.stage === "v" ? "#fff" : ink,
+    vmax = card.stage === "vmax",
+    titleInk = card.stage === "v" || vmax ? "#fff" : ink,
     nameBaseline = 81;
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = card.stage === "v" ? titleInk : defaultNameInk(card, ink);
+  if (vmax) {
+    ctx.strokeStyle = "#fff";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = 5;
+  }
   let titleX = 142;
   if (card.subname) {
     ctx.font = "700 25px PokemonGill,Arial,sans-serif";
+    if (vmax) ctx.strokeText(card.subname, titleX, nameBaseline);
     ctx.fillText(card.subname, titleX, nameBaseline);
     titleX += ctx.measureText(card.subname).width + 10;
   }
@@ -1322,10 +1330,12 @@ export async function renderPokemon(canvas: HTMLCanvasElement, card: PokemonCard
     if (ctx.measureText(name).width <= 390 - (titleX - 142)) break;
     nameSize--;
   }
+  if (vmax) ctx.strokeText(name, titleX, nameBaseline);
   ctx.fillText(name, titleX, nameBaseline);
   titleX += ctx.measureText(name).width + 10;
   if (card.suffix) {
     ctx.font = "700 25px PokemonGill,Arial,sans-serif";
+    if (vmax) ctx.strokeText(card.suffix, titleX, nameBaseline);
     ctx.fillText(card.suffix, titleX, nameBaseline);
     titleX += ctx.measureText(card.suffix).width + 8;
   }
@@ -1339,17 +1349,30 @@ export async function renderPokemon(canvas: HTMLCanvasElement, card: PokemonCard
   ctx.font = "700 17px PokemonGillExtraBold,PokemonGill,Arial,sans-serif";
   ctx.fillText("HP", 642 - hpWidth, 87);
   ctx.textAlign = "left";
-  if (card.stage !== "basic" && card.evolvesFrom) {
+  if ((card.stage === "stage1" || card.stage === "stage2") && card.evolvesFrom) {
     ctx.font = "700 15px PokemonGill,Arial,sans-serif";
-    ctx.fillText(`Evolves from ${card.evolvesFrom}`, 145, 57);
+    ctx.fillText(`Evolves from ${card.evolvesFrom}`, 145, 119, 280);
   }
   if (card.abilityName) {
+    ctx.drawImage(await image("/pokemon-card-creator/icons/ability-sword-and-shield.webp"), 54, 536, 183, 39);
+    ctx.save();
+    if (fullArt) {
+      ctx.strokeStyle = "#fff";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = 4;
+    }
     ctx.fillStyle = "#a30000";
     ctx.font = "700 27px PokemonGillCondensed,PokemonGill,Arial,sans-serif";
-    ctx.fillText(card.abilityName, 90, 568);
+    if (fullArt) ctx.strokeText(card.abilityName, 245, 568);
+    ctx.fillText(card.abilityName, 245, 568);
     ctx.fillStyle = ink;
     ctx.font = "400 18px PokemonGill,Arial,sans-serif";
-    wrap(ctx, card.abilityText, 58, 596, 630, 20, 2);
+    for (const [index, line] of lineWrap(ctx, card.abilityText, 630, 2).entries()) {
+      const y = 596 + index * 20;
+      if (fullArt) ctx.strokeText(line, 58, y);
+      ctx.fillText(line, 58, y);
+    }
+    ctx.restore();
   }
   ctx.fillStyle = ink;
   const moveY = fullArt ? (card.move2Name ? 650 : 790) : card.abilityName ? 690 : card.move2Name ? 635 : 713;
@@ -1362,7 +1385,8 @@ export async function renderPokemon(canvas: HTMLCanvasElement, card: PokemonCard
     ctx.fillText(dexStatsText(card), 374, 512);
     ctx.textAlign = "left";
   }
-  const footerInk = fullArt ? "#fff" : ink;
+  const outlinedVFooter = card.stage === "v" || card.stage === "vmax",
+    footerInk = outlinedVFooter ? "#111" : fullArt ? "#fff" : ink;
   ctx.fillStyle = footerInk;
   drawIcon(ctx, await image(typeIconPath(card.weakness, card.era)), 119, 894, 27);
   if (card.resistance !== "none") drawIcon(ctx, await image(typeIconPath(card.resistance, card.era)), 313, 894, 27);
@@ -1370,9 +1394,11 @@ export async function renderPokemon(canvas: HTMLCanvasElement, card: PokemonCard
   ctx.fillText(card.weaknessAmount, 149, 915);
   if (card.resistance !== "none") ctx.fillText(card.resistanceAmount, 343, 915);
   for (let i = 0; i < card.retreat; i++) drawIcon(ctx, await image(typeIconPath(card.retreatType, card.era)), 540 + i * 28, 894, 25);
-  await drawSwordShieldCollector(ctx, card, footerInk, fullArt);
-  ctx.fillStyle = ink;
-  drawCenteredFlavor(ctx, card.flavorText, 337, 933, 370, 78, 17, 22, "left");
+  await drawSwordShieldCollector(ctx, card, footerInk, fullArt || outlinedVFooter);
+  if (card.stage !== "v" && card.stage !== "vmax") {
+    ctx.fillStyle = ink;
+    drawCenteredFlavor(ctx, card.flavorText, 337, 933, 370, 78, 17, 22, "left");
+  }
 }
 async function drawScarletAbilityAndMoves(ctx: CanvasRenderingContext2D, card: PokemonCard, ink: string, outline: boolean) {
   const hasAbility = Boolean(card.abilityName),
@@ -1381,15 +1407,21 @@ async function drawScarletAbilityAndMoves(ctx: CanvasRenderingContext2D, card: P
     ctx.drawImage(await image("/pokemon-card-creator/icons/ability-scarlet-violet.webp"), 54, 553, 183, 39);
     ctx.save();
     if (outline) {
-      ctx.shadowColor = "#fff";
-      ctx.shadowBlur = 4;
+      ctx.strokeStyle = "#fff";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = 4;
     }
     ctx.fillStyle = "#a30000";
     ctx.font = "700 37px PokemonGillCondensed,PokemonGill,Arial,sans-serif";
+    if (outline) ctx.strokeText(card.abilityName, 245, 585);
     ctx.fillText(card.abilityName, 245, 585);
     ctx.fillStyle = ink;
     ctx.font = "400 28px PokemonGill,Arial,sans-serif";
-    wrap(ctx, card.abilityText, 59, 624, 628, 30, 2);
+    for (const [index, line] of lineWrap(ctx, card.abilityText, 628, 2).entries()) {
+      const y = 624 + index * 30;
+      if (outline) ctx.strokeText(line, 59, y);
+      ctx.fillText(line, 59, y);
+    }
     ctx.restore();
   }
   const moveY = hasAbility ? (hasSecond ? 690 : 735) : hasSecond ? 650 : 710,
@@ -1514,9 +1546,23 @@ async function renderScarletExPokemon(ctx: CanvasRenderingContext2D, card: Pokem
   ctx.fillStyle = ink;
   ctx.textAlign = "right";
   ctx.font = "700 56px PokemonFutura,PokemonGill,Arial,sans-serif";
+  if (fullArt) {
+    ctx.save();
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 5;
+    ctx.strokeText(card.hp || "—", 646, 82);
+    ctx.restore();
+  }
   ctx.fillText(card.hp || "—", 646, 82);
   const hpWidth = ctx.measureText(card.hp || "—").width;
   ctx.font = "700 21px PokemonGillExtraBold,PokemonGill,Arial,sans-serif";
+  if (fullArt) {
+    ctx.save();
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 4;
+    ctx.strokeText("HP", 640 - hpWidth, 82);
+    ctx.restore();
+  }
   ctx.fillText("HP", 640 - hpWidth, 82);
   ctx.textAlign = "left";
   if (isEvolvedStage(card.stage) && card.evolvesFrom) {
@@ -1524,12 +1570,23 @@ async function renderScarletExPokemon(ctx: CanvasRenderingContext2D, card: Pokem
     ctx.fillText(`Evolves from ${card.evolvesFrom}`, 144, 113);
   }
   await drawScarletAbilityAndMoves(ctx, card, ink, fullArt);
-  drawIcon(ctx, await image(typeIconPath(card.weakness, card.era)), 117, 895, 27);
-  if (card.resistance !== "none") drawIcon(ctx, await image(typeIconPath(card.resistance, card.era)), 312, 895, 27);
+  ctx.save();
+  if (fullArt) {
+    ctx.strokeStyle = "#fff";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = 3.5;
+  }
+  drawIcon(ctx, await image(typeIconPath(card.weakness, card.era)), 117, 895, 27, fullArt);
+  if (card.resistance !== "none") drawIcon(ctx, await image(typeIconPath(card.resistance, card.era)), 312, 895, 27, fullArt);
   ctx.font = "700 25px PokemonFutura,PokemonGill,Arial,sans-serif";
+  if (fullArt) ctx.strokeText(card.weaknessAmount, 148, 918);
   ctx.fillText(card.weaknessAmount, 148, 918);
-  if (card.resistance !== "none") ctx.fillText(card.resistanceAmount, 343, 918);
-  for (let i = 0; i < Math.min(5, card.retreat); i++) drawIcon(ctx, await image(typeIconPath(card.retreatType, card.era)), 537 + i * 29, 895, 27);
+  if (card.resistance !== "none") {
+    if (fullArt) ctx.strokeText(card.resistanceAmount, 343, 918);
+    ctx.fillText(card.resistanceAmount, 343, 918);
+  }
+  for (let i = 0; i < Math.min(5, card.retreat); i++) drawIcon(ctx, await image(typeIconPath(card.retreatType, card.era)), 537 + i * 29, 895, 27, fullArt);
+  ctx.restore();
   const footerInk = card.type === "dark" && !fullArt ? "#fff" : ink;
   await drawScarletCollector(ctx, card, footerInk, true, fullArt);
 }
