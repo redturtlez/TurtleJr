@@ -10,6 +10,7 @@ import { useNavbar } from "./use-navbar";
 
 const primaryLinks = [
   { href: "/", label: "Home" },
+  { href: "/art", label: "Art" },
   { href: "/about", label: "About" },
   { href: "/projects", label: "Projects" },
   { href: "/card-creator", label: "Card Studio" },

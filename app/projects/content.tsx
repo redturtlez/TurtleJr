@@ -20,6 +20,9 @@ Built MVC and database layers, wrote JUnit tests, contributed to the Angular int
 ];
 
 const personal = [
+  { title: "Art", date: "Ongoing creative practice", desc: `A growing collection of physical artwork, including custom Yu-Gi-Oh and Pokémon cards, hand-painted full arts, Pokémon card mosaics, 3D-printed paintings, and larger canvas work.
+
+The gallery organizes each medium into its own collection while leaving room to document individual titles, materials, and stories as new photographs are added.`, url: "/art", linkLabel: "Explore the art", tags: ["Painting", "Custom Cards", "Physical Art"] },
   { title: "Fruit Fly Plays Yu-Gi-Oh!", date: "Personal experiment", desc: `An experimental AI project combining a fruit fly brain-derived neural architecture with an open-source Yu-Gi-Oh engine. Trained across 40,000 simulated games toward the goal of achieving a first-turn win.`, url: "/projects/fruit-fly-yugioh", linkLabel: "View the experiment", tags: ["Artificial Intelligence", "Neural Networks", "Game Simulation"] },
   { title: "Turtle Jr", date: "Apr. 2023 – Present", desc: `TurtleJr.dev is a mobile-first portfolio and progressive web app built with Next.js, TypeScript, and Tailwind CSS.
 

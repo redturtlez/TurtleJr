@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { generateMetadata } from "../../lib/server";
 import Resume from "./resume";
 import styles from "./about.module.css";
@@ -22,6 +23,10 @@ export default function AboutPage() {
           <div className={styles.resume}><small>Experience</small><Resume /></div>
         </aside>
       </div>
+      <section className={styles.artFeature} aria-labelledby="art-feature-heading">
+        <div><span className={styles.number}>02 / The studio</span><h2 id="art-feature-heading">The work does not stop at the screen.</h2></div>
+        <div className={styles.artCopy}><p>Alongside software, I make physical art: custom trading cards, painted Pokémon full arts, card mosaics, 3D-printed paintings, and large-format canvas work. The Art gallery is a growing record of those finished pieces and the ideas behind them.</p><Link href="/art">Explore the art <span aria-hidden="true">↗</span></Link></div>
+      </section>
       <footer className={styles.contact}><span>Have a project or opportunity in mind?</span><a href="mailto:simone.mineo424@gmail.com">simone.mineo424@gmail.com <b aria-hidden="true">↗</b></a></footer>
     </section>
   );

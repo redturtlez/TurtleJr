@@ -1,0 +1,47 @@
+{
+  "categories": [
+    {
+      "slug": "custom-yugioh-cards",
+      "title": "Custom Yu-Gi-Oh Cards",
+      "shortTitle": "Yu-Gi-Oh Cards",
+      "description": "Handmade and customized Yu-Gi-Oh cards, collected together from finished builds and photographed details.",
+      "number": "01"
+    },
+    {
+      "slug": "custom-pokemon-cards",
+      "title": "Custom Pokémon Cards",
+      "shortTitle": "Pokémon Cards",
+      "description": "Original custom Pokémon card projects, including finished fronts, treatments, and physical details.",
+      "number": "02"
+    },
+    {
+      "slug": "mosaic-pokemon-card-art",
+      "title": "Mosaic Pokémon Card Art",
+      "shortTitle": "Pokémon Mosaics",
+      "description": "Pokémon artwork assembled as mosaics from trading-card imagery and carefully arranged fragments.",
+      "number": "03"
+    },
+    {
+      "slug": "custom-pokemon-paint-full-arts",
+      "title": "Custom Pokémon Paint Full Arts",
+      "shortTitle": "Paint Full Arts",
+      "description": "Pokémon cards extended and transformed with hand-painted full-art compositions.",
+      "number": "04"
+    },
+    {
+      "slug": "3d-printed-paintings",
+      "title": "3D Printed Paintings",
+      "shortTitle": "3D Printed Work",
+      "description": "Painted pieces that combine physical 3D-printed forms with color, texture, and finishing work.",
+      "number": "05"
+    },
+    {
+      "slug": "miscellaneous",
+      "title": "Miscellaneous",
+      "shortTitle": "Miscellaneous",
+      "description": "Large-format paintings and other work that sits outside the card-focused collections.",
+      "number": "06"
+    }
+  ],
+  "artworks": []
+}

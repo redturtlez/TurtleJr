@@ -7,6 +7,7 @@
   },
   "scripts": {
     "build": "next build --webpack",
+    "check:art-gallery": "node scripts/art-gallery-check.cjs",
     "check:card-creators": "node scripts/card-creator-check.cjs && node scripts/pokemon-card-creator-check.cjs",
     "dev": "next dev --webpack",
     "postinstall": "prisma generate",
