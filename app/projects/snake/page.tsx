@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { generateMetadata } from "../../../lib/server";
-import SnakeGame from "../../snake/SnakeGame";
+import SnakeGame from "./SnakeGame";
 import styles from "./snake-project.module.css";
 
 export const metadata = generateMetadata({

@@ -240,11 +240,11 @@ if (process.argv.includes('--serve')) {
     const yugioh=fs.readFileSync(path.join(root,'app/card-creator/yugioh/page.tsx'),'utf8');
     const pokemon=fs.readFileSync(path.join(root,'app/card-creator/pokemon/page.tsx'),'utf8');
     assert.doesNotMatch(yugioh+pokemon,/auth\(|auth\.protect|redirect\(|SignedIn/);
-    const middleware=fs.readFileSync(path.join(root,'middleware.ts'),'utf8');
-    assert.match(middleware,/"\/todo\(\.\*\)"/);
-    assert.match(middleware,/"\/budget\(\.\*\)"/);
-    assert.match(middleware,/"\/health\(\.\*\)"/);
-    assert.doesNotMatch(middleware,/"\/card-creator/);
+    const proxy=fs.readFileSync(path.join(root,'proxy.ts'),'utf8');
+    assert.match(proxy,/"\/todo\(\.\*\)"/);
+    assert.match(proxy,/"\/budget\(\.\*\)"/);
+    assert.match(proxy,/"\/health\(\.\*\)"/);
+    assert.doesNotMatch(proxy,/"\/card-creator/);
   });
   test('card values and extreme levels are validated',()=>{
     assert.deepEqual(validateCard(defaults),{});

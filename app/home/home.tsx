@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Github, Linkedin } from "public/svg";
+import { Github, Linkedin } from "@/public/svg";
 import styles from "./home.module.css";
 
 export default function HomePage() {
@@ -23,7 +23,6 @@ export default function HomePage() {
           </dl>
         </div>
         <div className={styles.visual}>
-          <div className={styles.monogram} aria-hidden="true">SIMONÈ</div>
           <div className={styles.portraitCard}>
             <div className={styles.portraitGlow} aria-hidden="true" />
             <Image src="/me.png" className={styles.portrait} fill sizes="(max-width: 760px) 78vw, 430px" alt="Portrait of Simonè Mineo" priority />

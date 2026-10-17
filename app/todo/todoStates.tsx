@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Todo, Todos, userTodo } from "app/todo/todoServer";
+import { Todo, Todos, userTodo } from "@/app/todo/todoServer";
 
 type State = userTodo &
   Todo & {

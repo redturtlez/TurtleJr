@@ -6,8 +6,8 @@ write to `.next`, so running them together can temporarily remove the developmen
 server's generated CSS.
 
 The public `/card-creator/yugioh` page requires no login. `/card-creator` is now the
-shared creator chooser. Existing Clerk middleware still
-protects `/todo` and `/health`; no authentication infrastructure was changed.
+shared creator chooser. Existing Clerk proxy still protects `/todo`, `/budget`,
+and `/health`; no authentication infrastructure was changed.
 
 The page uses the site's shared CSS color variables and is linked from primary
 navigation. Navigation switches to its accessible hamburger layout below 1280px.

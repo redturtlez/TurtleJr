@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Trash } from "public/svg";
+import { Plus, Trash } from "@/public/svg";
 import type { ChangeEvent, ReactNode } from "react";
 import { useProteinCostStore } from "./proteinCostStates";
 import styles from "./protein-cost.module.css";

@@ -1,6 +1,6 @@
 "use client";
 
-import { Arrow } from "public/svg";
+import { Arrow } from "@/public/svg";
 import Link from "next/link";
 import { useState } from "react";
 import styles from "./projects.module.css";

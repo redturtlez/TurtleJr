@@ -1,5 +1,5 @@
 "use client";
-import { Cross } from "public/svg";
+import { Cross } from "@/public/svg";
 import { useState } from "react";
 
 export default function Resume() {
