@@ -13,7 +13,6 @@ const primaryLinks = [
   { href: "/about", label: "About" },
   { href: "/projects", label: "Projects" },
   { href: "/card-creator", label: "Card Studio" },
-  { href: "/snake", label: "Snake" },
   { href: "/proteincost", label: "Protein Cost" },
 ] as const;
 

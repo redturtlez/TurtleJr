@@ -171,6 +171,20 @@ test("all selectable energy and rarity icons are local valid images", () => {
   const gxMoveBackground = publicFile("/pokemon-card-creator/icons/gx-move-sun-and-moon.png");
   assert.ok(fs.existsSync(gxMoveBackground));
   assert.deepEqual(imageSize(gxMoveBackground), [698, 59]);
+  for (const [era, expectedFile, expectedSize] of [
+    ["swordAndShield", "modern.png", [38, 38]],
+    ["scarletAndViolet", "modern.png", [38, 38]],
+    ["sunAndMoon", "modern.png", [38, 38]],
+    ["xAndYBlackAndWhite", "x-and-y-black-white.png", [39, 39]],
+    ["ex", "ex.png", [41, 39]],
+    ["exECard", "ex.png", [41, 39]],
+  ]) {
+    const url = model.noCostIconPath(era),
+      file = publicFile(url);
+    assert.equal(path.basename(url), expectedFile);
+    assert.ok(fs.existsSync(file), url);
+    assert.deepEqual(imageSize(file), expectedSize, url);
+  }
   for (const era of ["swordAndShield", "scarletAndViolet", "sunAndMoon", "xAndYBlackAndWhite", "ex", "exECard"])
     for (const type of era === "ex" || era === "exECard" ? model.legacyTypes : model.pokemonTypes) {
       const url = model.typeIconPath(type, era),

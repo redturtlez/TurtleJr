@@ -353,6 +353,10 @@ export const typeIconPath = (type: PokemonType, era: CardEra = "swordAndShield")
         : era === "ex" || era === "exECard"
           ? `/pokemon-card-creator/icons/types/ex/${type}.webp`
       : `/pokemon-card-creator/icons/types/${type}.png`;
+export const noCostIconPath = (era: CardEra = "swordAndShield") =>
+  `/pokemon-card-creator/icons/types/no-cost/${
+    era === "xAndYBlackAndWhite" ? "x-and-y-black-white" : era === "ex" || era === "exECard" ? "ex" : "modern"
+  }.png`;
 export const frameSourceSize = (card: PokemonCard) =>
   card.supertype === "pokemon" && (card.era === "scarletAndViolet" || card.era === "sunAndMoon" || card.era === "xAndYBlackAndWhite" || card.era === "ex" || card.era === "exECard" || card.stage === "vstar") ? { width: 745, height: 1040 } : { width: 747, height: 1038 };
 export const rarityPath = (rarity: PokemonCard["rarity"]) => `/pokemon-card-creator/icons/rarities/${rarity}.png`;

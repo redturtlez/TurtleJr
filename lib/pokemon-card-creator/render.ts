@@ -9,6 +9,7 @@ import {
   isMegaExStage,
   isXyBlackWhiteExStage,
   isXyBlackWhiteMegaStage,
+  noCostIconPath,
   rarityPath,
   setMarkPath,
   supportsFullArt,
@@ -103,6 +104,13 @@ export async function preload(card: PokemonCard) {
     ...(card.stage === "vstar" && card.vstarPowerType === "attack" ? card.vstarPowerEnergy : []),
   ])
     paths.push(typeIconPath(energy, card.era));
+  if (
+    (card.move1Name && card.move1Energy.length === 0) ||
+    (card.move2Name && card.move2Energy.length === 0) ||
+    (isGxStage(card.stage) && card.gxMoveName && card.gxMoveEnergy.length === 0) ||
+    (card.stage === "vstar" && card.vstarPowerType === "attack" && card.vstarPowerName && card.vstarPowerEnergy.length === 0)
+  )
+    paths.push(noCostIconPath(card.era));
   await Promise.all([...new Set(paths)].map(image));
 }
 function wrap(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, max: number, line: number, limit: number) {
@@ -454,6 +462,21 @@ function attackEnergyStart(nameX: number, iconSize: number, iconGap: number, cou
     reservedLeft = nameX - gutter - maximumGroupWidth;
   return reservedLeft + (maximumGroupWidth - groupWidth) / 2;
 }
+async function drawAttackEnergy(
+  ctx: CanvasRenderingContext2D,
+  energy: PokemonCard["move1Energy"],
+  era: CardEra,
+  nameX: number,
+  y: number,
+  iconSize = 39,
+  iconGap = 41,
+  outlined = false,
+) {
+  const visibleEnergy = energy.slice(0, 4),
+    icons = visibleEnergy.length > 0 ? visibleEnergy.map((type) => typeIconPath(type, era)) : [noCostIconPath(era)],
+    energyStart = attackEnergyStart(nameX, iconSize, iconGap, icons.length);
+  for (const [index, src] of icons.entries()) drawIcon(ctx, await image(src), energyStart + index * iconGap, y, iconSize, outlined);
+}
 function cover(ctx: CanvasRenderingContext2D, art: ImageBitmap, x: number, y: number, w: number, h: number, cropX: number, cropY: number, zoom: number) {
   const scale = Math.max(w / art.width, h / art.height) * zoom;
   const sw = w / scale,
@@ -505,9 +528,7 @@ async function drawXyBlackWhiteMove(
   descriptionLines: number,
 ) {
   if (!name) return;
-  const visibleEnergy = energy.slice(0, 4),
-    energyStart = attackEnergyStart(207, 39, 41, visibleEnergy.length);
-  for (const [index, type] of visibleEnergy.entries()) drawIcon(ctx, await image(typeIconPath(type, card.era)), energyStart + index * 41, y - 32, 39);
+  await drawAttackEnergy(ctx, energy, card.era, 207, y - 32);
   ctx.fillStyle = ink;
   ctx.font = "700 42px PokemonGillCondensed,PokemonGill,Arial,sans-serif";
   ctx.fillText(name, 207, y);
@@ -610,9 +631,7 @@ async function drawXyBlackWhiteExMove(
   descriptionLines: number,
 ) {
   if (!name) return;
-  const visibleEnergy = energy.slice(0, 4),
-    energyStart = attackEnergyStart(207, 39, 41, visibleEnergy.length);
-  for (const [index, type] of visibleEnergy.entries()) drawIcon(ctx, await image(typeIconPath(type, card.era)), energyStart + index * 41, y - 32, 39, outlined);
+  await drawAttackEnergy(ctx, energy, card.era, 207, y - 32, 39, 41, outlined);
   ctx.save();
   ctx.fillStyle = ink;
   if (outlined) {
@@ -789,11 +808,8 @@ async function drawLegacyMove(
   descriptionLines: number,
 ) {
   if (!name) return;
-  const iconSize = 39,
-    iconGap = 41,
-    visibleEnergy = energy.slice(0, 4),
-    energyStart = attackEnergyStart(214, iconSize, iconGap, visibleEnergy.length);
-  for (const [index, type] of visibleEnergy.entries()) drawIcon(ctx, await image(typeIconPath(type, card.era)), energyStart + index * iconGap, y - 32, iconSize);
+  const iconSize = 39;
+  await drawAttackEnergy(ctx, energy, card.era, 214, y - 32, iconSize);
   ctx.fillStyle = ink;
   ctx.font = "700 39px PokemonGillCondensed,PokemonGill,Arial,sans-serif";
   ctx.fillText(name, 214, y);
@@ -985,9 +1001,7 @@ async function drawSunMoonGxMove(ctx: CanvasRenderingContext2D, card: PokemonCar
     titleMaxWidth = 365,
     symbolGap = 9;
   ctx.drawImage(await image("/pokemon-card-creator/icons/gx-move-sun-and-moon.png"), 29, y, 698, 59);
-  const visibleEnergy = card.gxMoveEnergy.slice(0, 4),
-    energyStart = attackEnergyStart(titleX, 39, 41, visibleEnergy.length);
-  for (const [index, type] of visibleEnergy.entries()) drawIcon(ctx, await image(typeIconPath(type, card.era)), energyStart + index * 41, y + 9, 39);
+  await drawAttackEnergy(ctx, card.gxMoveEnergy, card.era, titleX, y + 9);
   ctx.save();
   ctx.fillStyle = "#fff";
   let titleSize = 38;
@@ -1362,20 +1376,32 @@ export async function renderPokemon(canvas: HTMLCanvasElement, card: PokemonCard
       ctx.lineWidth = 4;
     }
     ctx.fillStyle = "#a30000";
-    ctx.font = "700 27px PokemonGillCondensed,PokemonGill,Arial,sans-serif";
+    ctx.font = "700 37px PokemonGillCondensed,PokemonGill,Arial,sans-serif";
     if (fullArt) ctx.strokeText(card.abilityName, 245, 568);
     ctx.fillText(card.abilityName, 245, 568);
     ctx.fillStyle = ink;
-    ctx.font = "400 18px PokemonGill,Arial,sans-serif";
+    ctx.font = "400 28px PokemonGill,Arial,sans-serif";
     for (const [index, line] of lineWrap(ctx, card.abilityText, 630, 2).entries()) {
-      const y = 596 + index * 20;
+      const y = 596 + index * 30;
       if (fullArt) ctx.strokeText(line, 58, y);
       ctx.fillText(line, 58, y);
     }
     ctx.restore();
   }
   ctx.fillStyle = ink;
-  const moveY = fullArt ? (card.move2Name ? 650 : 790) : card.abilityName ? 690 : card.move2Name ? 635 : 713;
+  const moveY = fullArt
+    ? card.abilityName
+      ? card.move2Name
+        ? 690
+        : 735
+      : card.move2Name
+        ? 650
+        : 790
+    : card.abilityName
+      ? 690
+      : card.move2Name
+        ? 635
+        : 713;
   await drawMove(ctx, card.move1Name, card.move1Text, card.move1Damage, card.move1Energy, moveY, ink, fullArt, card.era, 3, fullArt);
   if (card.move2Name) await drawMove(ctx, card.move2Name, card.move2Text, card.move2Damage, card.move2Energy, moveY + 145, ink, fullArt, card.era, 3, fullArt);
   if (!fullArt) {
@@ -1695,10 +1721,8 @@ async function drawMove(
   const scarlet = era === "scarletAndViolet",
     iconSize = 39,
     iconGap = 41,
-    nameX = scarlet ? 240 : 220,
-    visibleEnergy = energy.slice(0, 4),
-    energyStart = attackEnergyStart(nameX, iconSize, iconGap, visibleEnergy.length);
-  for (const [index, type] of visibleEnergy.entries()) drawIcon(ctx, await image(typeIconPath(type, era)), energyStart + index * iconGap, y - iconSize + 7, iconSize, outlineEnergy);
+    nameX = scarlet ? 240 : 220;
+  await drawAttackEnergy(ctx, energy, era, nameX, y - iconSize + 7, iconSize, iconGap, outlineEnergy);
   ctx.save();
   if (outline && !strokeOutline) {
     ctx.shadowColor = "#fff";

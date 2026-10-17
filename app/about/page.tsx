@@ -15,7 +15,7 @@ export default function AboutPage() {
           <p>TurtleJr.dev is a mobile-first progressive web app built with Next.js. It combines a professional portfolio with practical tools, experiments, and creative projects in one evolving platform.</p>
           <p>The signed-in workspace includes productivity tools for tasks, health, and budgeting. Public experiences such as the card creators show the same focus on useful software, careful details, and hands-on problem solving.</p>
         </article>
-        <aside className={styles.details}>
+        <aside className={styles.details} id="resume">
           <div><small>Focus</small><strong>Full-stack engineering</strong></div>
           <div><small>Approach</small><strong>Mobile-first & practical</strong></div>
           <div><small>Stack</small><strong>Next.js · TypeScript · Java</strong></div>
