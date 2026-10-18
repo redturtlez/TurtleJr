@@ -67,9 +67,9 @@ export default function BudgetSummary() {
   const remove = async (id: number) => { try { await saveAll(transactions.filter((item) => item.id !== id)); toast.success("Transaction deleted"); } catch { toast.error("Could not delete transaction"); } };
 
   return (
-    <main className={styles.page}>
+    <section className={styles.legacyBudget} aria-labelledby="legacy-budget-title">
       {addModal ? <ExpenseForm open onOpenChange={(open) => { setAddModal(open); if (!open) setEditing(null); }} onSubmit={submit} defaultValues={editing ? { ...editing, amount: String(editing.amount), date: editing.date ?? new Date(), frequency: editing.frequency ?? "one-time", subitems: editing.subitems?.map((item) => ({ ...item, amount: String(item.amount) })) ?? [] } : undefined} /> : null}
-      <header className={styles.header}><p>Money workspace</p><div><h1>A clearer view <span>of your money.</span></h1><p className={styles.intro}>Track income and spending, understand category pressure, and keep each transaction easy to find.</p></div></header>
+      <header className={styles.legacyHeader}><p>Existing data preserved</p><div><h2 id="legacy-budget-title">Legacy budget ledger</h2><p>These original entries remain available in their existing storage and calculations. They have not been silently converted into Finance plans or recorded transactions.</p></div></header>
       <section className={styles.metrics}>
         <article className={styles.balance}><span><WalletCards />Available balance</span><strong>{formatCurrency(totals.balance)}</strong><small>{transactions.length} recorded transactions</small></article>
         <article><span><ArrowUpRight />Income</span><strong>{formatCurrency(totals.income)}</strong><small>Across all entries</small></article>
@@ -86,6 +86,6 @@ export default function BudgetSummary() {
           {pieData.length ? <><div className={styles.chart}><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={pieData} dataKey="value" nameKey="name" innerRadius="58%" outerRadius="82%" paddingAngle={3}>{pieData.map((entry, index) => <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />)}</Pie><Tooltip formatter={(value) => formatCurrency(Number(value))} /></PieChart></ResponsiveContainer><div><strong>{formatCurrency(totals.expenses)}</strong><span>Total spent</span></div></div><div className={styles.legend}>{pieData.map((entry, index) => <div key={entry.name}><i style={{ background: COLORS[index % COLORS.length] }} /><span>{entry.name}</span><b>{formatCurrency(entry.value)}</b></div>)}</div></> : <div className={styles.empty}><Landmark /><strong>No spending data</strong><span>Expense categories will appear here.</span></div>}
         </aside>
       </section>
-    </main>
+    </section>
   );
 }

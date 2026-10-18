@@ -13,12 +13,10 @@ export async function generateMetadata(params: MetadataParams): Promise<Metadata
     appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Turtle Jr" },
     icons: {
       icon: [
-        {
-          url: "logo.png",
-          type: "image/png",
-          sizes: "48x48 72x72 96x96 128x128 192x192 256x256 512x512 1024x1024",
-        },
+        { url: "/newlogo-192.png", type: "image/png", sizes: "192x192" },
+        { url: "/newlogo-512.png", type: "image/png", sizes: "512x512" },
       ],
+      apple: [{ url: "/newlogo-maskable-512.png", type: "image/png", sizes: "512x512" }],
     },
     manifest: "/manifest.json",
   };

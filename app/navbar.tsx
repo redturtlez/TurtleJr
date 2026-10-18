@@ -2,9 +2,10 @@
 
 import { SignInButton, SignOutButton } from "@clerk/nextjs";
 import clsx from "clsx";
+import Image from "next/image";
 import Link from "next/link";
 import type { JSX } from "react";
-import { CaretDown, Cross, Logo, Menu } from "@/public/svg";
+import { CaretDown, Cross, Menu } from "@/public/svg";
 import styles from "./navbar.module.css";
 import { useNavbar } from "./use-navbar";
 
@@ -20,7 +21,7 @@ const primaryLinks = [
 const appLinks = [
   { href: "/todo", label: "To Do" },
   { href: "/health", label: "Life" },
-  { href: "/budget", label: "Budget" },
+  { href: "/budget", label: "Finance" },
 ] as const;
 
 export default function Navbar(): JSX.Element {
@@ -31,7 +32,7 @@ export default function Navbar(): JSX.Element {
     <header className={styles.header}>
       <nav className={styles.nav} aria-label="Primary navigation">
         <Link prefetch={false} href="/" className={styles.brand} onClick={handleNavClick} aria-label="Turtle Jr home">
-          <Logo className={styles.logo} />
+          <Image className={styles.logo} src="/newlogocrop.png" width={38} height={38} alt="" priority />
           <span className={styles.wordmark}>Turtle Jr</span>
         </Link>
         <button type="button" className={styles.menuButton} aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={menuOpen} aria-controls="primary-navigation-links" onClick={handleMenuToggle}>

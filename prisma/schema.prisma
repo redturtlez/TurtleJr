@@ -24,6 +24,138 @@ model Budget {
   @@index([userid])
 }
 
+enum FinanceAccountType {
+  CHECKING
+  SAVINGS
+}
+
+enum FinancePlanKind {
+  INCOME
+  BILL
+  ALLOWANCE
+}
+
+enum FinanceRecurrence {
+  WEEKLY
+  BIWEEKLY
+  SEMIMONTHLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum FinanceTransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+enum FinanceGoalKind {
+  EMERGENCY
+  PURCHASE
+  GENERAL
+}
+
+model FinanceAccount {
+  id         String             @id @default(cuid())
+  userId     String
+  name       String
+  type       FinanceAccountType
+  currency   String             @default("USD")
+  archivedAt DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  snapshots    FinanceBalanceSnapshot[]
+  planItems    FinancePlanItem[]
+  transactions FinanceTransaction[]
+  goals        FinanceGoal[]
+
+  @@unique([id, userId])
+  @@index([userId, archivedAt])
+}
+
+model FinanceBalanceSnapshot {
+  id                 String    @id @default(cuid())
+  userId             String
+  accountId          String
+  balanceCents       BigInt
+  asOfDate           String
+  note               String?
+  recordedAt         DateTime  @default(now())
+  correctedAt        DateTime?
+  replacesSnapshotId String?   @unique
+
+  account FinanceAccount @relation(fields: [accountId, userId], references: [id, userId], onDelete: Cascade)
+
+  @@index([accountId, userId])
+  @@index([userId, accountId, asOfDate, recordedAt])
+  @@index([userId, correctedAt])
+}
+
+model FinancePlanItem {
+  id                   String            @id @default(cuid())
+  userId               String
+  accountId            String
+  name                 String
+  kind                 FinancePlanKind
+  amountCents          BigInt
+  category             String?
+  recurrence           FinanceRecurrence
+  startDate            String
+  semimonthlyFirstDay  Int?
+  semimonthlySecondDay Int?
+  archivedAt           DateTime?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  account FinanceAccount @relation(fields: [accountId, userId], references: [id, userId], onDelete: Cascade)
+
+  @@index([accountId, userId])
+  @@index([userId, archivedAt])
+}
+
+model FinanceTransaction {
+  id                String                 @id @default(cuid())
+  userId            String
+  accountId         String
+  transferAccountId String?
+  name              String
+  type              FinanceTransactionType
+  amountCents       BigInt
+  occurredOn        String
+  category          String?
+  note              String?
+  voidedAt          DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  account FinanceAccount @relation(fields: [accountId, userId], references: [id, userId], onDelete: Cascade)
+
+  @@index([accountId, userId])
+  @@index([transferAccountId, userId])
+  @@index([userId, occurredOn, voidedAt])
+}
+
+model FinanceGoal {
+  id                       String          @id @default(cuid())
+  userId                   String
+  accountId                String
+  name                     String
+  kind                     FinanceGoalKind
+  targetCents              BigInt
+  allocatedCents           BigInt
+  monthlyContributionCents BigInt          @default(0)
+  archivedAt               DateTime?
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime        @updatedAt
+
+  account FinanceAccount @relation(fields: [accountId, userId], references: [id, userId], onDelete: Cascade)
+
+  @@index([accountId, userId])
+  @@index([userId, archivedAt])
+}
+
 enum LifeActivityKind {
   ROUTINE
   HABIT
