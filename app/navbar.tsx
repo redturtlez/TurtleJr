@@ -58,7 +58,7 @@ export default function Navbar(): JSX.Element {
               </div>
             )}
             {!user.isSignedIn ? (
-              <SignInButton mode="modal"><button type="button" className={styles.loginButton}>Log in</button></SignInButton>
+              <SignInButton mode="modal" oauthFlow="redirect"><button type="button" className={styles.loginButton}>Log in</button></SignInButton>
             ) : (
               <SignOutButton><button type="button" className={styles.loginButton} onClick={handleNavClick}>Log out</button></SignOutButton>
             )}
