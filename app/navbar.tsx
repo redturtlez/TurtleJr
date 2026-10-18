@@ -19,7 +19,7 @@ const primaryLinks = [
 
 const appLinks = [
   { href: "/todo", label: "To Do" },
-  { href: "/health", label: "Health" },
+  { href: "/health", label: "Life" },
   { href: "/budget", label: "Budget" },
 ] as const;
 

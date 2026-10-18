@@ -16,7 +16,7 @@ export default function TodoItem({ item, id }: { item: Todo; id: number }) {
     setDeleting(true);
     const remaining = (todoStore.todos ?? []).filter((_, index) => index !== id);
     try {
-      const saved = await saveTodos({ userid: todoStore.userid, todos: remaining });
+      const saved = await saveTodos({ todos: remaining });
       if (typeof saved === "string") toast.error(saved);
       else { todoStore.setTodos(saved?.todos as Todos); todoStore.resetTodo(); toast.success("Task deleted"); }
     } catch { toast.error("Could not delete the task"); }

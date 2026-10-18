@@ -1,25 +1,679 @@
 generator client {
-    provider = "prisma-client-js"
-    previewFeatures = ["relationJoins"]
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url = env("DATABASE_URL")
-  directUrl = env("DIRECT_DATABASE_URL")
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  directUrl    = env("DIRECT_DATABASE_URL")
   relationMode = "prisma"
 }
 
-model Todo{
-    userid String @default("turtle") @unique
-    todos Json?
+model Todo {
+  userid String @unique @default("turtle")
+  todos  Json?
 
-    @@index([userid])
+  @@index([userid])
 }
 
-model Budget{
-    userid String @default("turtle") @unique
-    budgetItems Json?
+model Budget {
+  userid      String @unique @default("turtle")
+  budgetItems Json?
 
-    @@index([userid])
+  @@index([userid])
+}
+
+enum LifeActivityKind {
+  ROUTINE
+  HABIT
+}
+
+enum LifeScheduleType {
+  SEQUENTIAL
+  FIXED_TIME
+  FLEXIBLE_WINDOW
+}
+
+enum LifeActivityImportance {
+  ESSENTIAL
+  OPTIONAL
+}
+
+enum LifeCompletionStatus {
+  COMPLETED
+  SNOOZED
+  SKIPPED
+}
+
+enum LifeGoalStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+enum LifeRecommendationFeedbackStatus {
+  ACCEPTED
+  DISMISSED
+  SNOOZED
+}
+
+enum LifeFoodSource {
+  MANUAL
+  USDA
+}
+
+enum LifeMealSlot {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+}
+
+enum LifeNutritionDataQuality {
+  KNOWN
+  ESTIMATED
+}
+
+enum LifeRecipeComplexity {
+  SIMPLE
+  MODERATE
+  INVOLVED
+}
+
+enum LifeEnergyEquationSex {
+  MALE
+  FEMALE
+}
+
+enum LifeActivityLevel {
+  SEDENTARY
+  LIGHT
+  MODERATE
+  VERY_ACTIVE
+}
+
+enum LifeNutritionFeedbackTarget {
+  FOOD
+  MEAL
+  RECIPE
+}
+
+enum LifeNotificationDeliveryKind {
+  DAILY_DIGEST
+  ACTIVITY_REMINDER
+}
+
+enum LifeNotificationDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum LifeWorkoutSessionStatus {
+  COMPLETED
+  SKIPPED
+}
+
+enum LifeCreativeProjectStatus {
+  PLANNED
+  IN_PROGRESS
+  PAUSED
+  COMPLETED
+}
+
+model LifeProfile {
+  userId    String   @id
+  timeZone  String   @default("America/New_York")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  routines               LifeRoutine[]
+  activities             LifeActivity[]
+  completions            LifeCompletion[]
+  goals                  LifeGoal[]
+  goalProgress           LifeGoalProgress[]
+  activityGoals          LifeActivityGoal[]
+  recommendationFeedback LifeRecommendationFeedback[]
+  nutritionSettings      LifeNutritionSettings?
+  weightEntries          LifeWeightEntry[]
+  foods                  LifeFood[]
+  meals                  LifeMeal[]
+  foodLogs               LifeFoodLog[]
+  recipes                LifeRecipe[]
+  mealPlanEntries        LifeMealPlanEntry[]
+  groceryStates          LifeGroceryState[]
+  workoutPlans           LifeWorkoutPlan[]
+  workoutSessions        LifeWorkoutSession[]
+  creativeProjects       LifeCreativeProject[]
+  creativeSessions       LifeCreativeSession[]
+  nutritionFeedback      LifeNutritionFeedback[]
+  notificationSettings   LifeNotificationSettings?
+  pushSubscriptions      LifePushSubscription[]
+  notificationDeliveries LifeNotificationDelivery[]
+}
+
+model LifeNotificationSettings {
+  userId                       String   @id
+  dailyDigestEnabled           Boolean  @default(false)
+  dailyDigestMinutes           Int      @default(1080)
+  activityPushRemindersEnabled Boolean  @default(false)
+  inAppRemindersEnabled        Boolean  @default(true)
+  quietStartMinutes            Int?
+  quietEndMinutes              Int?
+  showActivityNames            Boolean  @default(false)
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
+
+  profile LifeProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+}
+
+model LifePushSubscription {
+  id             String    @id @default(cuid())
+  userId         String
+  endpoint       String    @unique
+  p256dh         String
+  auth           String
+  expirationTime DateTime?
+  active         Boolean   @default(true)
+  userAgent      String?
+  lastTestedAt   DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  profile    LifeProfile                @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  deliveries LifeNotificationDelivery[]
+
+  @@index([userId, active])
+}
+
+model LifeNotificationDelivery {
+  id             String                         @id @default(cuid())
+  userId         String
+  subscriptionId String
+  fingerprint    String
+  kind           LifeNotificationDeliveryKind
+  status         LifeNotificationDeliveryStatus @default(PENDING)
+  attemptCount   Int                            @default(0)
+  nextAttemptAt  DateTime?
+  errorCode      String?
+  sentAt         DateTime?
+  createdAt      DateTime                       @default(now())
+  updatedAt      DateTime                       @updatedAt
+
+  profile      LifeProfile          @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  subscription LifePushSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, fingerprint])
+  @@index([userId, createdAt])
+}
+
+model LifeNutritionSettings {
+  userId                String                 @id
+  weightUnit            String                 @default("LB")
+  targetWeightGrams     Int?
+  calorieTargetMilli    Int?
+  proteinTargetMg       Int?
+  carbsTargetMg         Int?
+  fatTargetMg           Int?
+  fiberTargetMg         Int?
+  calciumTargetMcg      Int?
+  potassiumTargetMcg    Int?
+  magnesiumTargetMcg    Int?
+  ironTargetMcg         Int?
+  vitaminDTargetMcg     Int?
+  vitaminB12TargetMcg   Int?
+  omega3TargetMcg       Int?
+  avoidSeafood          Boolean                @default(true)
+  avoidMushrooms        Boolean                @default(true)
+  maxPrepMinutes        Int                    @default(45)
+  preferredComplexity   LifeRecipeComplexity   @default(SIMPLE)
+  ageYears              Int?
+  heightMillimeters     Int?
+  energyEquationSex     LifeEnergyEquationSex?
+  activityLevel         LifeActivityLevel?
+  resistanceTraining    Boolean?
+  targetWeeklyLossGrams Int?
+  preferredFoods        String[]               @default([])
+  acceptableFoods       String[]               @default([])
+  avoidedFoods          String[]               @default([])
+  preferenceProfileSet  Boolean                @default(false)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  profile LifeProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+}
+
+model LifeWeightEntry {
+  id          String   @id @default(cuid())
+  userId      String
+  localDate   String
+  weightGrams Int
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  profile LifeProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, localDate])
+  @@index([userId, localDate])
+}
+
+model LifeFood {
+  id                String                   @id @default(cuid())
+  userId            String
+  source            LifeFoodSource           @default(MANUAL)
+  externalId        String?
+  name              String
+  brand             String?
+  servingLabel      String
+  servingGramsMilli Int?
+  caloriesMilli     Int?
+  proteinMg         Int?
+  carbsMg           Int?
+  fatMg             Int?
+  fiberMg           Int?
+  calciumMcg        Int?
+  potassiumMcg      Int?
+  magnesiumMcg      Int?
+  ironMcg           Int?
+  vitaminDMcg       Int?
+  vitaminB12Mcg     Int?
+  omega3Mcg         Int?
+  waterMg           Int?
+  favorite          Boolean                  @default(true)
+  dataQuality       LifeNutritionDataQuality @default(KNOWN)
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  profile           LifeProfile            @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  mealItems         LifeMealItem[]
+  logs              LifeFoodLog[]
+  recipeIngredients LifeRecipeIngredient[]
+  groceryStates     LifeGroceryState[]
+
+  @@unique([userId, source, externalId])
+  @@index([userId, favorite])
+}
+
+model LifeMeal {
+  id              String        @id @default(cuid())
+  userId          String
+  name            String
+  pinned          Boolean       @default(false)
+  defaultMealSlot LifeMealSlot?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  profile LifeProfile    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  items   LifeMealItem[]
+
+  @@index([userId, name])
+}
+
+model LifeMealItem {
+  mealId        String
+  foodId        String
+  quantityMilli Int
+  position      Int    @default(0)
+
+  meal LifeMeal @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  food LifeFood @relation(fields: [foodId], references: [id], onDelete: Restrict)
+
+  @@id([mealId, foodId])
+  @@index([foodId])
+}
+
+model LifeFoodLog {
+  id                    String                   @id @default(cuid())
+  userId                String
+  foodId                String?
+  localDate             String
+  mealSlot              LifeMealSlot
+  quantityMilli         Int
+  nameSnapshot          String
+  servingLabelSnapshot  String
+  caloriesMilliSnapshot Int?
+  proteinMgSnapshot     Int?
+  carbsMgSnapshot       Int?
+  fatMgSnapshot         Int?
+  fiberMgSnapshot       Int?
+  calciumMcgSnapshot    Int?
+  potassiumMcgSnapshot  Int?
+  magnesiumMcgSnapshot  Int?
+  ironMcgSnapshot       Int?
+  vitaminDMcgSnapshot   Int?
+  vitaminB12McgSnapshot Int?
+  omega3McgSnapshot     Int?
+  waterMgSnapshot       Int?
+  mealBatchId           String?
+  dataQualitySnapshot   LifeNutritionDataQuality
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+
+  profile LifeProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  food    LifeFood?   @relation(fields: [foodId], references: [id], onDelete: SetNull)
+
+  @@index([userId, localDate])
+  @@index([mealBatchId])
+  @@index([foodId])
+}
+
+model LifeNutritionFeedback {
+  id                 String                      @id @default(cuid())
+  userId             String
+  targetType         LifeNutritionFeedbackTarget
+  targetId           String
+  targetNameSnapshot String
+  fullness           Int?
+  enjoyment          Int?
+  convenience        Int?
+  eatAgain           Boolean?
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
+
+  profile LifeProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+  @@index([userId, targetType])
+}
+
+model LifeRecipe {
+  id           String               @id @default(cuid())
+  userId       String
+  name         String
+  instructions String
+  tags         String[]             @default([])
+  servings     Int
+  prepMinutes  Int?
+  complexity   LifeRecipeComplexity @default(SIMPLE)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  profile     LifeProfile            @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  ingredients LifeRecipeIngredient[]
+  planEntries LifeMealPlanEntry[]
+
+  @@index([userId, name])
+}
+
+model LifeRecipeIngredient {
+  recipeId      String
+  foodId        String
+  quantityMilli Int
+  position      Int    @default(0)
+
+  recipe LifeRecipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  food   LifeFood   @relation(fields: [foodId], references: [id], onDelete: Restrict)
+
+  @@id([recipeId, foodId])
+  @@index([foodId])
+}
+
+model LifeMealPlanEntry {
+  id            String       @id @default(cuid())
+  userId        String
+  localDate     String
+  mealSlot      LifeMealSlot
+  recipeId      String
+  servingsMilli Int          @default(1000)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  profile LifeProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  recipe  LifeRecipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, localDate, mealSlot])
+  @@index([recipeId])
+}
+
+model LifeGroceryState {
+  userId    String
+  weekStart String
+  foodId    String
+  inPantry  Boolean  @default(false)
+  purchased Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+
+  profile LifeProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  food    LifeFood    @relation(fields: [foodId], references: [id], onDelete: Cascade)
+
+  @@id([userId, weekStart, foodId])
+  @@index([foodId])
+}
+
+model LifeRoutine {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile    LifeProfile    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  activities LifeActivity[]
+
+  @@index([userId, active])
+}
+
+model LifeActivity {
+  id                       String                 @id @default(cuid())
+  userId                   String
+  routineId                String?
+  kind                     LifeActivityKind
+  title                    String
+  description              String?
+  position                 Int                    @default(0)
+  estimatedDurationMinutes Int?
+  minimumDurationMinutes   Int?
+  preferredDurationMinutes Int?
+  scheduleType             LifeScheduleType
+  fixedTimeMinutes         Int?
+  windowStartMinutes       Int?
+  windowEndMinutes         Int?
+  daysOfWeek               Int[]                  @default([0, 1, 2, 3, 4, 5, 6])
+  importance               LifeActivityImportance @default(OPTIONAL)
+  reminderEnabled          Boolean                @default(false)
+  active                   Boolean                @default(true)
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+
+  profile          LifeProfile           @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  routine          LifeRoutine?          @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  completions      LifeCompletion[]
+  goalLinks        LifeActivityGoal[]
+  workoutPlans     LifeWorkoutPlan[]     @relation("WorkoutActivity")
+  creativeProjects LifeCreativeProject[] @relation("CreativeActivity")
+
+  @@index([userId, active])
+  @@index([routineId, position])
+}
+
+model LifeGoal {
+  id          String         @id @default(cuid())
+  userId      String
+  title       String
+  description String?
+  targetValue Float?
+  targetUnit  String?
+  targetDate  DateTime?
+  status      LifeGoalStatus @default(ACTIVE)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  profile       LifeProfile        @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  progress      LifeGoalProgress[]
+  activityLinks LifeActivityGoal[]
+
+  @@index([userId, status])
+}
+
+model LifeGoalProgress {
+  id        String   @id @default(cuid())
+  userId    String
+  goalId    String
+  localDate String
+  value     Float?
+  note      String?
+  createdAt DateTime @default(now())
+
+  profile LifeProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  goal    LifeGoal    @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, localDate])
+  @@index([userId, localDate])
+}
+
+model LifeActivityGoal {
+  userId     String
+  activityId String
+  goalId     String
+  createdAt  DateTime @default(now())
+
+  profile  LifeProfile  @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  activity LifeActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  goal     LifeGoal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@id([activityId, goalId])
+  @@index([userId])
+  @@index([goalId])
+}
+
+model LifeRecommendationFeedback {
+  id           String                           @id @default(cuid())
+  userId       String
+  fingerprint  String
+  status       LifeRecommendationFeedbackStatus
+  snoozedUntil DateTime?
+  createdAt    DateTime                         @default(now())
+  updatedAt    DateTime                         @updatedAt
+
+  profile LifeProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, fingerprint])
+  @@index([userId, status])
+}
+
+model LifeCompletion {
+  id              String               @id @default(cuid())
+  userId          String
+  activityId      String
+  localDate       String
+  status          LifeCompletionStatus
+  titleSnapshot   String
+  durationMinutes Int?
+  snoozedUntil    DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  profile  LifeProfile  @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  activity LifeActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@unique([activityId, localDate])
+  @@index([userId, localDate])
+}
+
+model LifeWorkoutPlan {
+  id                       String   @id @default(cuid())
+  userId                   String
+  name                     String
+  description              String?
+  estimatedDurationMinutes Int?
+  activityId               String?
+  active                   Boolean  @default(true)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  profile        LifeProfile           @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  linkedActivity LifeActivity?         @relation("WorkoutActivity", fields: [activityId], references: [id], onDelete: SetNull)
+  exercises      LifeWorkoutExercise[]
+  sessions       LifeWorkoutSession[]
+
+  @@index([userId, active])
+  @@index([activityId])
+}
+
+model LifeWorkoutExercise {
+  id         String @id @default(cuid())
+  planId     String
+  name       String
+  targetSets Int?
+  targetReps Int?
+  position   Int    @default(0)
+
+  plan    LifeWorkoutPlan             @relation(fields: [planId], references: [id], onDelete: Cascade)
+  results LifeWorkoutExerciseResult[]
+
+  @@index([planId, position])
+}
+
+model LifeWorkoutSession {
+  id               String                   @id @default(cuid())
+  userId           String
+  planId           String
+  localDate        String
+  status           LifeWorkoutSessionStatus @default(COMPLETED)
+  durationMinutes  Int?
+  note             String?
+  planNameSnapshot String
+  createdAt        DateTime                 @default(now())
+
+  profile LifeProfile                 @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  plan    LifeWorkoutPlan             @relation(fields: [planId], references: [id], onDelete: Restrict)
+  results LifeWorkoutExerciseResult[]
+
+  @@index([userId, localDate])
+  @@index([planId, localDate])
+}
+
+model LifeWorkoutExerciseResult {
+  id                   String  @id @default(cuid())
+  sessionId            String
+  exerciseId           String?
+  exerciseNameSnapshot String
+  sets                 Int?
+  reps                 Int?
+  position             Int     @default(0)
+
+  session  LifeWorkoutSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exercise LifeWorkoutExercise? @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId, position])
+  @@index([exerciseId])
+}
+
+model LifeCreativeProject {
+  id          String                    @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  status      LifeCreativeProjectStatus @default(IN_PROGRESS)
+  activityId  String?
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+
+  profile        LifeProfile           @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  linkedActivity LifeActivity?         @relation("CreativeActivity", fields: [activityId], references: [id], onDelete: SetNull)
+  sessions       LifeCreativeSession[]
+
+  @@index([userId, status])
+  @@index([activityId])
+}
+
+model LifeCreativeSession {
+  id                  String   @id @default(cuid())
+  userId              String
+  projectId           String?
+  localDate           String
+  activityType        String
+  durationMinutes     Int?
+  note                String?
+  projectNameSnapshot String?
+  createdAt           DateTime @default(now())
+
+  profile LifeProfile          @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  project LifeCreativeProject? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([userId, localDate])
+  @@index([projectId, localDate])
 }

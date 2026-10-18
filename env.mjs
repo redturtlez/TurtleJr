@@ -10,6 +10,11 @@ const server = z.object({
   DIRECT_DATABASE_URL: z.string(),
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
   CLERK_SECRET_KEY: z.string(),
+  USDA_API_KEY: z.string().min(1),
+  VAPID_PUBLIC_KEY: z.string().min(1).optional(),
+  VAPID_PRIVATE_KEY: z.string().min(1).optional(),
+  VAPID_SUBJECT: z.string().refine((value) => value.startsWith("mailto:") || value.startsWith("https://"), "Use a mailto: or https: VAPID subject").optional(),
+  CRON_SECRET: z.string().min(16).optional(),
   // Add `.min(1) on ID and SECRET if you want to make sure they're not empty
 });
 
@@ -33,6 +38,11 @@ const processEnv = {
   DIRECT_DATABASE_URL: process.env.DIRECT_DATABASE_URL,
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
   CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
+  USDA_API_KEY: process.env.USDA_API_KEY,
+  VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY,
+  VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
+  VAPID_SUBJECT: process.env.VAPID_SUBJECT,
+  CRON_SECRET: process.env.CRON_SECRET,
 };
 
 // Don't touch the part below

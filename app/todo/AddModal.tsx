@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { useTodoStore } from "@/app/todo/todoStates";
-import { Todos, saveTodos } from "./todoServer";
+import { type Todo, Todos, saveTodos } from "./todoServer";
 import styles from "./todo.module.css";
 
 export default function AddModal() {
@@ -16,7 +16,7 @@ export default function AddModal() {
     if (!todoStore.title.trim()) { toast.error("Give the task a title"); return; }
     setSaving(true);
     try {
-      const result = await saveTodos({ userid: todoStore.userid, todos: todoStore.pushTodo() });
+      const result = await saveTodos({ todos: todoStore.pushTodo() });
       if (typeof result === "string") toast.error(result);
       else { todoStore.setTodos(result?.todos as Todos); todoStore.resetTodo(); todoStore.flipModal(); toast.success(editing ? "Task updated" : "Task added"); }
     } catch { toast.error("Could not save the task"); }
@@ -36,7 +36,7 @@ export default function AddModal() {
             <div className={styles.setting}><span className={styles.settingTitle}>Schedule</span><label className={styles.settingRow}><span>Use a due date</span><input type="checkbox" checked={todoStore.timed} onChange={() => todoStore.flipTimed()} /></label></div>
           </div>
           {todoStore.timed ? <label className={styles.formField}><span>Due date</span><input type="date" value={dateValue} onChange={(event) => todoStore.setNextShow(new Date(`${event.target.value}T12:00:00`))} /></label> : null}
-          {todoStore.timed ? <div className={styles.settings}><div className={styles.setting}><span className={styles.settingTitle}>Repeat</span><label className={styles.settingRow}><span>Recurring task</span><input type="checkbox" checked={todoStore.repeatable} onChange={() => todoStore.flipRepeatable()} /></label></div>{todoStore.repeatable ? <label className={styles.formField}><span>Frequency</span><select className={styles.select} value={todoStore.frequency ?? "Daily"} onChange={(event) => todoStore.setFrequency(event.target.value)}><option>Daily</option><option>Weekly</option><option>Monthly</option><option>Yearly</option></select></label> : null}</div> : null}
+          {todoStore.timed ? <div className={styles.settings}><div className={styles.setting}><span className={styles.settingTitle}>Repeat</span><label className={styles.settingRow}><span>Recurring task</span><input type="checkbox" checked={todoStore.repeatable} onChange={() => todoStore.flipRepeatable()} /></label></div>{todoStore.repeatable ? <label className={styles.formField}><span>Frequency</span><select className={styles.select} value={todoStore.frequency ?? "Daily"} onChange={(event) => todoStore.setFrequency(event.target.value as NonNullable<Todo["frequency"]>)}><option>Daily</option><option>Weekly</option><option>Monthly</option><option>Yearly</option></select></label> : null}</div> : null}
         </div>
         <footer className={styles.modalFooter}><button type="button" className={styles.secondaryButton} onClick={() => todoStore.flipModal()}>Cancel</button><button type="button" className={styles.primaryButton} disabled={saving} onClick={() => void save()}>{saving ? "Saving…" : editing ? "Save changes" : "Add task"}</button></footer>
       </section>

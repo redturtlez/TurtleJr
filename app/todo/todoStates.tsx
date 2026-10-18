@@ -1,8 +1,11 @@
 import { create } from "zustand";
-import { Todo, Todos, userTodo } from "@/app/todo/todoServer";
+import type { Todo, Todos } from "@/app/todo/todoServer";
 
-type State = userTodo &
-  Todo & {
+type State = {
+    todos: Todos;
+    priority: Todo["priority"];
+    title: string;
+    frequency: Todo["frequency"];
     activeTodo: number;
     timed: boolean;
     repeatable: boolean;
@@ -13,7 +16,6 @@ type State = userTodo &
   };
 
 const initialState: State = {
-  userid: "",
   todos: [],
   priority: 2,
   activeTodo: -1,
@@ -28,16 +30,15 @@ const initialState: State = {
 };
 
 type Actions = {
-  setUserId: (input: string) => void;
   setTodos: (input: Todos) => void;
-  setPriority: (input: number | undefined) => void;
+  setPriority: (input: number) => void;
   setActiveTodo: (input: number) => void;
   setTitle: (input: string) => void;
   setTasks: (input: string[]) => void;
   flipTimed: () => void;
   flipRepeatable: () => void;
   setNextShow: (input: Date) => void;
-  setFrequency: (input: string) => void;
+  setFrequency: (input: NonNullable<Todo["frequency"]>) => void;
   deleteTodo: (input: number) => void;
   addTask: () => void;
   deleteTask: (input: number) => void;
@@ -50,9 +51,6 @@ type Actions = {
 
 export const useTodoStore = create<State & Actions>()((set, get) => ({
   ...initialState,
-  setUserId: (input) => {
-    set({ userid: input });
-  },
   flipModal: () => {
     set((state) => ({ modal: !state.modal }));
   },
@@ -107,13 +105,13 @@ export const useTodoStore = create<State & Actions>()((set, get) => ({
   setActiveTodo: (input) => {
     set((state) => ({
       activeTodo: input,
-      priority: state.todos[input]?.priority,
-      title: state.todos[input]?.title,
-      tasks: state.todos[input]?.tasks,
+      priority: state.todos[input]?.priority ?? initialState.priority,
+      title: state.todos[input]?.title ?? initialState.title,
+      tasks: state.todos[input]?.tasks ?? initialState.tasks,
       timed: state.todos[input]?.nextShow != undefined && state.todos[input]?.nextShow != null,
       repeatable: state.todos[input]?.frequency != undefined && state.todos[input]?.frequency != null,
       nextShow: state.todos[input]?.nextShow != null ? new Date(state.todos[input]?.nextShow as Date) : new Date(),
-      frequency: state.todos[input]?.frequency,
+      frequency: state.todos[input]?.frequency ?? initialState.frequency,
     }));
   },
   setTitle: (input) => {

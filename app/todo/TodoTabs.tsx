@@ -1,6 +1,5 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
 import { CalendarDays, Inbox, ListChecks, Plus, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
@@ -19,23 +18,20 @@ const isToday = (value: Date | string | null | undefined) => {
 };
 
 export default function TodoTabs() {
-  const { isLoaded, userId } = useAuth();
   const todoStore = useTodoStore();
   const setTodos = useTodoStore((state) => state.setTodos);
-  const setUserId = useTodoStore((state) => state.setUserId);
   const [filter, setFilter] = useState<Filter>("today");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isLoaded || !userId) return;
     let cancelled = false;
     setLoading(true);
-    void getTodos(userId).then((todos) => {
-      if (!cancelled) { setTodos(todos); setUserId(userId); }
+    void getTodos().then((todos) => {
+      if (!cancelled) setTodos(todos);
     }).catch(() => toast.error("Could not load your tasks")).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [isLoaded, setTodos, setUserId, userId]);
+  }, [setTodos]);
 
   const todos = useMemo(() => todoStore.todos ?? [], [todoStore.todos]);
   const counts = { today: todos.filter((item) => isToday(item.nextShow)).length, untimed: todos.filter((item) => !item.nextShow).length, all: todos.length };
