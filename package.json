@@ -8,6 +8,7 @@
   "scripts": {
     "build": "next build --webpack",
     "check:art-gallery": "node scripts/art-gallery-check.cjs",
+    "sync:art-gallery": "node scripts/sync-art-gallery.cjs",
     "check:card-creators": "node scripts/card-creator-check.cjs && node scripts/pokemon-card-creator-check.cjs",
     "check:life-dashboard": "node --experimental-strip-types app/health/life-dashboard.test.ts",
     "dev": "next dev --webpack",

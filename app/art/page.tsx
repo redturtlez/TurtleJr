@@ -37,7 +37,7 @@ export default function ArtPage() {
       </section>
 
       <section className={styles.collections} aria-labelledby="collections-heading">
-        <div className={styles.sectionHeading}><p className={styles.eyebrow}>Browse by collection</p><h2 id="collections-heading">Six ways into the work.</h2></div>
+        <div className={styles.sectionHeading}><p className={styles.eyebrow}>Browse by collection</p><h2 id="collections-heading">Ways into the work.</h2></div>
         <div className={styles.categoryGrid}>
           {artCatalog.categories.map((category) => {
             const categoryArtworks = getCategoryArtworks(category.slug);

@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/database";
 import { getLocalDayContext, type ActivityCompletionSummary, type ScheduledActivity } from "./scheduling";
-import { buildRecommendations, buildWeeklyTrends, shiftDateKey, type LifeRecommendation, type WeeklyTrend } from "./analytics";
+import { buildHabitPatterns, buildRecommendations, buildWeeklyTrends, shiftDateKey, type HabitPattern, type LifeRecommendation, type WeeklyTrend } from "./analytics";
 
 export interface DashboardActivity extends ScheduledActivity {
   description: string | null;
@@ -22,6 +22,7 @@ export interface LifeDashboardData {
     progress: Array<{ id: string; localDate: string; value: number | null; note: string | null }>;
   }>;
   trends: WeeklyTrend[];
+  patterns: HabitPattern[];
   recommendations: LifeRecommendation[];
 }
 
@@ -50,7 +51,7 @@ export async function getLifeDashboardData(now = new Date()): Promise<LifeDashbo
       select: { id: true, name: true },
     });
     const context = getLocalDayContext(now, profile.timeZone);
-    const historyStart = shiftDateKey(context.localDate, -27);
+    const historyStart = shiftDateKey(context.localDate, -55);
     const [activities, completions, history, goals, feedback] = await Promise.all([
       prisma.lifeActivity.findMany({
         where: { userId, active: true },
@@ -71,6 +72,7 @@ export async function getLifeDashboardData(now = new Date()): Promise<LifeDashbo
           daysOfWeek: true,
           importance: true,
           reminderEnabled: true,
+          createdAt: true,
         },
       }),
       prisma.lifeCompletion.findMany({
@@ -92,9 +94,12 @@ export async function getLifeDashboardData(now = new Date()): Promise<LifeDashbo
       }),
       prisma.lifeRecommendationFeedback.findMany({ where: { userId }, select: { fingerprint: true, status: true, snoozedUntil: true } }),
     ]);
-    const trends = buildWeeklyTrends(activities, history, context.localDate);
+    const analyticsActivities = activities.map((activity) => ({ ...activity, activeFromDate: getLocalDayContext(activity.createdAt, profile.timeZone).localDate }));
+    const trends = buildWeeklyTrends(analyticsActivities, history, context.localDate);
+    const allPatterns = buildHabitPatterns(analyticsActivities, history, context.localDate);
+    const patterns = allPatterns.slice(0, 4);
     const feedbackByFingerprint = new Map(feedback.map((item) => [item.fingerprint, item]));
-    const recommendations = buildRecommendations(activities, history, context.localDate).filter((item) => {
+    const recommendations = buildRecommendations(analyticsActivities, history, context.localDate, allPatterns).filter((item) => {
       const response = feedbackByFingerprint.get(item.fingerprint);
       if (!response) return true;
       if (response.status === "SNOOZED") return !response.snoozedUntil || response.snoozedUntil <= now;
@@ -103,7 +108,7 @@ export async function getLifeDashboardData(now = new Date()): Promise<LifeDashbo
     return {
       profile,
       routine,
-      activities,
+      activities: activities.map(({ createdAt: _createdAt, ...activity }) => activity),
       completions: completions.map((completion) => ({
         activityId: completion.activityId,
         status: completion.status,
@@ -116,6 +121,7 @@ export async function getLifeDashboardData(now = new Date()): Promise<LifeDashbo
         activityIds: goal.activityLinks.map((link) => link.activityId), progress: goal.progress,
       })),
       trends,
+      patterns,
       recommendations,
     };
   } catch {

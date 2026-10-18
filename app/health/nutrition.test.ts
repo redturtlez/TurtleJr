@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { aggregateGroceryItems, aggregateNutrients, estimateMaintenance, foodDensity, kilogramsToGrams, mifflinStJeorRmr, poundsToGrams, proposeCalorieTarget, proposeProteinTarget, recipeNutrients, recipeServingGrams, recommendFoodSubstitutions, recommendRecipes, rollingWeightAverage, scaleNutrient } from "./nutrition.ts";
+import { aggregateGroceryItems, aggregateNutrients, buildNutritionInsightReview, estimateMaintenance, foodDensity, kilogramsToGrams, mifflinStJeorRmr, poundsToGrams, proposeCalorieTarget, proposeProteinTarget, recipeNutrients, recipeServingGrams, recommendFoodSubstitutions, recommendRecipes, rollingWeightAverage, scaleNutrient } from "./nutrition.ts";
 
 test("serving quantities scale integer nutrients deterministically", () => {
   assert.equal(scaleNutrient(250_000, 1500), 375_000);
@@ -95,4 +95,21 @@ test("personal ratings influence recipe order without overriding avoidances", ()
   const result = recommendRecipes([{ ...base, id: "rated", name: "Chicken bowl", ingredients: [ingredient] }, { ...base, id: "plain", name: "Turkey bowl", ingredients: [{ ...ingredient, name: "Turkey" }] }, { ...base, id: "avoid", name: "Pea bowl", ingredients: [{ ...ingredient, name: "Peas" }] }], {}, { caloriesMilli: 0, proteinMg: 0, carbsMg: 0, fatMg: 0, fiberMg: 0 }, { avoidSeafood: true, avoidMushrooms: true, maxPrepMinutes: 30, preferredComplexity: "SIMPLE", avoidedFoods: ["peas"], ratings: { rated: { fullness: 5, enjoyment: 5, convenience: 5, eatAgain: true } } });
   assert.deepEqual(result.map((item) => item.id), ["rated", "plain"]);
   assert.match(result[0]?.reasons.join(" ") ?? "", /filling/);
+});
+
+test("nutrition insights require four logged days and return only the strongest two gaps", () => {
+  const base = { quantityMilli: 1000, dataQuality: "KNOWN" as const, caloriesMilli: 1_800_000, proteinMg: 50_000, carbsMg: 100_000, fatMg: 40_000, fiberMg: 5_000, calciumMcg: 500_000 };
+  const sparse = buildNutritionInsightReview(Array.from({ length: 3 }, (_, index) => ({ ...base, localDate: `2026-10-${index + 15}` })), { proteinMg: 100_000 }, "2026-10-17");
+  assert.equal(sparse.status, "INSUFFICIENT_LOGS");
+  const review = buildNutritionInsightReview(Array.from({ length: 4 }, (_, index) => ({ ...base, localDate: `2026-10-${index + 14}` })), { proteinMg: 100_000, fiberMg: 30_000, calciumMcg: 1_000_000 }, "2026-10-17");
+  assert.equal(review.status, "READY");
+  assert.deepEqual(review.insights.map((item) => item.label), ["Fiber", "Protein"]);
+  assert.match(review.insights[0]?.evidence ?? "", /4 logged days/);
+});
+
+test("nutrition insights suppress conclusions from substantially missing values", () => {
+  const logs = Array.from({ length: 4 }, (_, index) => ({ localDate: `2026-10-${index + 14}`, quantityMilli: 1000, dataQuality: "KNOWN" as const, caloriesMilli: 1_800_000, proteinMg: index === 0 ? null : 50_000, carbsMg: 100_000, fatMg: 40_000, fiberMg: 5_000 }));
+  const review = buildNutritionInsightReview(logs, { proteinMg: 100_000 }, "2026-10-17");
+  assert.equal(review.status, "LIMITED_DATA");
+  assert.deepEqual(review.insights, []);
 });

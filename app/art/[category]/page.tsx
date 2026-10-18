@@ -1,24 +1,31 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { artCatalog, getCategory, getCategoryArtworks } from "../catalog";
 import GalleryGrid from "../GalleryGrid";
 import styles from "../art.module.css";
 
 export const dynamicParams = false;
 
+const legacyCustomCardSlugs = new Set(["custom-yugioh-cards", "custom-pokemon-cards"]);
+
 export function generateStaticParams() {
-  return artCatalog.categories.map(({ slug }) => ({ category: slug }));
+  return [
+    ...artCatalog.categories.map(({ slug }) => ({ category: slug })),
+    ...[...legacyCustomCardSlugs].map((category) => ({ category })),
+  ];
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ category: string }> }): Promise<Metadata> {
   const { category: slug } = await params;
+  if (legacyCustomCardSlugs.has(slug)) return { title: "Custom Cards | Turtle Jr" };
   const category = getCategory(slug);
   return category ? { title: `${category.title} | Turtle Jr`, description: category.description } : {};
 }
 
 export default async function ArtCategoryPage({ params }: { params: Promise<{ category: string }> }) {
   const { category: slug } = await params;
+  if (legacyCustomCardSlugs.has(slug)) permanentRedirect("/art/custom-cards");
   const category = getCategory(slug);
   if (!category) notFound();
   const artworks = getCategoryArtworks(category.slug);

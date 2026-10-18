@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/database";
-import { aggregateNutrients, estimateMaintenance, proposeCalorieTarget, proposeProteinTarget, rollingWeightAverage } from "./nutrition";
+import { aggregateNutrients, buildNutritionInsightReview, estimateMaintenance, proposeCalorieTarget, proposeProteinTarget, rollingWeightAverage, type NutrientKey, type NutritionInsightReview } from "./nutrition";
 import { shiftDateKey } from "./analytics";
 
 export interface NutritionDashboardData {
@@ -14,6 +14,7 @@ export interface NutritionDashboardData {
   proposal: null | { rmrCalories: number; maintenanceCalories: number; lowCalories: number; highCalories: number; targetCalories: number; proteinGrams: number | null; proteinGramsPerKilogram: number | null; effectiveWeeklyLossGrams: number; minimumCalories: number; limited: boolean };
   summary: ReturnType<typeof aggregateNutrients>;
   missingCounts: Record<"caloriesMilli" | "proteinMg" | "carbsMg" | "fatMg" | "fiberMg", number>;
+  insightReview: NutritionInsightReview;
 }
 
 export async function getNutritionDashboardData(localDate: string): Promise<NutritionDashboardData> {
@@ -28,6 +29,8 @@ export async function getNutritionDashboardData(localDate: string): Promise<Nutr
     prisma.lifeNutritionFeedback.findMany({ where: { userId }, select: { targetType: true, targetId: true, fullness: true, enjoyment: true, convenience: true, eatAgain: true } }),
   ]);
   const normalizedLogs = logs.map((log) => ({ id: log.id, localDate: log.localDate, mealSlot: log.mealSlot, quantityMilli: log.quantityMilli, name: log.nameSnapshot, servingLabel: log.servingLabelSnapshot, dataQuality: log.dataQualitySnapshot, caloriesMilli: log.caloriesMilliSnapshot, proteinMg: log.proteinMgSnapshot, carbsMg: log.carbsMgSnapshot, fatMg: log.fatMgSnapshot, fiberMg: log.fiberMgSnapshot, calciumMcg: log.calciumMcgSnapshot, potassiumMcg: log.potassiumMcgSnapshot, magnesiumMcg: log.magnesiumMcgSnapshot, ironMcg: log.ironMcgSnapshot, vitaminDMcg: log.vitaminDMcgSnapshot, vitaminB12Mcg: log.vitaminB12McgSnapshot, omega3Mcg: log.omega3McgSnapshot, waterMg: log.waterMgSnapshot }));
+  const insightTargets: Partial<Record<NutrientKey, number | null>> = { proteinMg: settings.proteinTargetMg, fiberMg: settings.fiberTargetMg, calciumMcg: settings.calciumTargetMcg, potassiumMcg: settings.potassiumTargetMcg, magnesiumMcg: settings.magnesiumTargetMcg, ironMcg: settings.ironTargetMcg, vitaminDMcg: settings.vitaminDTargetMcg, vitaminB12Mcg: settings.vitaminB12TargetMcg, omega3Mcg: settings.omega3TargetMcg };
+  const insightReview = buildNutritionInsightReview(normalizedLogs, insightTargets, localDate);
   const todayLogs = normalizedLogs.filter((log) => log.localDate === localDate);
   const latestWeight = weights[0]?.weightGrams ?? null;
   const maintenance = latestWeight && settings.ageYears && settings.heightMillimeters && settings.energyEquationSex && settings.activityLevel ? estimateMaintenance({ weightGrams: latestWeight, ageYears: settings.ageYears, heightMillimeters: settings.heightMillimeters, sex: settings.energyEquationSex, activityLevel: settings.activityLevel }) : null;
@@ -47,5 +50,6 @@ export async function getNutritionDashboardData(localDate: string): Promise<Nutr
     proposal: maintenance && calorieProposal ? { ...maintenance, targetCalories: calorieProposal.targetCalories, proteinGrams: proteinProposal?.targetGrams ?? null, proteinGramsPerKilogram: proteinProposal?.gramsPerKilogram ?? null, effectiveWeeklyLossGrams: calorieProposal.effectiveWeeklyLossGrams, minimumCalories: calorieProposal.minimumCalories, limited: calorieProposal.limited } : null,
     logs: normalizedLogs, summary: aggregateNutrients(todayLogs.map((log) => ({ ...log, quantityMilli: log.quantityMilli }))),
     missingCounts: { caloriesMilli: todayLogs.filter((item) => item.caloriesMilli === null).length, proteinMg: todayLogs.filter((item) => item.proteinMg === null).length, carbsMg: todayLogs.filter((item) => item.carbsMg === null).length, fatMg: todayLogs.filter((item) => item.fatMg === null).length, fiberMg: todayLogs.filter((item) => item.fiberMg === null).length },
+    insightReview,
   };
 }

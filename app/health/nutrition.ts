@@ -46,6 +46,66 @@ export function aggregateNutrients(items: Array<Nutrients & { quantityMilli: num
   })) as unknown as Nutrients;
 }
 
+export interface NutritionInsight {
+  key: NutrientKey;
+  label: string;
+  percent: number;
+  evidence: string;
+}
+
+export interface NutritionInsightReview {
+  status: "INSUFFICIENT_LOGS" | "NO_TARGETS" | "LIMITED_DATA" | "READY" | "ON_TRACK";
+  daysLogged: number;
+  insights: NutritionInsight[];
+}
+
+export function buildNutritionInsightReview(
+  logs: Array<Nutrients & { localDate: string; quantityMilli: number; dataQuality: "KNOWN" | "ESTIMATED" }>,
+  targets: Partial<Record<NutrientKey, number | null>>,
+  endDate: string,
+): NutritionInsightReview {
+  const end = new Date(`${endDate}T00:00:00.000Z`);
+  end.setUTCDate(end.getUTCDate() - 6);
+  const startDate = end.toISOString().slice(0, 10);
+  const recent = logs.filter((item) => item.localDate >= startDate && item.localDate <= endDate);
+  const daysLogged = new Set(recent.map((item) => item.localDate)).size;
+  if (daysLogged < 4) return { status: "INSUFFICIENT_LOGS", daysLogged, insights: [] };
+
+  const candidates: Array<[NutrientKey, string]> = [
+    ["proteinMg", "Protein"],
+    ["fiberMg", "Fiber"],
+    ["calciumMcg", "Calcium"],
+    ["potassiumMcg", "Potassium"],
+    ["magnesiumMcg", "Magnesium"],
+    ["ironMcg", "Iron"],
+    ["vitaminDMcg", "Vitamin D"],
+    ["vitaminB12Mcg", "Vitamin B12"],
+    ["omega3Mcg", "Omega-3"],
+  ];
+  const configured = candidates.filter(([key]) => (targets[key] ?? 0) > 0);
+  if (!configured.length) return { status: "NO_TARGETS", daysLogged, insights: [] };
+
+  const eligible = configured.flatMap(([key, label]) => {
+    const target = targets[key];
+    if (!target) return [];
+    const known = recent.filter((item) => item[key] != null);
+    if (!recent.length || known.length / recent.length < 0.8) return [];
+    const estimated = known.filter((item) => item.dataQuality === "ESTIMATED").length;
+    if (estimated / known.length > 0.5) return [];
+    const total = known.reduce((sum, item) => sum + (scaleNutrient(item[key] ?? null, item.quantityMilli) ?? 0), 0);
+    const percent = Math.round((total / (target * daysLogged)) * 100);
+    return [{ key, label, percent }];
+  });
+  if (!eligible.length) return { status: "LIMITED_DATA", daysLogged, insights: [] };
+
+  const insights = eligible
+    .filter((item) => item.percent < 80)
+    .toSorted((left, right) => left.percent - right.percent)
+    .slice(0, 2)
+    .map((item) => ({ ...item, evidence: `${item.label} averaged ${item.percent}% of your configured target across ${daysLogged} logged days.` }));
+  return { status: insights.length ? "READY" : "ON_TRACK", daysLogged, insights };
+}
+
 export interface RecipeNutritionInput extends Nutrients { id: string; name: string; servings: number; prepMinutes: number | null; complexity: "SIMPLE" | "MODERATE" | "INVOLVED"; tags: string[]; ingredients: Array<Nutrients & { name: string; quantityMilli: number; servingGramsMilli?: number | null }>; }
 
 export function recipeNutrients(recipe: Pick<RecipeNutritionInput, "ingredients" | "servings">): Nutrients {

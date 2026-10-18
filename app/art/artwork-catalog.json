@@ -1,47 +1,327 @@
 {
   "categories": [
     {
-      "slug": "custom-yugioh-cards",
-      "title": "Custom Yu-Gi-Oh Cards",
-      "shortTitle": "Yu-Gi-Oh Cards",
-      "description": "Handmade and customized Yu-Gi-Oh cards, collected together from finished builds and photographed details.",
+      "slug": "custom-cards",
+      "title": "Custom Cards",
+      "shortTitle": "Custom Cards",
+      "description": "Original custom trading-card projects, including finished cards, treatments, and physical details.",
       "number": "01"
-    },
-    {
-      "slug": "custom-pokemon-cards",
-      "title": "Custom Pokémon Cards",
-      "shortTitle": "Pokémon Cards",
-      "description": "Original custom Pokémon card projects, including finished fronts, treatments, and physical details.",
-      "number": "02"
     },
     {
       "slug": "mosaic-pokemon-card-art",
       "title": "Mosaic Pokémon Card Art",
       "shortTitle": "Pokémon Mosaics",
       "description": "Pokémon artwork assembled as mosaics from trading-card imagery and carefully arranged fragments.",
-      "number": "03"
+      "number": "02"
     },
     {
       "slug": "custom-pokemon-paint-full-arts",
       "title": "Custom Pokémon Paint Full Arts",
       "shortTitle": "Paint Full Arts",
       "description": "Pokémon cards extended and transformed with hand-painted full-art compositions.",
-      "number": "04"
+      "number": "03"
     },
     {
       "slug": "3d-printed-paintings",
-      "title": "3D Printed Paintings",
-      "shortTitle": "3D Printed Work",
+      "title": "Painted 3D Prints",
+      "shortTitle": "Painted 3D Prints",
       "description": "Painted pieces that combine physical 3D-printed forms with color, texture, and finishing work.",
-      "number": "05"
+      "number": "04"
     },
     {
       "slug": "miscellaneous",
       "title": "Miscellaneous",
       "shortTitle": "Miscellaneous",
       "description": "Large-format paintings and other work that sits outside the card-focused collections.",
-      "number": "06"
+      "number": "05"
     }
   ],
-  "artworks": []
+  "artworks": [
+    {
+      "id": "custom-card-collection-one",
+      "category": "custom-cards",
+      "src": "/art/custom-cards/customcards.jpg",
+      "title": "Custom Card Collection I",
+      "alt": "Four custom Yu-Gi-Oh-style cards featuring Dolly, Evelyn, and personal photographs.",
+      "width": 4032,
+      "height": 3024,
+      "dimensions": "59 x 86 mm",
+      "order": 1
+    },
+    {
+      "id": "custom-card-collection-two",
+      "category": "custom-cards",
+      "src": "/art/custom-cards/customcards1.jpg",
+      "title": "Custom Card Collection II",
+      "alt": "Four custom Yu-Gi-Oh-style cards featuring Dolly, Evelyn, and plush toys.",
+      "width": 4032,
+      "height": 3024,
+      "dimensions": "59 x 86 mm",
+      "order": 2
+    },
+    {
+      "id": "custom-card-collection-three",
+      "category": "custom-cards",
+      "src": "/art/custom-cards/customcards3.jpg",
+      "title": "Custom Card Collection III",
+      "alt": "Four custom Yu-Gi-Oh-style cards featuring Dolly, Evelyn, and a rabbit.",
+      "width": 4032,
+      "height": 3024,
+      "dimensions": "59 x 86 mm",
+      "order": 3
+    },
+    {
+      "id": "dolly-card-set",
+      "category": "custom-cards",
+      "src": "/art/custom-cards/dollycards.jpg",
+      "title": "Dolly Card Set",
+      "alt": "Four custom Yu-Gi-Oh-style cards featuring Dolly the dog.",
+      "width": 4032,
+      "height": 3024,
+      "dimensions": "59 x 86 mm",
+      "order": 4
+    },
+    {
+      "id": "evelyn-card-set",
+      "category": "custom-cards",
+      "src": "/art/custom-cards/evecards.jpg",
+      "title": "Evelyn Card Set",
+      "alt": "Four custom Yu-Gi-Oh-style cards featuring Evelyn the black cat.",
+      "width": 4032,
+      "height": 3024,
+      "dimensions": "59 x 86 mm",
+      "order": 5
+    },
+    {
+      "id": "exodia-binder-page-one",
+      "category": "custom-cards",
+      "src": "/art/custom-cards/exodia1.jpg",
+      "title": "Exodia Binder Page I",
+      "alt": "A binder page displaying Egyptian God cards and a customized Exodia card set.",
+      "width": 4032,
+      "height": 3024,
+      "dimensions": "59 x 86 mm",
+      "order": 6
+    },
+    {
+      "id": "exodia-binder-page-two",
+      "category": "custom-cards",
+      "src": "/art/custom-cards/exodia2.jpg",
+      "title": "Exodia Binder Page II",
+      "alt": "A second binder page displaying Egyptian God cards and a customized Exodia card set.",
+      "width": 4032,
+      "height": 3024,
+      "dimensions": "59 x 86 mm",
+      "order": 7
+    },
+    {
+      "id": "eeveelution-card-mosaic",
+      "category": "mosaic-pokemon-card-art",
+      "src": "/art/mosaic-pokemon-card-art/eeveelution.jpg",
+      "title": "Eeveelutions",
+      "alt": "Framed mosaic of eight Eevee evolutions arranged over colorful energy-card sections.",
+      "width": 4032,
+      "height": 3024,
+      "dimensions": "19.5 x 23.5 in (frame)",
+      "order": 1
+    },
+    {
+      "id": "legendary-pokemon-card-mosaic",
+      "category": "mosaic-pokemon-card-art",
+      "src": "/art/mosaic-pokemon-card-art/legendaries.jpg",
+      "title": "Legendary Trio",
+      "alt": "Large framed trading-card mosaic featuring Groudon, Kyogre, and Rayquaza.",
+      "width": 4032,
+      "height": 3024,
+      "dimensions": "20.5 x 24 in (frame)",
+      "order": 2
+    },
+    {
+      "id": "blaziken-card-mosaic",
+      "category": "mosaic-pokemon-card-art",
+      "src": "/art/mosaic-pokemon-card-art/blaziken.jpg",
+      "title": "Blaziken",
+      "alt": "Framed Blaziken mosaic assembled from green Pokémon trading-card pieces.",
+      "width": 4032,
+      "height": 3024,
+      "dimensions": "12.5 x 15.5 in (frame)",
+      "order": 3
+    },
+    {
+      "id": "gengar-family-card-mosaic",
+      "category": "mosaic-pokemon-card-art",
+      "src": "/art/mosaic-pokemon-card-art/gengars.jpg",
+      "title": "Gengar Family",
+      "alt": "Framed purple mosaic featuring Gengar, Haunter, Gastly, and Mega Gengar.",
+      "width": 4032,
+      "height": 3024,
+      "dimensions": "8 x 10 in (frame)",
+      "order": 4
+    },
+    {
+      "id": "salamence-card-mosaic",
+      "category": "mosaic-pokemon-card-art",
+      "src": "/art/mosaic-pokemon-card-art/salamence.jpg",
+      "title": "Salamence",
+      "alt": "Framed Salamence mosaic assembled over yellow Lightning Energy card pieces.",
+      "width": 4032,
+      "height": 3024,
+      "dimensions": "12.5 x 15.5 in (frame)",
+      "order": 5
+    },
+    {
+      "id": "spinarak-painted-full-art",
+      "category": "custom-pokemon-paint-full-arts",
+      "src": "/art/custom-pokemon-paint-full-arts/spinarak103.jpg",
+      "title": "Spinarak Full Art",
+      "alt": "Spinarak trading card extended with a hand-painted woodland scene and purple berries.",
+      "width": 3024,
+      "height": 4032,
+      "dimensions": "63.5 x 88.9 mm",
+      "order": 1
+    },
+    {
+      "id": "cubone-painted-full-art",
+      "category": "custom-pokemon-paint-full-arts",
+      "src": "/art/custom-pokemon-paint-full-arts/cubone72.jpg",
+      "title": "Cubone Full Art",
+      "alt": "Cubone trading card extended with a hand-painted grassy landscape and flowers.",
+      "width": 3024,
+      "height": 4032,
+      "dimensions": "63.5 x 88.9 mm",
+      "order": 2
+    },
+    {
+      "id": "bagon-painted-full-art",
+      "category": "custom-pokemon-paint-full-arts",
+      "src": "/art/custom-pokemon-paint-full-arts/bagon43.jpg",
+      "title": "Bagon Full Art",
+      "alt": "Bagon trading card extended with a hand-painted rocky ocean landscape.",
+      "width": 3024,
+      "height": 4032,
+      "dimensions": "63.5 x 88.9 mm",
+      "order": 3
+    },
+    {
+      "id": "magikarp-painted-full-art",
+      "category": "custom-pokemon-paint-full-arts",
+      "src": "/art/custom-pokemon-paint-full-arts/magikarp60.jpg",
+      "title": "Magikarp Full Art",
+      "alt": "Magikarp trading card extended with hand-painted waterfalls, rocks, and foliage.",
+      "width": 1080,
+      "height": 1080,
+      "dimensions": "63.5 x 88.9 mm",
+      "order": 4
+    },
+    {
+      "id": "viper-painted-figure",
+      "category": "3d-printed-paintings",
+      "src": "/art/3d-printed-paintings/viper-funko.jpg",
+      "title": "Viper Figure",
+      "alt": "Hand-painted stylized Viper figure in a black and green suit over a green smoke base.",
+      "width": 4032,
+      "height": 3024,
+      "order": 1
+    },
+    {
+      "id": "swole-pokemon-families",
+      "category": "3d-printed-paintings",
+      "src": "/art/3d-printed-paintings/dont-talk-to-me-or-my-sons.jpg",
+      "title": "Don't Talk to Me or My Sons",
+      "alt": "Painted muscular Charmander, Squirtle, Bulbasaur, and Pikachu prints posed with smaller figures.",
+      "width": 4032,
+      "height": 3024,
+      "order": 2
+    },
+    {
+      "id": "painted-reaver-karambits",
+      "category": "3d-printed-paintings",
+      "src": "/art/3d-printed-paintings/reaver-karambit.jpg",
+      "title": "Reaver Karambits",
+      "alt": "Two painted 3D-printed fantasy karambit props in silver, purple, pink, and black.",
+      "width": 4032,
+      "height": 3024,
+      "order": 3
+    },
+    {
+      "id": "swole-bulbasaur",
+      "category": "3d-printed-paintings",
+      "src": "/art/3d-printed-paintings/swole-bulbasaur.jpg",
+      "title": "Swole Bulbasaur",
+      "alt": "Painted muscular Bulbasaur 3D print posed beside a small Bulbasaur figure.",
+      "width": 4032,
+      "height": 3024,
+      "order": 4
+    },
+    {
+      "id": "swole-charmander",
+      "category": "3d-printed-paintings",
+      "src": "/art/3d-printed-paintings/swole-charmander.jpg",
+      "title": "Swole Charmander",
+      "alt": "Painted muscular Charmander 3D print posed beside a small Charmander figure.",
+      "width": 4032,
+      "height": 3024,
+      "order": 5
+    },
+    {
+      "id": "swole-pikachu",
+      "category": "3d-printed-paintings",
+      "src": "/art/3d-printed-paintings/swole-pikachu.jpg",
+      "title": "Swole Pikachu",
+      "alt": "Painted muscular Pikachu 3D print posed beside a small Pikachu figure.",
+      "width": 4032,
+      "height": 3024,
+      "order": 6
+    },
+    {
+      "id": "swole-pokemon-set",
+      "category": "3d-printed-paintings",
+      "src": "/art/3d-printed-paintings/swole-pokemon.jpg",
+      "title": "Swole Pokémon Set",
+      "alt": "Four painted muscular Pokémon 3D prints featuring Pikachu, Charmander, Squirtle, and Bulbasaur.",
+      "width": 4032,
+      "height": 3024,
+      "order": 7
+    },
+    {
+      "id": "swole-squirtle",
+      "category": "3d-printed-paintings",
+      "src": "/art/3d-printed-paintings/swole-squirtle.jpg",
+      "title": "Swole Squirtle",
+      "alt": "Painted muscular Squirtle 3D print posed beside a small Squirtle figure.",
+      "width": 4032,
+      "height": 3024,
+      "order": 8
+    },
+    {
+      "id": "swole-pokemon-statues",
+      "category": "3d-printed-paintings",
+      "src": "/art/3d-printed-paintings/swole-statues.jpg",
+      "title": "Swole Pokémon and Figures",
+      "alt": "Four painted muscular Pokémon 3D prints arranged behind four smaller character figures.",
+      "width": 4032,
+      "height": 3024,
+      "order": 9
+    },
+    {
+      "id": "dolly-paw-print-canvas",
+      "category": "miscellaneous",
+      "src": "/art/miscellaneous/dolly-canvas.jpg",
+      "title": "Dolly Paw-Print Canvas",
+      "alt": "White canvas labeled Dolly with colorful paw prints and red hearts.",
+      "width": 4032,
+      "height": 3024,
+      "order": 1
+    },
+    {
+      "id": "citrus-hanging-canvases",
+      "category": "miscellaneous",
+      "src": "/art/miscellaneous/canvas-citrus.jpg",
+      "title": "Citrus Hanging Canvases",
+      "alt": "Two hanging hexagonal canvases painted with oranges, lemons, leaves, and blossoms.",
+      "width": 4032,
+      "height": 3024,
+      "order": 2
+    }
+  ]
 }

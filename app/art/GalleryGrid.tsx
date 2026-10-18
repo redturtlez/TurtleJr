@@ -56,6 +56,7 @@ export default function GalleryGrid({ artworks, emptyTitle = "Photography coming
                 <span className={styles.artworkText}>
                   <strong>{artwork.title}</strong>
                   {artwork.description && <span>{artwork.description}</span>}
+                  {artwork.dimensions && <span>{artwork.dimensions}</span>}
                   <small>View larger <i aria-hidden="true">↗</i></small>
                 </span>
               </button>
@@ -75,6 +76,7 @@ export default function GalleryGrid({ artworks, emptyTitle = "Photography coming
               <p>Selected work</p>
               <h2 id={`artwork-${selectedArtwork.id}`}>{selectedArtwork.title}</h2>
               {selectedArtwork.description && <span>{selectedArtwork.description}</span>}
+              {selectedArtwork.dimensions && <span>{selectedArtwork.dimensions}</span>}
             </div>
             {artworks.length > 1 && <div className={styles.lightboxControls}><button type="button" onClick={() => move(-1)}>← Previous</button><span>{selectedIndex! + 1} / {artworks.length}</span><button type="button" onClick={() => move(1)}>Next →</button></div>}
           </div>

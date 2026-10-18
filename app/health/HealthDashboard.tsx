@@ -158,7 +158,7 @@ export default function HealthDashboard({ data, nutrition, planning, wellness, n
             </aside>
           </section>
         </>
-      ) : view === "goals" ? <GoalsPanel data={data} /> : view === "nutrition" ? <NutritionPanel data={nutrition} localDate={data.context.localDate} /> : view === "planning" ? <PlanningPanel data={planning} foods={nutrition.foods} localDate={data.context.localDate} /> : view === "wellness" ? <WellnessPanel data={wellness} localDate={data.context.localDate} /> : view === "insights" ? <InsightsPanel data={data} /> : view === "notifications" ? <NotificationPanel data={notifications} /> : (
+      ) : view === "goals" ? <GoalsPanel data={data} /> : view === "nutrition" ? <NutritionPanel data={nutrition} localDate={data.context.localDate} /> : view === "planning" ? <PlanningPanel data={planning} foods={nutrition.foods} localDate={data.context.localDate} /> : view === "wellness" ? <WellnessPanel data={wellness} localDate={data.context.localDate} /> : view === "insights" ? <InsightsPanel data={data} nutrition={nutrition} /> : view === "notifications" ? <NotificationPanel data={notifications} /> : (
         <section className={styles.configureGrid}>
           <div className={styles.managePanel}>
             <div className={styles.panelHeading}><div><small>{data.routine.name}</small><h2>Activities and habits</h2></div><span>{data.activities.length} total</span></div>

@@ -23,9 +23,12 @@ function hasSupportedSignature(filePath) {
 }
 
 test("gallery categories have stable public folders and unique slugs", () => {
-  assert.equal(catalog.categories.length, 6);
+  assert.equal(catalog.categories.length, 5);
   const slugs = catalog.categories.map(({ slug }) => slug);
   assert.equal(new Set(slugs).size, slugs.length);
+  assert.ok(slugs.includes("custom-cards"));
+  assert.ok(!slugs.includes("custom-yugioh-cards"));
+  assert.ok(!slugs.includes("custom-pokemon-cards"));
   for (const category of catalog.categories) {
     assert.match(category.slug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
     assert.ok(category.title.trim());
@@ -39,19 +42,27 @@ test("every artwork has deliberate metadata and a valid local image", () => {
   const ids = new Set();
   const sources = new Set();
   for (const artwork of catalog.artworks) {
-    assert.ok(!ids.has(artwork.id), `duplicate artwork id: ${artwork.id}`);
-    ids.add(artwork.id);
+    if (artwork.id !== undefined) {
+      assert.equal(typeof artwork.id, "string", "artwork id must be a string when supplied");
+      assert.ok(artwork.id.trim(), "artwork id cannot be empty");
+      assert.ok(!ids.has(artwork.id), `duplicate artwork id: ${artwork.id}`);
+      ids.add(artwork.id);
+    }
     assert.ok(categorySlugs.has(artwork.category), `unknown category: ${artwork.category}`);
-    assert.ok(artwork.title.trim(), `${artwork.id} requires a title`);
-    assert.ok(artwork.alt.trim(), `${artwork.id} requires alt text`);
-    assert.ok(Number.isInteger(artwork.width) && artwork.width > 0, `${artwork.id} requires a positive width`);
-    assert.ok(Number.isInteger(artwork.height) && artwork.height > 0, `${artwork.id} requires a positive height`);
-    assert.ok(Number.isInteger(artwork.order) && artwork.order > 0, `${artwork.id} requires a positive order`);
+    if (artwork.title !== undefined) assert.ok(typeof artwork.title === "string" && artwork.title.trim(), `${artwork.src} title must be non-empty when supplied`);
+    if (artwork.alt !== undefined) assert.ok(typeof artwork.alt === "string" && artwork.alt.trim(), `${artwork.src} alt text must be non-empty when supplied`);
+    if (artwork.description !== undefined) assert.ok(typeof artwork.description === "string" && artwork.description.trim(), `${artwork.src} description must be non-empty when supplied`);
+    if (artwork.dimensions !== undefined) assert.ok(typeof artwork.dimensions === "string" && artwork.dimensions.trim(), `${artwork.src} dimensions must be non-empty when supplied`);
+    assert.equal(artwork.width === undefined, artwork.height === undefined, `${artwork.src} width and height must be supplied together`);
+    if (artwork.width !== undefined) assert.ok(Number.isInteger(artwork.width) && artwork.width > 0, `${artwork.src} width must be positive`);
+    if (artwork.height !== undefined) assert.ok(Number.isInteger(artwork.height) && artwork.height > 0, `${artwork.src} height must be positive`);
+    if (artwork.order !== undefined) assert.ok(Number.isInteger(artwork.order) && artwork.order > 0, `${artwork.src} order must be positive when supplied`);
     assert.ok(artwork.src.startsWith(`/art/${artwork.category}/`), `${artwork.id} is outside its category folder`);
     assert.match(artwork.src, allowedExtension);
     const filePath = publicFilePath(artwork.src);
     assert.ok(existsSync(filePath) && statSync(filePath).isFile(), `missing image: ${artwork.src}`);
     assert.ok(hasSupportedSignature(filePath), `unsupported image payload: ${artwork.src}`);
+    assert.ok(!sources.has(artwork.src.toLowerCase()), `duplicate artwork source: ${artwork.src}`);
     sources.add(artwork.src.toLowerCase());
   }
 
@@ -67,6 +78,9 @@ test("every artwork has deliberate metadata and a valid local image", () => {
 test("art remains a public primary route", () => {
   const navbar = readFileSync(join(root, "app", "navbar.tsx"), "utf8");
   const proxy = readFileSync(join(root, "proxy.ts"), "utf8");
+  const categoryPage = readFileSync(join(root, "app", "art", "[category]", "page.tsx"), "utf8");
   assert.match(navbar, /href:\s*["']\/art["'],\s*label:\s*["']Art["']/);
   assert.doesNotMatch(proxy, /\/art\(\.\*\)/);
+  assert.match(categoryPage, /"custom-yugioh-cards", "custom-pokemon-cards"/);
+  assert.match(categoryPage, /permanentRedirect\("\/art\/custom-cards"\)/);
 });
