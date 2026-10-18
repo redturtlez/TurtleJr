@@ -20,9 +20,15 @@ Built MVC and database layers, wrote JUnit tests, contributed to the Angular int
 ];
 
 const personal = [
-  { title: "Art", date: "Ongoing creative practice", desc: `A growing collection of physical artwork, including custom Yu-Gi-Oh and Pokémon cards, hand-painted full arts, Pokémon card mosaics, 3D-printed paintings, and larger canvas work.
+  { title: "Art Gallery", date: "Ongoing creative practice", desc: `A growing public archive of physical artwork spanning custom trading cards, Pokémon card mosaics, hand-painted full arts, painted 3D prints, and larger canvas work.
 
-The gallery organizes each medium into its own collection while leaving room to document individual titles, materials, and stories as new photographs are added.`, url: "/art", linkLabel: "Explore the art", tags: ["Painting", "Custom Cards", "Physical Art"] },
+Each collection is populated from a maintainable local catalog, with optional titles, descriptions, and physical dimensions for individual pieces. New artwork can be added without rebuilding the gallery structure.`, url: "/art", linkLabel: "Explore the gallery", tags: ["Painting", "Custom Cards", "Physical Art"] },
+  { title: "Trading Card Creator", date: "Public creative app · Ongoing", desc: `A browser-based studio for designing custom Yu-Gi-Oh and Pokémon cards across multiple eras and template families.
+
+The editor keeps uploaded artwork in the browser, uses the same calibrated layout for previews and print-resolution PNG exports, and adapts card frames, typography, attacks, abilities, energy symbols, and other details to the selected template. It is public and does not require an account.`, url: "/card-creator", linkLabel: "Open the Card Creator", tags: ["Canvas", "TypeScript", "Creative Tool"] },
+  { title: "Life Dashboard", date: "Personal app · Ongoing", desc: `A private, mobile-first workspace for building flexible routines and following progress without turning daily life into a rigid checklist.
+
+The dashboard combines recurring habits, long-term goals, exercise and creative activity, food and nutrient tracking, meal planning, weekly insights, and configurable push reminders. Recommendations use the user's own history and require enough evidence before surfacing a pattern or nutrition suggestion.`, url: "/health", linkLabel: "Open the Life Dashboard", tags: ["Next.js", "Health Tracking", "PWA"] },
   { title: "Fruit Fly Plays Yu-Gi-Oh!", date: "Personal experiment", desc: `An experimental AI project combining a fruit fly brain-derived neural architecture with an open-source Yu-Gi-Oh engine. Trained across 40,000 simulated games toward the goal of achieving a first-turn win.`, url: "/projects/fruit-fly-yugioh", linkLabel: "View the experiment", tags: ["Artificial Intelligence", "Neural Networks", "Game Simulation"] },
   { title: "Turtle Jr", date: "Apr. 2023 – Present", desc: `TurtleJr.dev is a mobile-first portfolio and progressive web app built with Next.js, TypeScript, and Tailwind CSS.
 
