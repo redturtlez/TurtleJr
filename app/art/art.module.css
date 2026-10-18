@@ -3,3 +3,21 @@
 @media(max-width:680px){.page{padding-top:36px}.hero h1{font-size:clamp(43px,13vw,62px)}.intro{margin-top:22px;font-size:16px}.featuredSection,.collections{margin-top:78px}.featuredCard,.featuredPlaceholder{grid-template-columns:1fr;min-height:0}.featuredImage,.featuredScale{min-height:330px}.featuredCopy{border-top:1px solid rgb(var(--border)/.25);border-left:0}.categoryGrid{gap:11px}.categoryCard{grid-template-columns:112px minmax(0,1fr);min-height:245px}.categoryCopy{padding:22px 18px}.categoryCopy>span{font-size:11px}.categoryHeader h1{font-size:clamp(41px,12vw,60px)}.categoryNav{margin-top:38px}.categoryGallery{margin-top:24px}.emptyState{min-height:330px;padding:30px 20px}.galleryGrid{columns:1}.lightbox{width:calc(100% - 16px);max-height:calc(100dvh - 16px)}.lightboxPanel{min-height:calc(100dvh - 18px)}.lightboxImage{min-height:58dvh;margin:8px}.lightboxCaption{padding:12px 22px 82px}.lightboxControls{right:20px;bottom:22px;left:20px;justify-content:space-between}}
 @media(max-width:420px){.categoryCard{grid-template-columns:1fr}.categoryVisual{min-height:170px}.categoryCopy{min-height:220px}}
 @media(prefers-reduced-motion:reduce){.featuredCard,.categoryCard,.backLink,.artworkImage img{transition:none}}
+
+.lightboxImage{width:auto;min-width:0;padding:0;border:0;color:inherit;cursor:zoom-in;touch-action:manipulation}
+.imageToggleHint{position:absolute;z-index:1;bottom:12px;left:50%;padding:7px 10px;border:1px solid rgb(255 255 255/.16);border-radius:999px;color:rgb(255 255 255/.82);background:rgb(0 0 0/.68);font-size:9px;font-weight:700;white-space:nowrap;pointer-events:none;transform:translateX(-50%);backdrop-filter:blur(8px)}
+.imageOnly{grid-template-columns:1fr}
+.imageOnly .lightboxImage{height:calc(100dvh - 66px);min-height:0;aspect-ratio:auto!important;cursor:zoom-out}
+.imageOnly .lightboxCaption,.imageOnly .lightboxControls{display:none}
+
+@media(max-width:900px){
+  .lightboxImage{height:min(65dvh,620px);min-height:0;aspect-ratio:auto!important}
+  .imageOnly .lightboxImage{height:calc(100dvh - 66px)}
+}
+
+@media(max-width:680px){
+  .lightboxImage{height:min(58dvh,560px);min-height:0;aspect-ratio:auto!important}
+  .imageOnly .lightboxImage{height:calc(100dvh - 34px)}
+}
+
+.categoryVisual img{object-fit:contain}
