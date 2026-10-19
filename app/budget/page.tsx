@@ -4,7 +4,6 @@ import BudgetPlanner from "./BudgetPlanner";
 import SavingsAdvisor from "./SavingsAdvisor";
 import GoalsAndGrowth from "./GoalsAndGrowth";
 import FinanceOverview from "./FinanceOverview";
-import BudgetSummary from "./budgetSummary";
 import { getFinanceAccounts } from "./financeData";
 import { getFinanceBudgetData } from "./financeBudgetData";
 import { getFinanceGoals } from "./financeGoalData";
@@ -21,7 +20,6 @@ export default async function BudgetPage() {
       <BudgetPlanner accounts={accounts} data={budget} />
       <SavingsAdvisor accounts={accounts} data={budget} />
       <GoalsAndGrowth accounts={accounts} goals={goals} />
-      <BudgetSummary />
     </main>
   );
 }

@@ -11,7 +11,7 @@ V1 remains manual-only. Bank connections, imports, live rates, transfers, invest
 ## Architecture
 
 - Canonical route: `/budget`, protected by the existing Clerk proxy. The visible product label is Finance so bookmarks and auth routing remain compatible.
-- Existing budget: `Budget.userid` plus `Budget.budgetItems` JSON. It remains unchanged and visible as the legacy ledger.
+- Existing budget: `Budget.userid` plus `Budget.budgetItems` JSON. It remains unchanged in storage but is no longer rendered in Turtle Jr. Finance.
 - Account persistence: `FinanceAccount`, scoped by Clerk `userId`, limited by validation to checking and savings, and archived instead of deleted.
 - Balance persistence: `FinanceBalanceSnapshot`, with integer `BIGINT` cents, local ISO as-of date, UTC recording time, and user/account ownership.
 - Corrections: the original snapshot receives `correctedAt`; a new snapshot points to it with `replacesSnapshotId`. Current-balance calculations ignore corrected rows. No historical row is overwritten or deleted.
@@ -121,3 +121,5 @@ Completed on 2026-10-18 without running a migration or querying financial record
 - Archived accounts and their snapshots are retained but no unarchive UI is included in Milestone 1.
 
 All approved Turtle Jr. Finance V1 milestones are complete. Future work, including legacy-ledger conversion, unarchive tooling, additional account types, bank connections, or other post-V1 scope, requires a new explicit approval.
+
+On 2026-10-19, the user approved removing the legacy ledger from the Finance interface. Its persisted JSON and dormant component remain untouched; only the page rendering was removed. The Finance desktop header was also aligned with the Health page's stacked accent-eyebrow and main-heading layout.
