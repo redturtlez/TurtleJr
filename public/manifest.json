@@ -35,7 +35,7 @@
     }
   ],
   "shortcuts": [
-    { "name": "Life Dashboard", "short_name": "Life", "url": "/health" },
-    { "name": "To Do", "short_name": "To Do", "url": "/todo" }
+    { "name": "Life Dashboard", "short_name": "Life", "url": "/health", "icons": [{ "src": "/heart.png", "sizes": "192x192" }]},
+    { "name": "To Do", "short_name": "To Do", "url": "/todo", "icons": [{ "src": "/check.png", "sizes": "192x192" }] }
   ]
 }

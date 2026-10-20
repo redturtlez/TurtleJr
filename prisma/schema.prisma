@@ -193,6 +193,7 @@ enum LifeRecommendationFeedbackStatus {
 enum LifeFoodSource {
   MANUAL
   USDA
+  OPEN_FOOD_FACTS
 }
 
 enum LifeMealSlot {
@@ -396,6 +397,7 @@ model LifeFood {
   userId            String
   source            LifeFoodSource           @default(MANUAL)
   externalId        String?
+  barcode           String?
   name              String
   brand             String?
   servingLabel      String
@@ -425,6 +427,7 @@ model LifeFood {
   groceryStates     LifeGroceryState[]
 
   @@unique([userId, source, externalId])
+  @@unique([userId, barcode])
   @@index([userId, favorite])
 }
 

@@ -1,10 +1,21 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { aggregateGroceryItems, aggregateNutrients, buildNutritionInsightReview, estimateMaintenance, foodDensity, kilogramsToGrams, mifflinStJeorRmr, poundsToGrams, proposeCalorieTarget, proposeProteinTarget, recipeNutrients, recipeServingGrams, recommendFoodSubstitutions, recommendRecipes, rollingWeightAverage, scaleNutrient } from "./nutrition.ts";
+import { aggregateGroceryItems, aggregateNutrients, buildNutritionInsightReview, estimateMaintenance, foodDensity, groupFoodLogs, kilogramsToGrams, mifflinStJeorRmr, poundsToGrams, proposeCalorieTarget, proposeProteinTarget, recipeNutrients, recipeServingGrams, recommendFoodSubstitutions, recommendRecipes, rollingWeightAverage, scaleNutrient } from "./nutrition.ts";
 
 test("serving quantities scale integer nutrients deterministically", () => {
   assert.equal(scaleNutrient(250_000, 1500), 375_000);
   assert.equal(scaleNutrient(12_345, 333), 4_111);
+});
+
+test("food logs group newest dates first and meals in daily order", () => {
+  const groups = groupFoodLogs([
+    { id: "dinner", localDate: "2026-10-18", mealSlot: "DINNER" as const },
+    { id: "snack", localDate: "2026-10-19", mealSlot: "SNACK" as const },
+    { id: "breakfast", localDate: "2026-10-19", mealSlot: "BREAKFAST" as const },
+  ]);
+  assert.deepEqual(groups.map((group) => group.localDate), ["2026-10-19", "2026-10-18"]);
+  assert.deepEqual(groups[0]?.meals.map((meal) => meal.mealSlot), ["BREAKFAST", "SNACK"]);
+  assert.equal(groups[0]?.meals[0]?.logs[0]?.id, "breakfast");
 });
 
 test("missing nutrients remain missing instead of becoming zero", () => {

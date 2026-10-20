@@ -6,6 +6,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/database";
 import { estimateMaintenance, kilogramsToGrams, poundsToGrams, proposeCalorieTarget, proposeProteinTarget } from "./nutrition";
 import { fetchUsdaFood, searchUsda, type UsdaSearchResult } from "./usda";
+import { lookupBarcode } from "./barcodeLookup";
+import type { BarcodeFoodDraft } from "./barcodeData";
 import { foodLogSchema, foodLogUpdateSchema, foodSchema, groceryStateSchema, mealLogSchema, mealPlanSchema, mealSchema, nutritionFeedbackSchema, nutritionSettingsSchema, recipeSchema, weightEntrySchema } from "./validation";
 
 async function requireUserId(): Promise<string> { const { userId } = await auth(); if (!userId) throw new Error("You must be signed in to update nutrition"); return userId; }
@@ -46,8 +48,8 @@ export async function createFood(input: unknown): Promise<void> {
 }
 
 export async function searchUsdaFoods(input: unknown): Promise<UsdaSearchResult[]> {
-  await requireUserId(); const parsed = z.string().trim().min(2).max(100).safeParse(input);
-  if (!parsed.success) throw new Error("Enter at least two search characters"); return searchUsda(parsed.data);
+  await requireUserId(); const parsed = z.object({ query: z.string().trim().min(2).max(100), scope: z.enum(["ALL", "GENERIC", "BRANDED"]), completeOnly: z.boolean(), includeDuplicates: z.boolean() }).safeParse(input);
+  if (!parsed.success) throw new Error("Enter at least two search characters"); return searchUsda(parsed.data.query, parsed.data);
 }
 
 export async function importUsdaFood(input: unknown): Promise<void> {
@@ -55,6 +57,33 @@ export async function importUsdaFood(input: unknown): Promise<void> {
   const food = await fetchUsdaFood(parsed.data);
   const { nutrients, ...details } = food;
   await prisma.lifeFood.upsert({ where: { userId_source_externalId: { userId, source: "USDA", externalId: food.externalId } }, update: { ...details, ...nutrients, dataQuality: "KNOWN", favorite: true }, create: { userId, source: "USDA", ...details, ...nutrients, dataQuality: "KNOWN" } }); refresh();
+}
+
+export async function lookupFoodBarcode(input: unknown): Promise<BarcodeFoodDraft> {
+  await requireUserId(); const parsed = z.string().trim().regex(/^\d{6,14}$/).safeParse(input);
+  if (!parsed.success) throw new Error("Enter a valid 6–14 digit barcode");
+  return lookupBarcode(parsed.data);
+}
+
+const scannedFoodSchema = z.object({
+  barcode: z.string().regex(/^\d{6,14}$/), source: z.enum(["USDA", "OPEN_FOOD_FACTS"]), externalId: z.string().trim().min(1).max(100),
+  name: z.string().trim().min(1).max(200), brand: z.string().trim().max(200).nullable(), servingLabel: z.string().trim().min(1).max(100),
+  servingGrams: z.number().positive().max(100_000).nullable(), calories: z.number().min(0).max(100_000).nullable(),
+  protein: z.number().min(0).max(10_000).nullable(), carbs: z.number().min(0).max(10_000).nullable(), fat: z.number().min(0).max(10_000).nullable(), fiber: z.number().min(0).max(10_000).nullable(), water: z.number().min(0).max(100_000).nullable(),
+  calcium: z.number().min(0).max(1_000_000).nullable(), potassium: z.number().min(0).max(1_000_000).nullable(), magnesium: z.number().min(0).max(1_000_000).nullable(), iron: z.number().min(0).max(1_000_000).nullable(), omega3: z.number().min(0).max(1_000_000).nullable(),
+  vitaminD: z.number().min(0).max(1_000_000).nullable(), vitaminB12: z.number().min(0).max(1_000_000).nullable(),
+});
+
+export async function saveScannedFood(input: unknown): Promise<void> {
+  const userId = await requireUserId(); const parsed = scannedFoodSchema.safeParse(input); if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid scanned food");
+  const d = parsed.data;
+  const values = { source: d.source, externalId: d.externalId, barcode: d.barcode, name: d.name, brand: d.brand || null, servingLabel: d.servingLabel, servingGramsMilli: milli(d.servingGrams), caloriesMilli: milli(d.calories), proteinMg: milli(d.protein), carbsMg: milli(d.carbs), fatMg: milli(d.fat), fiberMg: milli(d.fiber), waterMg: milli(d.water), calciumMcg: milli(d.calcium), potassiumMcg: milli(d.potassium), magnesiumMcg: milli(d.magnesium), ironMcg: milli(d.iron), vitaminDMcg: whole(d.vitaminD), vitaminB12Mcg: whole(d.vitaminB12), omega3Mcg: milli(d.omega3), dataQuality: "KNOWN" as const, favorite: true };
+  await prisma.$transaction(async (transaction) => {
+    const existing = await transaction.lifeFood.findFirst({ where: { userId, OR: [{ barcode: d.barcode }, { source: d.source, externalId: d.externalId }] }, select: { id: true } });
+    if (existing) await transaction.lifeFood.update({ where: { id: existing.id }, data: values });
+    else await transaction.lifeFood.create({ data: { userId, ...values } });
+  });
+  refresh();
 }
 
 export async function logFood(input: unknown): Promise<void> {
@@ -69,11 +98,39 @@ export async function updateFoodLog(input: unknown): Promise<void> {
   if (!result.count) throw new Error("Food log not found"); refresh();
 }
 
+export async function deleteFoodLog(input: unknown): Promise<void> {
+  const userId = await requireUserId(); const parsed = z.string().cuid().safeParse(input); if (!parsed.success) throw new Error("Invalid food log");
+  const result = await prisma.lifeFoodLog.deleteMany({ where: { id: parsed.data, userId } });
+  if (!result.count) throw new Error("Food log not found"); refresh();
+}
+
+export async function removeSavedFood(input: unknown): Promise<void> {
+  const userId = await requireUserId(); const parsed = z.string().cuid().safeParse(input); if (!parsed.success) throw new Error("Invalid food");
+  const result = await prisma.lifeFood.updateMany({ where: { id: parsed.data, userId, favorite: true }, data: { favorite: false } });
+  if (!result.count) throw new Error("Saved food not found"); refresh();
+}
+
+export async function restoreSavedFood(input: unknown): Promise<void> {
+  const userId = await requireUserId(); const parsed = z.string().cuid().safeParse(input); if (!parsed.success) throw new Error("Invalid food");
+  const result = await prisma.lifeFood.updateMany({ where: { id: parsed.data, userId, favorite: false }, data: { favorite: true } });
+  if (!result.count) throw new Error("Removed food not found"); refresh();
+}
+
 export async function createMeal(input: unknown): Promise<void> {
   const userId = await requireUserId(); const parsed = mealSchema.safeParse(input); if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid meal");
   const ids = parsed.data.items.map((item) => item.foodId); if (new Set(ids).size !== ids.length) throw new Error("Choose each food once per meal");
   if (await prisma.lifeFood.count({ where: { userId, id: { in: ids } } }) !== ids.length) throw new Error("One or more foods are unavailable");
   await prisma.lifeMeal.create({ data: { userId, name: parsed.data.name, pinned: parsed.data.pinned, defaultMealSlot: parsed.data.defaultMealSlot, items: { create: parsed.data.items.map((item, position) => ({ foodId: item.foodId, quantityMilli: Math.round(item.quantity * 1000), position })) } } }); refresh();
+}
+
+export async function deleteMeal(input: unknown): Promise<void> {
+  const userId = await requireUserId(); const parsed = z.string().cuid().safeParse(input); if (!parsed.success) throw new Error("Invalid meal");
+  const deleted = await prisma.$transaction(async (transaction) => {
+    const result = await transaction.lifeMeal.deleteMany({ where: { id: parsed.data, userId } });
+    if (result.count) await transaction.lifeNutritionFeedback.deleteMany({ where: { userId, targetType: "MEAL", targetId: parsed.data } });
+    return result.count;
+  });
+  if (!deleted) throw new Error("Meal not found"); refresh();
 }
 
 export async function logMeal(input: unknown): Promise<void> {

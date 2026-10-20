@@ -14,6 +14,23 @@ export interface Nutrients {
   waterMg?: number | null;
 }
 
+export type FoodLogSlot = "BREAKFAST" | "LUNCH" | "DINNER" | "SNACK";
+export interface FoodLogGroup<T> { localDate: string; meals: Array<{ mealSlot: FoodLogSlot; logs: T[] }> }
+
+export function groupFoodLogs<T extends { localDate: string; mealSlot: FoodLogSlot }>(logs: T[]): FoodLogGroup<T>[] {
+  const mealOrder: FoodLogSlot[] = ["BREAKFAST", "LUNCH", "DINNER", "SNACK"];
+  const dates = new Map<string, Map<FoodLogSlot, T[]>>();
+  for (const log of logs) {
+    const meals = dates.get(log.localDate) ?? new Map<FoodLogSlot, T[]>();
+    const entries = meals.get(log.mealSlot) ?? [];
+    entries.push(log); meals.set(log.mealSlot, entries); dates.set(log.localDate, meals);
+  }
+  return [...dates.entries()].toSorted(([left], [right]) => right.localeCompare(left)).map(([localDate, meals]) => ({
+    localDate,
+    meals: mealOrder.flatMap((mealSlot) => meals.has(mealSlot) ? [{ mealSlot, logs: meals.get(mealSlot)! }] : []),
+  }));
+}
+
 export type NutrientKey = keyof Nutrients;
 
 export function scaleNutrient(value: number | null, quantityMilli: number): number | null {
