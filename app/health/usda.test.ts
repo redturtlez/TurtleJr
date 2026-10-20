@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normalizeUsdaSearchFood, rankUsdaSearchResults, usdaSourceLabel } from "./usdaData.ts";
+import { normalizeUsdaSearchFood, rankUsdaSearchResults, usdaServing, usdaServingOptions, usdaSourceLabel } from "./usdaData.ts";
 
 test("USDA search nutrition scales from 100 grams to a supplied gram serving", () => {
   const result = normalizeUsdaSearchFood({
@@ -52,6 +52,19 @@ test("USDA data types have plain-language source labels", () => {
   assert.equal(usdaSourceLabel("Survey (FNDDS)"), "USDA survey");
   assert.equal(usdaSourceLabel("SR Legacy"), "USDA legacy");
   assert.equal(usdaSourceLabel("Experimental"), "USDA data");
+});
+
+test("USDA serving selection recognizes branded GRM units and household portions", () => {
+  assert.deepEqual(usdaServing({ fdcId: 3, servingSize: 43, servingSizeUnit: "GRM", householdServingFullText: "1 packet (43 g)" }), { label: "1 packet (43 g)", grams: 43, basis: "PER_SERVING" });
+  assert.deepEqual(usdaServing({ fdcId: 4, foodPortions: [{ amount: 1, gramWeight: 28, modifier: "slice" }] }), { label: "1 slice", grams: 28, basis: "PER_SERVING" });
+  assert.deepEqual(usdaServing({ fdcId: 5 }), { label: "100 g", grams: 100, basis: "PER_100_GRAMS" });
+});
+
+test("USDA serving options put the household portion before the 100 gram fallback", () => {
+  assert.deepEqual(usdaServingOptions({ fdcId: 2620192, servingSize: 43, servingSizeUnit: "GRM", householdServingFullText: "1 packet" }), [
+    { label: "1 packet", grams: 43, basis: "PER_SERVING" },
+    { label: "100 g", grams: 100, basis: "PER_100_GRAMS" },
+  ]);
 });
 
 const completeNutrients = [

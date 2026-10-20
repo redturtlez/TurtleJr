@@ -1,8 +1,8 @@
 import "server-only";
 import { env } from "@/env.mjs";
 import type { Nutrients } from "./nutrition";
-import { normalizeBarcode, type BarcodeFoodDraft } from "./barcodeData";
-import { rankUsdaSearchResults, usdaNutrient, type UsdaFoodSummary, type UsdaNutrientValue, type UsdaSearchResult } from "./usdaData";
+import { barcodeLookupQueries, normalizeBarcode, type BarcodeFoodDraft } from "./barcodeData";
+import { rankUsdaSearchResults, usdaNutrient, usdaServing, usdaServingOptions, type UsdaFoodSummary, type UsdaNutrientValue, type UsdaSearchResult, type UsdaServing } from "./usdaData";
 
 export type { UsdaSearchResult } from "./usdaData";
 
@@ -30,14 +30,14 @@ function nutrientSum(food: UsdaFood, names: string[]): number | null {
   return values.length ? values.reduce((sum, value) => sum + value, 0) : null;
 }
 
-export async function fetchUsdaFood(fdcId: number): Promise<{ externalId: string; name: string; brand: string | null; servingLabel: string; servingGramsMilli: number; nutrients: Nutrients }> {
+export async function fetchUsdaFood(fdcId: number): Promise<{ externalId: string; name: string; brand: string | null; servingLabel: string; servingGramsMilli: number; nutritionBasis: "PER_SERVING" | "PER_100_GRAMS"; servingOptions: UsdaServing[]; nutrients: Nutrients }> {
   const food = await request(`/food/${fdcId}`) as UsdaFood;
-  const servingGrams = food.servingSizeUnit?.toLowerCase() === "g" && food.servingSize && food.servingSize > 0 ? food.servingSize : 100;
+  const serving = usdaServing(food); const servingGrams = serving.grams;
   const factor = servingGrams / 100;
   const scaled = (value: number | null, multiplier: number): number | null => value === null ? null : Math.round(value * factor * multiplier);
   return {
     externalId: String(food.fdcId), name: food.description ?? "Unnamed USDA food", brand: food.brandOwner ?? food.brandName ?? null,
-    servingLabel: servingGrams === 100 ? "100 g" : food.householdServingFullText?.trim() || `${servingGrams} g`, servingGramsMilli: Math.round(servingGrams * 1000),
+    servingLabel: serving.label, servingGramsMilli: Math.round(servingGrams * 1000), nutritionBasis: serving.basis, servingOptions: usdaServingOptions(food),
     nutrients: {
       caloriesMilli: scaled(usdaNutrient(food, ["energy"], "kcal"), 1000),
       proteinMg: scaled(usdaNutrient(food, ["protein"]), 1000),
@@ -57,17 +57,24 @@ export async function fetchUsdaFood(fdcId: number): Promise<{ externalId: string
 }
 
 export async function lookupUsdaBarcode(input: string): Promise<BarcodeFoodDraft | null> {
-  const barcode = normalizeBarcode(input); if (!barcode) return null;
-  const data = await request("/foods/search", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: barcode, dataType: ["Branded"], pageSize: 25 }) }) as { foods?: UsdaFood[] };
-  const summary = data.foods?.find((food) => normalizeBarcode(food.gtinUpc ?? "") === barcode);
+  const rawBarcode = input.replace(/\D/g, ""); const barcode = normalizeBarcode(rawBarcode); if (!barcode) return null;
+  const queries = barcodeLookupQueries(input);
+  const matches: UsdaFood[] = [];
+  for (const query of queries) {
+    const data = await request("/foods/search", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query, dataType: ["Branded"], pageSize: 25 }) }) as { foods?: UsdaFood[] };
+    matches.push(...(data.foods ?? []).filter((food) => normalizeBarcode(food.gtinUpc ?? "") === barcode));
+    if (matches.length) break;
+  }
+  const summary = matches.toSorted((left, right) => (right.publicationDate ?? "").localeCompare(left.publicationDate ?? ""))[0];
   if (!summary) return null;
   const food = await fetchUsdaFood(summary.fdcId);
   const value = (stored: number | null | undefined, divisor: number): number | null => stored == null ? null : stored / divisor;
   const draft: BarcodeFoodDraft = {
     barcode, source: "USDA", externalId: food.externalId, sourceLabel: "USDA FoodData Central",
     name: food.name, brand: food.brand, servingLabel: food.servingLabel, servingGrams: food.servingGramsMilli / 1000,
-    nutritionBasis: "PER_SERVING", calories: value(food.nutrients.caloriesMilli, 1000), protein: value(food.nutrients.proteinMg, 1000), carbs: value(food.nutrients.carbsMg, 1000), fat: value(food.nutrients.fatMg, 1000), fiber: value(food.nutrients.fiberMg, 1000), water: value(food.nutrients.waterMg, 1000), calcium: value(food.nutrients.calciumMcg, 1000), potassium: value(food.nutrients.potassiumMcg, 1000), magnesium: value(food.nutrients.magnesiumMcg, 1000), iron: value(food.nutrients.ironMcg, 1000), vitaminD: food.nutrients.vitaminDMcg ?? null, vitaminB12: food.nutrients.vitaminB12Mcg ?? null, omega3: value(food.nutrients.omega3Mcg, 1000), warnings: [],
+    nutritionBasis: food.nutritionBasis, servingOptions: food.servingOptions, calories: value(food.nutrients.caloriesMilli, 1000), protein: value(food.nutrients.proteinMg, 1000), carbs: value(food.nutrients.carbsMg, 1000), fat: value(food.nutrients.fatMg, 1000), fiber: value(food.nutrients.fiberMg, 1000), water: value(food.nutrients.waterMg, 1000), calcium: value(food.nutrients.calciumMcg, 1000), potassium: value(food.nutrients.potassiumMcg, 1000), magnesium: value(food.nutrients.magnesiumMcg, 1000), iron: value(food.nutrients.ironMcg, 1000), vitaminD: food.nutrients.vitaminDMcg ?? null, vitaminB12: food.nutrients.vitaminB12Mcg ?? null, omega3: value(food.nutrients.omega3Mcg, 1000), warnings: [],
   };
   if ([draft.calories, draft.protein, draft.carbs, draft.fat].some((item) => item === null)) draft.warnings.push("Some calories or macros are unavailable and will remain unknown.");
+  if (draft.nutritionBasis === "PER_100_GRAMS") draft.warnings.push("USDA did not provide a supported household serving; values are shown per 100 g.");
   return draft;
 }

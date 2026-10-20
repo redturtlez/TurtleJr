@@ -17,7 +17,7 @@ async function lookupOpenFoodFacts(barcode: string): Promise<BarcodeFoodDraft | 
 export async function lookupBarcode(input: string): Promise<BarcodeFoodDraft> {
   const barcode = normalizeBarcode(input); if (!barcode) throw new Error("Enter a valid 6–14 digit barcode");
   let usdaUnavailable = false;
-  try { const usda = await lookupUsdaBarcode(barcode); if (usda) return usda; }
+  try { const usda = await lookupUsdaBarcode(input); if (usda) return usda; }
   catch { usdaUnavailable = true; }
   const openFoodFacts = await lookupOpenFoodFacts(barcode);
   if (openFoodFacts) { if (usdaUnavailable) openFoodFacts.warnings.push("USDA was unavailable, so this result came from Open Food Facts."); return openFoodFacts; }

@@ -19,8 +19,26 @@ export interface UsdaFoodSummary {
   gtinUpc?: string;
   publicationDate?: string;
   score?: number;
+  foodPortions?: Array<{ amount?: number; gramWeight?: number; modifier?: string; portionDescription?: string; measureUnit?: { name?: string; abbreviation?: string } }>;
   foodNutrients?: UsdaNutrientValue[];
 }
+
+export interface UsdaServing { label: string; grams: number; basis: "PER_SERVING" | "PER_100_GRAMS" }
+
+const isGramUnit = (unit: string | undefined): boolean => ["g", "grm", "gram", "grams"].includes(unit?.trim().toLocaleLowerCase() ?? "");
+
+export function usdaServingOptions(food: UsdaFoodSummary): UsdaServing[] {
+  const options: UsdaServing[] = [];
+  if (food.servingSize && food.servingSize > 0 && isGramUnit(food.servingSizeUnit)) options.push({ label: food.householdServingFullText?.trim() || `${food.servingSize} g`, grams: food.servingSize, basis: "PER_SERVING" });
+  for (const portion of food.foodPortions ?? []) if (portion.gramWeight && portion.gramWeight > 0) {
+    const unit = portion.modifier?.trim() || portion.portionDescription?.trim() || portion.measureUnit?.name?.trim() || portion.measureUnit?.abbreviation?.trim() || "serving";
+    options.push({ label: `${portion.amount ?? 1} ${unit}`.trim(), grams: portion.gramWeight, basis: "PER_SERVING" });
+  }
+  options.push({ label: "100 g", grams: 100, basis: "PER_100_GRAMS" });
+  return [...new Map(options.map((option) => [`${option.label.toLocaleLowerCase()}|${option.grams}`, option])).values()];
+}
+
+export function usdaServing(food: UsdaFoodSummary): UsdaServing { return usdaServingOptions(food)[0]!; }
 
 export interface UsdaSearchResult {
   fdcId: number;
@@ -65,8 +83,9 @@ export function usdaSourceLabel(dataType: string): string {
 }
 
 export function normalizeUsdaSearchFood(food: UsdaFoodSummary): UsdaSearchResult {
-  const servingGrams = food.servingSizeUnit?.toLowerCase() === "g" && food.servingSize && food.servingSize > 0 ? food.servingSize : null;
-  const factor = servingGrams === null ? 1 : servingGrams / 100;
+  const serving = usdaServing(food);
+  const servingGrams = serving.basis === "PER_SERVING" ? serving.grams : null;
+  const factor = serving.grams / 100;
   const scaled = (value: number | null): number | null => (value === null ? null : value * factor);
   const dataType = food.dataType ?? "USDA";
   return {
@@ -75,8 +94,8 @@ export function normalizeUsdaSearchFood(food: UsdaFoodSummary): UsdaSearchResult
     brand: food.brandOwner ?? food.brandName ?? null,
     dataType,
     sourceLabel: usdaSourceLabel(dataType),
-    servingLabel: servingGrams === null ? null : food.householdServingFullText?.trim() || `${servingGrams} g`,
-    nutritionBasis: servingGrams === null ? "PER_100_GRAMS" : "PER_SERVING",
+    servingLabel: serving.basis === "PER_SERVING" ? serving.label : null,
+    nutritionBasis: serving.basis,
     calories: scaled(usdaNutrient(food, ["energy"], "kcal")),
     proteinGrams: scaled(usdaNutrient(food, ["protein"])),
     carbsGrams: scaled(usdaNutrient(food, ["carbohydrate, by difference"])),

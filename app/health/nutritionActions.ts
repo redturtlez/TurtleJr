@@ -55,14 +55,19 @@ export async function searchUsdaFoods(input: unknown): Promise<UsdaSearchResult[
 export async function importUsdaFood(input: unknown): Promise<void> {
   const userId = await requireUserId(); const parsed = z.number().int().positive().safeParse(input); if (!parsed.success) throw new Error("Invalid USDA food");
   const food = await fetchUsdaFood(parsed.data);
-  const { nutrients, ...details } = food;
+  const { nutrients } = food; const details = { externalId: food.externalId, name: food.name, brand: food.brand, servingLabel: food.servingLabel, servingGramsMilli: food.servingGramsMilli };
   await prisma.lifeFood.upsert({ where: { userId_source_externalId: { userId, source: "USDA", externalId: food.externalId } }, update: { ...details, ...nutrients, dataQuality: "KNOWN", favorite: true }, create: { userId, source: "USDA", ...details, ...nutrients, dataQuality: "KNOWN" } }); refresh();
 }
 
-export async function lookupFoodBarcode(input: unknown): Promise<BarcodeFoodDraft> {
+export async function lookupFoodBarcode(input: unknown): Promise<{ draft: BarcodeFoodDraft | null; error: string | null }> {
   await requireUserId(); const parsed = z.string().trim().regex(/^\d{6,14}$/).safeParse(input);
-  if (!parsed.success) throw new Error("Enter a valid 6–14 digit barcode");
-  return lookupBarcode(parsed.data);
+  if (!parsed.success) return { draft: null, error: "Enter the 6–14 barcode digits printed below the bars." };
+  try { return { draft: await lookupBarcode(parsed.data), error: null }; }
+  catch (error) {
+    const message = error instanceof Error ? error.message : "Barcode lookup failed";
+    const allowed = ["No nutrition product was found for this barcode. You can add it manually instead.", "Open Food Facts is unavailable", "Open Food Facts is temporarily rate limited"];
+    return { draft: null, error: allowed.includes(message) ? message : "This barcode could not be looked up. Check the digits and enter it manually." };
+  }
 }
 
 const scannedFoodSchema = z.object({

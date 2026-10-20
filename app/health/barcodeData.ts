@@ -10,6 +10,7 @@ export interface BarcodeFoodDraft {
   servingLabel: string;
   servingGrams: number | null;
   nutritionBasis: "PER_SERVING" | "PER_100_GRAMS";
+  servingOptions: Array<{ label: string; grams: number; basis: "PER_SERVING" | "PER_100_GRAMS" }>;
   calories: number | null;
   protein: number | null;
   carbs: number | null;
@@ -26,6 +27,16 @@ export interface BarcodeFoodDraft {
   warnings: string[];
 }
 
+const scalableNutrients = ["calories", "protein", "carbs", "fat", "fiber", "water", "calcium", "potassium", "magnesium", "iron", "vitaminD", "vitaminB12", "omega3"] as const;
+
+export function selectBarcodeServing(draft: BarcodeFoodDraft, option: BarcodeFoodDraft["servingOptions"][number]): BarcodeFoodDraft {
+  const ratio = draft.servingGrams && draft.servingGrams > 0 ? option.grams / draft.servingGrams : 1;
+  return {
+    ...draft, servingLabel: option.label, servingGrams: option.grams, nutritionBasis: option.basis,
+    ...Object.fromEntries(scalableNutrients.map((key) => [key, draft[key] === null ? null : draft[key] * ratio])),
+  };
+}
+
 export function normalizeBarcode(input: string): string | null {
   const digits = input.replace(/\D/g, "");
   if (digits.length < 6 || digits.length > 14) return null;
@@ -33,6 +44,22 @@ export function normalizeBarcode(input: string): string | null {
   if (significant.length <= 7) return significant.padStart(8, "0");
   if (significant.length >= 9 && significant.length <= 12) return significant.padStart(13, "0");
   return digits;
+}
+
+export function barcodeLookupQueries(input: string): string[] {
+  const raw = input.replace(/\D/g, "");
+  const canonical = normalizeBarcode(raw);
+  if (!canonical) return [];
+  const alternate = raw.length === 13 && raw.startsWith("0") ? raw.slice(1) : canonical;
+  return [...new Set([raw, alternate])];
+}
+
+export function hasValidGtinCheckDigit(input: string): boolean {
+  const digits = input.replace(/\D/g, "");
+  if (![12, 13, 14].includes(digits.length)) return true;
+  const values = [...digits].map(Number); const check = values.pop(); if (check === undefined) return false;
+  const sum = values.toReversed().reduce((total, value, index) => total + value * (index % 2 === 0 ? 3 : 1), 0);
+  return (10 - (sum % 10)) % 10 === check;
 }
 
 export interface OpenFoodFactsProduct {
@@ -76,6 +103,7 @@ export function openFoodFactsDraft(product: OpenFoodFactsProduct, requestedBarco
     servingLabel: hasGramServing ? product.serving_size?.trim() || `${servingGrams} g` : "100 g",
     servingGrams: hasGramServing ? servingGrams : 100,
     nutritionBasis: hasGramServing ? "PER_SERVING" : "PER_100_GRAMS",
+    servingOptions: hasGramServing ? [{ label: product.serving_size?.trim() || `${servingGrams} g`, grams: servingGrams, basis: "PER_SERVING" }, { label: "100 g", grams: 100, basis: "PER_100_GRAMS" }] : [{ label: "100 g", grams: 100, basis: "PER_100_GRAMS" }],
     calories: nutrient(product, "energy-kcal", basis, factor),
     protein: nutrient(product, "proteins", basis, factor),
     carbs: nutrient(product, "carbohydrates", basis, factor),
