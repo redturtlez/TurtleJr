@@ -35,7 +35,23 @@
     }
   ],
   "shortcuts": [
-    { "name": "Life Dashboard", "short_name": "Life", "url": "/health", "icons": [{ "src": "/heart.png", "sizes": "192x192" }]},
-    { "name": "To Do", "short_name": "To Do", "url": "/todo", "icons": [{ "src": "/check.png", "sizes": "192x192" }] }
+    {
+      "name": "Life Dashboard",
+      "short_name": "Life",
+      "url": "/health",
+      "icons": [
+        { "src": "/heart-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": "/heart-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+      ]
+    },
+    {
+      "name": "To Do",
+      "short_name": "To Do",
+      "url": "/todo",
+      "icons": [
+        { "src": "/check-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": "/check-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+      ]
+    }
   ]
 }
