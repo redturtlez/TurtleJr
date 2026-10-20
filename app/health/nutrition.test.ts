@@ -1,10 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { aggregateGroceryItems, aggregateNutrients, buildNutritionInsightReview, estimateMaintenance, foodDensity, groupFoodLogs, kilogramsToGrams, mifflinStJeorRmr, poundsToGrams, proposeCalorieTarget, proposeProteinTarget, recipeNutrients, recipeServingGrams, recommendFoodSubstitutions, recommendRecipes, rollingWeightAverage, scaleNutrient } from "./nutrition.ts";
+import { aggregateGroceryItems, aggregateNutrients, buildNutritionInsightReview, estimateMaintenance, foodAmountInServings, foodDensity, groupFoodLogs, kilogramsToGrams, mifflinStJeorRmr, poundsToGrams, proposeCalorieTarget, proposeProteinTarget, recipeNutrients, recipeServingGrams, recommendFoodSubstitutions, recommendRecipes, rollingWeightAverage, scaleNutrient } from "./nutrition.ts";
 
 test("serving quantities scale integer nutrients deterministically", () => {
   assert.equal(scaleNutrient(250_000, 1500), 375_000);
   assert.equal(scaleNutrient(12_345, 333), 4_111);
+});
+
+test("food amounts convert grams through the saved serving weight", () => {
+  assert.equal(foodAmountInServings(21.5, "GRAMS", 43_000), 0.5);
+  assert.equal(foodAmountInServings(1.25, "SERVINGS", 43_000), 1.25);
+  assert.equal(foodAmountInServings(30, "GRAMS", null), null);
 });
 
 test("food logs group newest dates first and meals in daily order", () => {

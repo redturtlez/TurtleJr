@@ -37,6 +37,13 @@ export function scaleNutrient(value: number | null, quantityMilli: number): numb
   return value === null ? null : Math.round((value * quantityMilli) / 1000);
 }
 
+export function foodAmountInServings(amount: number, unit: "SERVINGS" | "GRAMS", servingGramsMilli: number | null): number | null {
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  if (unit === "SERVINGS") return amount;
+  if (servingGramsMilli === null || servingGramsMilli <= 0) return null;
+  return (amount * 1000) / servingGramsMilli;
+}
+
 export function scaleNutrients(nutrients: Nutrients, quantityMilli: number): Nutrients {
   return {
     caloriesMilli: scaleNutrient(nutrients.caloriesMilli, quantityMilli),
