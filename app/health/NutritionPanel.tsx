@@ -16,6 +16,7 @@ type Slot = "BREAKFAST" | "LUNCH" | "DINNER" | "SNACK";
 type SearchResult = Awaited<ReturnType<typeof searchUsdaFoods>>[number];
 type FoodAmount = { amount: number; unit: "SERVINGS" | "GRAMS" };
 type SavedFood = NutritionDashboardData["foods"][number];
+type ReusableMeal = NutritionDashboardData["meals"][number];
 type NutritionRun = (work: () => Promise<unknown>, success: string) => void;
 const editableFoodNutrients = [
   ["calories", "Calories", "caloriesMilli", 1000], ["protein", "Protein (g)", "proteinMg", 1000], ["carbs", "Carbs (g)", "carbsMg", 1000], ["fat", "Fat (g)", "fatMg", 1000], ["fiber", "Fiber (g)", "fiberMg", 1000], ["water", "Water (g)", "waterMg", 1000],
@@ -100,7 +101,7 @@ export default function NutritionPanel({ data, localDate }: { data: NutritionDas
 
         <article className={styles.nutritionCard}>
           <div className={styles.panelHeading}><div><small>Pinned meals appear first</small><h2>Reusable meals</h2></div><Utensils /></div>
-          <div className={styles.mealList}>{data.meals.map((meal) => <div key={meal.id} className={styles.mealEntry}><span><strong>{meal.pinned ? "★ " : ""}{meal.name}</strong><small>{meal.defaultMealSlot ? `${meal.defaultMealSlot.toLowerCase()} · ` : ""}{meal.items.map((item) => item.name).join(" · ")}</small><small>{display(meal.caloriesMilli, "cal")} cal · {display(meal.proteinMg)} protein</small></span><div className={styles.rowActions}><button disabled={pending} onClick={() => run(() => logMeal({ mealId: meal.id, localDate, mealSlot: meal.defaultMealSlot ?? slot, quantity: 1 }), `${meal.name} logged`)}>Log meal</button><button type="button" className={styles.dangerButton} disabled={pending} aria-label={`Delete ${meal.name}`} title="Delete reusable meal" onClick={() => { if (window.confirm(`Delete reusable meal “${meal.name}”? Existing food-log history will be preserved.`)) run(() => deleteMeal(meal.id), `${meal.name} deleted`); }}><Trash2 /></button></div><details><summary>Quick rating</summary><form className={styles.compactForm} action={(form) => run(() => saveNutritionFeedback({ targetType: "MEAL", targetId: meal.id, fullness: numberOrNull(form.get("fullness")), enjoyment: numberOrNull(form.get("enjoyment")), convenience: numberOrNull(form.get("convenience")), eatAgain: form.get("eatAgain") === "yes" ? true : form.get("eatAgain") === "no" ? false : null }), "Rating saved")}><div className={styles.threeColumns}>{["fullness", "enjoyment", "convenience"].map((name) => <label key={name}><span>{name} (1–5)</span><input name={name} type="number" min="1" max="5" /></label>)}</div><label><span>Eat again?</span><select name="eatAgain" defaultValue=""><option value="">Not rated</option><option value="yes">Yes</option><option value="no">No</option></select></label><button disabled={pending}>Save rating</button></form></details></div>)}</div>
+          <div className={styles.mealList}>{data.meals.map((meal) => <ReusableMealRow key={meal.id} meal={meal} pending={pending} localDate={localDate} slot={slot} run={run} />)}</div>
           <form className={styles.compactForm} action={(form) => run(() => createMeal({ name: String(form.get("name") ?? ""), pinned: form.get("pinned") === "on", defaultMealSlot: String(form.get("defaultMealSlot") ?? "") || null, items: Object.entries(mealFoods).flatMap(([foodId, selection]) => { const food = data.foods.find((item) => item.id === foodId); const quantity = food && selection ? amountInServings(food, selection) : null; return quantity === null ? [] : [{ foodId, quantity }]; }) }), "Meal saved")}>
             <label><span>Meal name</span><input name="name" required /></label><label className={styles.checkRow}><input name="pinned" type="checkbox" /><span>Pin for frequent logging</span></label>
             <label><span>Default slot</span><select name="defaultMealSlot" defaultValue=""><option value="">Use selected quick-log slot</option><option value="BREAKFAST">Breakfast</option><option value="LUNCH">Lunch</option><option value="DINNER">Dinner</option><option value="SNACK">Snack</option></select></label>
@@ -128,6 +129,19 @@ export default function NutritionPanel({ data, localDate }: { data: NutritionDas
       </aside>
     </div>
   </section>;
+}
+
+function ReusableMealRow({ meal, pending, localDate, slot, run }: { meal: ReusableMeal; pending: boolean; localDate: string; slot: Slot; run: NutritionRun }) {
+  return <div className={styles.mealEntry}>
+    <details className={styles.mealDetails}>
+      <summary><span><strong>{meal.pinned ? "★ " : ""}{meal.name}</strong><small>{display(meal.caloriesMilli, "cal")} cal · {display(meal.proteinMg)} protein</small></span></summary>
+      <div className={styles.mealContents}>
+        <p>{meal.defaultMealSlot ? `${meal.defaultMealSlot.toLowerCase()} · ` : ""}{meal.items.map((item) => `${item.name} · ${(item.quantityMilli / 1000).toFixed(item.quantityMilli % 1000 ? 2 : 0)} serving${item.quantityMilli === 1000 ? "" : "s"}`).join(" · ")}</p>
+        <details className={styles.mealRating}><summary>Quick rating</summary><form className={styles.compactForm} action={(form) => run(() => saveNutritionFeedback({ targetType: "MEAL", targetId: meal.id, fullness: numberOrNull(form.get("fullness")), enjoyment: numberOrNull(form.get("enjoyment")), convenience: numberOrNull(form.get("convenience")), eatAgain: form.get("eatAgain") === "yes" ? true : form.get("eatAgain") === "no" ? false : null }), "Rating saved")}><div className={styles.threeColumns}>{["fullness", "enjoyment", "convenience"].map((name) => <label key={name}><span>{name} (1–5)</span><input name={name} type="number" min="1" max="5" /></label>)}</div><label><span>Eat again?</span><select name="eatAgain" defaultValue=""><option value="">Not rated</option><option value="yes">Yes</option><option value="no">No</option></select></label><button disabled={pending}>Save rating</button></form></details>
+      </div>
+    </details>
+    <div className={styles.rowActions}><button disabled={pending} onClick={() => run(() => logMeal({ mealId: meal.id, localDate, mealSlot: meal.defaultMealSlot ?? slot, quantity: 1 }), `${meal.name} logged`)}>Log meal</button><button type="button" className={styles.dangerButton} disabled={pending} aria-label={`Delete ${meal.name}`} title="Delete reusable meal" onClick={() => { if (window.confirm(`Delete reusable meal “${meal.name}”? Existing food-log history will be preserved.`)) run(() => deleteMeal(meal.id), `${meal.name} deleted`); }}><Trash2 /></button></div>
+  </div>;
 }
 
 function SavedFoodRow({ food, selection, pending, localDate, slot, editing, run, onSelectionChange, onEdit, onCancelEdit }: { food: SavedFood; selection: FoodAmount; pending: boolean; localDate: string; slot: Slot; editing: boolean; run: NutritionRun; onSelectionChange: (selection: FoodAmount) => void; onEdit: () => void; onCancelEdit: () => void }) {
