@@ -47,6 +47,13 @@ export async function createFood(input: unknown): Promise<void> {
   await prisma.lifeFood.create({ data: { userId, name: d.name, brand: d.brand || null, servingLabel: d.servingLabel, servingGramsMilli: milli(d.servingGrams), caloriesMilli: milli(d.calories), proteinMg: milli(d.protein), carbsMg: milli(d.carbs), fatMg: milli(d.fat), fiberMg: milli(d.fiber), waterMg: milli(d.water), calciumMcg: milli(d.calcium), potassiumMcg: milli(d.potassium), magnesiumMcg: milli(d.magnesium), ironMcg: milli(d.iron), vitaminDMcg: whole(d.vitaminD), vitaminB12Mcg: whole(d.vitaminB12), omega3Mcg: milli(d.omega3), dataQuality: d.dataQuality } }); refresh();
 }
 
+export async function updateSavedFood(input: unknown): Promise<void> {
+  const userId = await requireUserId(); const parsed = foodSchema.extend({ id: z.string().cuid() }).safeParse(input);
+  if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid food"); const d = parsed.data;
+  const result = await prisma.lifeFood.updateMany({ where: { id: d.id, userId, favorite: true }, data: { name: d.name, brand: d.brand || null, servingLabel: d.servingLabel, servingGramsMilli: milli(d.servingGrams), caloriesMilli: milli(d.calories), proteinMg: milli(d.protein), carbsMg: milli(d.carbs), fatMg: milli(d.fat), fiberMg: milli(d.fiber), waterMg: milli(d.water), calciumMcg: milli(d.calcium), potassiumMcg: milli(d.potassium), magnesiumMcg: milli(d.magnesium), ironMcg: milli(d.iron), vitaminDMcg: whole(d.vitaminD), vitaminB12Mcg: whole(d.vitaminB12), omega3Mcg: milli(d.omega3), dataQuality: d.dataQuality } });
+  if (!result.count) throw new Error("Saved food not found"); refresh();
+}
+
 export async function searchUsdaFoods(input: unknown): Promise<UsdaSearchResult[]> {
   await requireUserId(); const parsed = z.object({ query: z.string().trim().min(2).max(100), scope: z.enum(["ALL", "GENERIC", "BRANDED"]), completeOnly: z.boolean(), includeDuplicates: z.boolean() }).safeParse(input);
   if (!parsed.success) throw new Error("Enter at least two search characters"); return searchUsda(parsed.data.query, parsed.data);
