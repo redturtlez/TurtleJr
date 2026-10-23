@@ -5,17 +5,19 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/database";
 import { buildRecommendations, shiftDateKey } from "./analytics";
+import { ensureLifeProfile } from "./profile";
 import { getLocalDayContext } from "./scheduling";
 import { activitySchema, goalProgressSchema, goalSchema, recommendationFeedbackSchema, statusSchema } from "./validation";
 
 async function requireUserId(): Promise<string> {
   const { userId } = await auth();
   if (!userId) throw new Error("You must be signed in to update the Life Dashboard");
+  await ensureLifeProfile(userId);
   return userId;
 }
 
 function refreshHealth(): void {
-  revalidatePath("/health");
+  revalidatePath("/health", "layout");
 }
 
 export async function createActivity(input: unknown): Promise<void> {
@@ -23,10 +25,12 @@ export async function createActivity(input: unknown): Promise<void> {
   const parsed = activitySchema.safeParse(input);
   if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid activity");
   try {
-    const routine = parsed.data.kind === "ROUTINE"
+    let routine = parsed.data.kind === "ROUTINE"
       ? await prisma.lifeRoutine.findFirst({ where: { userId, active: true }, orderBy: { createdAt: "asc" }, select: { id: true } })
       : null;
-    if (parsed.data.kind === "ROUTINE" && !routine) throw new Error("No active routine exists");
+    if (parsed.data.kind === "ROUTINE" && !routine) {
+      routine = await prisma.lifeRoutine.create({ data: { userId, name: "Daily routine" }, select: { id: true } });
+    }
     const count = await prisma.lifeActivity.count({ where: { userId, kind: parsed.data.kind, active: true } });
     await prisma.lifeActivity.create({
       data: {

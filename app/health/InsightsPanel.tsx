@@ -4,18 +4,18 @@ import { Apple, Check, Clock3, Lightbulb, TrendingDown, TrendingUp, X } from "lu
 import { useTransition } from "react";
 import { toast } from "react-toastify";
 import { respondToRecommendation } from "./actions";
-import type { LifeDashboardData } from "./data";
-import type { NutritionDashboardData } from "./nutritionData";
+import type { InsightsDashboardData } from "./data";
+import type { NutritionInsightReview } from "./nutrition";
 import styles from "./health.module.css";
 
-function nutritionEmptyCopy(review: NutritionDashboardData["insightReview"]): string {
+function nutritionEmptyCopy(review: NutritionInsightReview): string {
   if (review.status === "INSUFFICIENT_LOGS") return `Log food on ${Math.max(0, 4 - review.daysLogged)} more day${4 - review.daysLogged === 1 ? "" : "s"} this week before drawing a pattern.`;
   if (review.status === "NO_TARGETS") return "Set nutrition targets before comparing recent intake.";
   if (review.status === "LIMITED_DATA") return "Recent logs do not contain enough confirmed nutrient values for a reliable suggestion.";
   return "No supported nutrient was meaningfully below its configured target across recent logged days.";
 }
 
-export default function InsightsPanel({ data, nutrition }: { data: LifeDashboardData; nutrition: NutritionDashboardData }) {
+export default function InsightsPanel({ data, nutrition }: { data: InsightsDashboardData; nutrition: { insightReview: NutritionInsightReview } }) {
   const [pending, startTransition] = useTransition();
   const latest = data.trends.at(-1);
   const previous = data.trends.at(-2);

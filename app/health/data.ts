@@ -1,4 +1,6 @@
-import { auth } from "@clerk/nextjs/server";
+import "server-only";
+
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/database";
 import { getLocalDayContext, type ActivityCompletionSummary, type ScheduledActivity } from "./scheduling";
 import { buildHabitPatterns, buildRecommendations, buildWeeklyTrends, shiftDateKey, type HabitPattern, type LifeRecommendation, type WeeklyTrend } from "./analytics";
@@ -26,31 +28,148 @@ export interface LifeDashboardData {
   recommendations: LifeRecommendation[];
 }
 
-async function requireUserId(): Promise<string> {
-  const { userId } = await auth();
-  if (!userId) throw new Error("You must be signed in to view the Life Dashboard");
-  return userId;
+export type TodayDashboardData = Pick<LifeDashboardData, "profile" | "activities" | "completions" | "context">;
+export type ConfigureDashboardData = Pick<LifeDashboardData, "profile" | "routine" | "activities">;
+export type GoalsDashboardData = Pick<LifeDashboardData, "activities" | "context" | "goals">;
+export type InsightsDashboardData = Pick<LifeDashboardData, "trends" | "patterns" | "recommendations">;
+
+type LifeContextClient = Pick<Prisma.TransactionClient, "lifeProfile">;
+type InsightsClient = Pick<Prisma.TransactionClient, "lifeActivity" | "lifeCompletion" | "lifeRecommendationFeedback">;
+
+export async function getLifeContext(userId: string, now = new Date(), database: LifeContextClient = prisma): Promise<Pick<LifeDashboardData, "profile" | "context">> {
+  const profile = await database.lifeProfile.findUnique({ where: { userId }, select: { timeZone: true } })
+    ?? { timeZone: "America/New_York" };
+  return { profile, context: getLocalDayContext(now, profile.timeZone) };
 }
 
-export async function getLifeDashboardData(now = new Date()): Promise<LifeDashboardData> {
-  const userId = await requireUserId();
-  try {
-    const profile = await prisma.lifeProfile.upsert({
-      where: { userId },
-      update: {},
-      create: { userId },
-      select: { timeZone: true },
-    });
-    let routine = await prisma.lifeRoutine.findFirst({
+export async function getTodayDashboardData(userId: string, now = new Date()): Promise<TodayDashboardData> {
+  const { profile, context } = await getLifeContext(userId, now);
+  const [activities, completions] = await Promise.all([
+    prisma.lifeActivity.findMany({
+      where: { userId, active: true },
+      orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+      select: {
+        id: true, kind: true, title: true, description: true, position: true, estimatedDurationMinutes: true,
+        minimumDurationMinutes: true, preferredDurationMinutes: true, scheduleType: true, fixedTimeMinutes: true,
+        windowStartMinutes: true, windowEndMinutes: true, daysOfWeek: true, importance: true, reminderEnabled: true,
+      },
+    }),
+    prisma.lifeCompletion.findMany({
+      where: { userId, localDate: context.localDate },
+      select: { activityId: true, status: true, snoozedUntil: true },
+    }),
+  ]);
+  return {
+    profile,
+    context,
+    activities,
+    completions: completions.map((completion) => ({
+      activityId: completion.activityId,
+      status: completion.status,
+      snoozedUntil: completion.snoozedUntil?.toISOString() ?? null,
+    })),
+  };
+}
+
+export async function getConfigureDashboardData(userId: string): Promise<ConfigureDashboardData> {
+  const [{ profile }, routine, activities] = await Promise.all([
+    getLifeContext(userId),
+    prisma.lifeRoutine.findFirst({
       where: { userId, active: true },
       orderBy: { createdAt: "asc" },
       select: { id: true, name: true },
-    });
-    routine ??= await prisma.lifeRoutine.create({
-      data: { userId, name: "Daily routine" },
+    }),
+    prisma.lifeActivity.findMany({
+      where: { userId, active: true },
+      orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+      select: {
+        id: true, kind: true, title: true, description: true, position: true, estimatedDurationMinutes: true,
+        minimumDurationMinutes: true, preferredDurationMinutes: true, scheduleType: true, fixedTimeMinutes: true,
+        windowStartMinutes: true, windowEndMinutes: true, daysOfWeek: true, importance: true, reminderEnabled: true,
+      },
+    }),
+  ]);
+  return { profile, routine: routine ?? { id: "", name: "Daily routine" }, activities };
+}
+
+export async function getGoalsDashboardData(userId: string, now = new Date()): Promise<GoalsDashboardData> {
+  const { context } = await getLifeContext(userId, now);
+  const [activities, goals] = await Promise.all([
+    prisma.lifeActivity.findMany({
+      where: { userId, active: true },
+      orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+      select: {
+        id: true, kind: true, title: true, description: true, position: true, estimatedDurationMinutes: true,
+        minimumDurationMinutes: true, preferredDurationMinutes: true, scheduleType: true, fixedTimeMinutes: true,
+        windowStartMinutes: true, windowEndMinutes: true, daysOfWeek: true, importance: true, reminderEnabled: true,
+      },
+    }),
+    prisma.lifeGoal.findMany({
+      where: { userId },
+      orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
+      select: {
+        id: true, title: true, description: true, targetValue: true, targetUnit: true, targetDate: true, status: true,
+        activityLinks: { select: { activityId: true } },
+        progress: { orderBy: [{ localDate: "desc" }, { createdAt: "desc" }], take: 20, select: { id: true, localDate: true, value: true, note: true } },
+      },
+    }),
+  ]);
+  return {
+    context,
+    activities,
+    goals: goals.map((goal) => ({
+      id: goal.id, title: goal.title, description: goal.description, targetValue: goal.targetValue, targetUnit: goal.targetUnit,
+      targetDate: goal.targetDate?.toISOString().slice(0, 10) ?? null, status: goal.status,
+      activityIds: goal.activityLinks.map((link) => link.activityId), progress: goal.progress,
+    })),
+  };
+}
+
+export async function getInsightsDashboardData(userId: string, timeZone: string, localDate: string, now = new Date(), database: InsightsClient = prisma): Promise<InsightsDashboardData> {
+  const historyStart = shiftDateKey(localDate, -55);
+  const [activities, history, feedback] = await Promise.all([
+    database.lifeActivity.findMany({
+      where: { userId, active: true },
+      orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+      select: {
+        id: true, kind: true, title: true, position: true, estimatedDurationMinutes: true, scheduleType: true,
+        fixedTimeMinutes: true, windowStartMinutes: true, windowEndMinutes: true, daysOfWeek: true,
+        importance: true, createdAt: true,
+      },
+    }),
+    database.lifeCompletion.findMany({
+      where: { userId, localDate: { gte: historyStart, lte: localDate } },
+      select: { activityId: true, localDate: true, status: true },
+    }),
+    database.lifeRecommendationFeedback.findMany({
+      where: { userId },
+      select: { fingerprint: true, status: true, snoozedUntil: true },
+    }),
+  ]);
+  const analyticsActivities = activities.map((activity) => ({
+    ...activity,
+    activeFromDate: getLocalDayContext(activity.createdAt, timeZone).localDate,
+  }));
+  const trends = buildWeeklyTrends(analyticsActivities, history, localDate);
+  const allPatterns = buildHabitPatterns(analyticsActivities, history, localDate);
+  const feedbackByFingerprint = new Map(feedback.map((item) => [item.fingerprint, item]));
+  const recommendations = buildRecommendations(analyticsActivities, history, localDate, allPatterns).filter((item) => {
+    const response = feedbackByFingerprint.get(item.fingerprint);
+    if (!response) return true;
+    if (response.status === "SNOOZED") return !response.snoozedUntil || response.snoozedUntil <= now;
+    return false;
+  });
+  return { trends, patterns: allPatterns.slice(0, 4), recommendations };
+}
+
+export async function getLifeDashboardData(userId: string, now = new Date()): Promise<LifeDashboardData> {
+  try {
+    const { profile, context } = await getLifeContext(userId, now);
+    const routine = await prisma.lifeRoutine.findFirst({
+      where: { userId, active: true },
+      orderBy: { createdAt: "asc" },
       select: { id: true, name: true },
-    });
-    const context = getLocalDayContext(now, profile.timeZone);
+    }) ?? { id: "", name: "Daily routine" };
     const historyStart = shiftDateKey(context.localDate, -55);
     const [activities, completions, history, goals, feedback] = await Promise.all([
       prisma.lifeActivity.findMany({

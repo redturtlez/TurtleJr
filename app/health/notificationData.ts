@@ -1,6 +1,5 @@
 import "server-only";
 
-import { auth } from "@clerk/nextjs/server";
 import { env } from "@/env.mjs";
 import { prisma } from "@/lib/database";
 import { pushIsConfigured } from "./notificationDelivery";
@@ -22,25 +21,46 @@ export interface NotificationDashboardData {
   schedule: string;
 }
 
-export async function getNotificationDashboardData(): Promise<NotificationDashboardData> {
-  const { userId } = await auth();
-  if (!userId) throw new Error("You must be signed in to view notification settings");
+export type ReminderSettingsData = Pick<NotificationDashboardData["settings"], "inAppRemindersEnabled" | "quietStartMinutes" | "quietEndMinutes">;
+
+const defaultNotificationSettings: NotificationDashboardData["settings"] = {
+  dailyDigestEnabled: false,
+  dailyDigestMinutes: 1080,
+  activityPushRemindersEnabled: false,
+  inAppRemindersEnabled: true,
+  quietStartMinutes: null,
+  quietEndMinutes: null,
+  showActivityNames: false,
+};
+
+export async function getReminderSettings(userId: string): Promise<ReminderSettingsData> {
+  return await prisma.lifeNotificationSettings.findUnique({
+    where: { userId },
+    select: { inAppRemindersEnabled: true, quietStartMinutes: true, quietEndMinutes: true },
+  }) ?? {
+    inAppRemindersEnabled: defaultNotificationSettings.inAppRemindersEnabled,
+    quietStartMinutes: defaultNotificationSettings.quietStartMinutes,
+    quietEndMinutes: defaultNotificationSettings.quietEndMinutes,
+  };
+}
+
+export async function getNotificationDashboardData(userId: string): Promise<NotificationDashboardData> {
   try {
-    await prisma.lifeProfile.upsert({ where: { userId }, update: {}, create: { userId } });
     const [settings, activeSubscriptionCount] = await Promise.all([
-      prisma.lifeNotificationSettings.upsert({ where: { userId }, update: {}, create: { userId } }),
+      prisma.lifeNotificationSettings.findUnique({ where: { userId } }),
       prisma.lifePushSubscription.count({ where: { userId, active: true } }),
     ]);
+    const resolvedSettings = settings ?? defaultNotificationSettings;
     const configured = pushIsConfigured();
     return {
       settings: {
-        dailyDigestEnabled: settings.dailyDigestEnabled,
-        dailyDigestMinutes: settings.dailyDigestMinutes,
-        activityPushRemindersEnabled: settings.activityPushRemindersEnabled,
-        inAppRemindersEnabled: settings.inAppRemindersEnabled,
-        quietStartMinutes: settings.quietStartMinutes,
-        quietEndMinutes: settings.quietEndMinutes,
-        showActivityNames: settings.showActivityNames,
+        dailyDigestEnabled: resolvedSettings.dailyDigestEnabled,
+        dailyDigestMinutes: resolvedSettings.dailyDigestMinutes,
+        activityPushRemindersEnabled: resolvedSettings.activityPushRemindersEnabled,
+        inAppRemindersEnabled: resolvedSettings.inAppRemindersEnabled,
+        quietStartMinutes: resolvedSettings.quietStartMinutes,
+        quietEndMinutes: resolvedSettings.quietEndMinutes,
+        showActivityNames: resolvedSettings.showActivityNames,
       },
       activeSubscriptionCount,
       pushConfigured: configured,

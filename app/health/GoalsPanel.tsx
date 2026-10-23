@@ -4,13 +4,13 @@ import { CheckCircle2, Flag, PauseCircle, Pencil, TrendingUp } from "lucide-reac
 import { useState, useTransition } from "react";
 import { toast } from "react-toastify";
 import { addGoalProgress } from "./actions";
-import type { LifeDashboardData } from "./data";
+import type { GoalsDashboardData } from "./data";
 import GoalForm from "./GoalForm";
 import styles from "./health.module.css";
 
-type Goal = LifeDashboardData["goals"][number];
+type Goal = GoalsDashboardData["goals"][number];
 
-export default function GoalsPanel({ data }: { data: LifeDashboardData }) {
+export default function GoalsPanel({ data }: { data: GoalsDashboardData }) {
   const [editing, setEditing] = useState<Goal | null>(null);
   const [pending, startTransition] = useTransition();
   const habits = data.activities.filter((activity) => activity.kind === "HABIT");

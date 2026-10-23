@@ -1,4 +1,6 @@
-import { auth } from "@clerk/nextjs/server";
+import "server-only";
+
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/database";
 import { aggregateNutrients, buildNutritionInsightReview, estimateMaintenance, proposeCalorieTarget, proposeProteinTarget, rollingWeightAverage, type NutrientKey, type NutritionInsightReview } from "./nutrition";
 import { shiftDateKey } from "./analytics";
@@ -18,16 +20,122 @@ export interface NutritionDashboardData {
   insightReview: NutritionInsightReview;
 }
 
-export async function getNutritionDashboardData(localDate: string): Promise<NutritionDashboardData> {
-  const { userId } = await auth();
-  if (!userId) throw new Error("You must be signed in to view nutrition");
-  const settings = await prisma.lifeNutritionSettings.upsert({ where: { userId }, update: {}, create: { userId } });
+const defaultSettings = {
+  weightUnit: "LB", targetWeightGrams: null, calorieTargetMilli: null, proteinTargetMg: null, carbsTargetMg: null,
+  fatTargetMg: null, fiberTargetMg: null, calciumTargetMcg: null, potassiumTargetMcg: null, magnesiumTargetMcg: null,
+  ironTargetMcg: null, vitaminDTargetMcg: null, vitaminB12TargetMcg: null, omega3TargetMcg: null,
+  avoidSeafood: true, avoidMushrooms: true, maxPrepMinutes: 45, preferredComplexity: "SIMPLE", ageYears: null,
+  heightMillimeters: null, energyEquationSex: null, activityLevel: null, resistanceTraining: null,
+  targetWeeklyLossGrams: null, preferredFoods: [], acceptableFoods: [], avoidedFoods: [], preferenceProfileSet: false,
+} satisfies NutritionDashboardData["settings"];
+
+type NutritionClient = Pick<Prisma.TransactionClient,
+  "lifeNutritionSettings" | "lifeWeightEntry" | "lifeFood" | "lifeMeal" | "lifeFoodLog" | "lifeNutritionFeedback"
+>;
+
+type PlanningLog = Pick<NutritionDashboardData["logs"][number],
+  "localDate" | "quantityMilli" | "dataQuality" | "caloriesMilli" | "proteinMg" | "carbsMg" | "fatMg" |
+  "fiberMg" | "calciumMcg" | "potassiumMcg" | "magnesiumMcg" | "ironMcg" | "vitaminDMcg" |
+  "vitaminB12Mcg" | "omega3Mcg" | "waterMg"
+>;
+
+export interface PlanningNutritionData {
+  settings: NutritionDashboardData["settings"];
+  foods: NutritionDashboardData["foods"];
+  logs: PlanningLog[];
+  feedback: NutritionDashboardData["feedback"];
+  summary: ReturnType<typeof aggregateNutrients>;
+}
+
+export async function getPlanningNutritionData(userId: string, localDate: string, database: NutritionClient = prisma): Promise<PlanningNutritionData> {
+  const startDate = shiftDateKey(localDate, -6);
+  const [settingsRecord, foods, logs, feedback] = await Promise.all([
+    database.lifeNutritionSettings.findUnique({ where: { userId } }),
+    database.lifeFood.findMany({
+      where: { userId, favorite: true },
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true, name: true, brand: true, servingLabel: true, servingGramsMilli: true, caloriesMilli: true,
+        proteinMg: true, carbsMg: true, fatMg: true, fiberMg: true, calciumMcg: true, potassiumMcg: true,
+        magnesiumMcg: true, ironMcg: true, vitaminDMcg: true, vitaminB12Mcg: true, omega3Mcg: true,
+        waterMg: true, source: true, externalId: true, dataQuality: true,
+      },
+    }),
+    database.lifeFoodLog.findMany({
+      where: { userId, localDate: { gte: startDate, lte: localDate } },
+      orderBy: [{ localDate: "desc" }, { createdAt: "asc" }],
+      select: {
+        localDate: true, quantityMilli: true, dataQualitySnapshot: true, caloriesMilliSnapshot: true,
+        proteinMgSnapshot: true, carbsMgSnapshot: true, fatMgSnapshot: true, fiberMgSnapshot: true,
+        calciumMcgSnapshot: true, potassiumMcgSnapshot: true, magnesiumMcgSnapshot: true, ironMcgSnapshot: true,
+        vitaminDMcgSnapshot: true, vitaminB12McgSnapshot: true, omega3McgSnapshot: true, waterMgSnapshot: true,
+      },
+    }),
+    database.lifeNutritionFeedback.findMany({
+      where: { userId, targetType: "RECIPE" },
+      select: { targetType: true, targetId: true, fullness: true, enjoyment: true, convenience: true, eatAgain: true },
+    }),
+  ]);
+  const normalizedLogs: PlanningLog[] = logs.map((log) => ({
+    localDate: log.localDate, quantityMilli: log.quantityMilli, dataQuality: log.dataQualitySnapshot,
+    caloriesMilli: log.caloriesMilliSnapshot, proteinMg: log.proteinMgSnapshot, carbsMg: log.carbsMgSnapshot,
+    fatMg: log.fatMgSnapshot, fiberMg: log.fiberMgSnapshot, calciumMcg: log.calciumMcgSnapshot,
+    potassiumMcg: log.potassiumMcgSnapshot, magnesiumMcg: log.magnesiumMcgSnapshot, ironMcg: log.ironMcgSnapshot,
+    vitaminDMcg: log.vitaminDMcgSnapshot, vitaminB12Mcg: log.vitaminB12McgSnapshot,
+    omega3Mcg: log.omega3McgSnapshot, waterMg: log.waterMgSnapshot,
+  }));
+  return {
+    settings: settingsRecord ? { ...settingsRecord, weightUnit: settingsRecord.weightUnit === "KG" ? "KG" : "LB" } : defaultSettings,
+    foods,
+    logs: normalizedLogs,
+    feedback,
+    summary: aggregateNutrients(normalizedLogs.filter((log) => log.localDate === localDate)),
+  };
+}
+
+export async function getNutritionInsightReview(userId: string, localDate: string, database: NutritionClient = prisma): Promise<NutritionInsightReview> {
+  const [settings, logs] = await Promise.all([
+    database.lifeNutritionSettings.findUnique({
+      where: { userId },
+      select: {
+        proteinTargetMg: true, fiberTargetMg: true, calciumTargetMcg: true, potassiumTargetMcg: true,
+        magnesiumTargetMcg: true, ironTargetMcg: true, vitaminDTargetMcg: true, vitaminB12TargetMcg: true,
+        omega3TargetMcg: true,
+      },
+    }),
+    database.lifeFoodLog.findMany({
+      where: { userId, localDate: { gte: shiftDateKey(localDate, -6), lte: localDate } },
+      select: {
+        localDate: true, quantityMilli: true, dataQualitySnapshot: true, proteinMgSnapshot: true,
+        fiberMgSnapshot: true, calciumMcgSnapshot: true, potassiumMcgSnapshot: true, magnesiumMcgSnapshot: true,
+        ironMcgSnapshot: true, vitaminDMcgSnapshot: true, vitaminB12McgSnapshot: true, omega3McgSnapshot: true,
+      },
+    }),
+  ]);
+  const targets: Partial<Record<NutrientKey, number | null>> = {
+    proteinMg: settings?.proteinTargetMg ?? null, fiberMg: settings?.fiberTargetMg ?? null,
+    calciumMcg: settings?.calciumTargetMcg ?? null, potassiumMcg: settings?.potassiumTargetMcg ?? null,
+    magnesiumMcg: settings?.magnesiumTargetMcg ?? null, ironMcg: settings?.ironTargetMcg ?? null,
+    vitaminDMcg: settings?.vitaminDTargetMcg ?? null, vitaminB12Mcg: settings?.vitaminB12TargetMcg ?? null,
+    omega3Mcg: settings?.omega3TargetMcg ?? null,
+  };
+  return buildNutritionInsightReview(logs.map((log) => ({
+    localDate: log.localDate, quantityMilli: log.quantityMilli, dataQuality: log.dataQualitySnapshot,
+    caloriesMilli: null, proteinMg: log.proteinMgSnapshot, carbsMg: null, fatMg: null,
+    fiberMg: log.fiberMgSnapshot, calciumMcg: log.calciumMcgSnapshot, potassiumMcg: log.potassiumMcgSnapshot,
+    magnesiumMcg: log.magnesiumMcgSnapshot, ironMcg: log.ironMcgSnapshot, vitaminDMcg: log.vitaminDMcgSnapshot,
+    vitaminB12Mcg: log.vitaminB12McgSnapshot, omega3Mcg: log.omega3McgSnapshot, waterMg: null,
+  })), targets, localDate);
+}
+
+export async function getNutritionDashboardData(userId: string, localDate: string, database: NutritionClient = prisma): Promise<NutritionDashboardData> {
+  const settings = await database.lifeNutritionSettings.findUnique({ where: { userId } }) ?? defaultSettings;
   const [weights, allFoods, meals, logs, feedback] = await Promise.all([
-    prisma.lifeWeightEntry.findMany({ where: { userId }, orderBy: { localDate: "desc" }, take: 90, select: { id: true, localDate: true, weightGrams: true, note: true } }),
-    prisma.lifeFood.findMany({ where: { userId }, orderBy: { updatedAt: "desc" }, select: { id: true, name: true, brand: true, servingLabel: true, servingGramsMilli: true, caloriesMilli: true, proteinMg: true, carbsMg: true, fatMg: true, fiberMg: true, calciumMcg: true, potassiumMcg: true, magnesiumMcg: true, ironMcg: true, vitaminDMcg: true, vitaminB12Mcg: true, omega3Mcg: true, waterMg: true, source: true, externalId: true, dataQuality: true, favorite: true } }),
-    prisma.lifeMeal.findMany({ where: { userId }, orderBy: [{ pinned: "desc" }, { updatedAt: "desc" }], select: { id: true, name: true, pinned: true, defaultMealSlot: true, items: { orderBy: { position: "asc" }, select: { foodId: true, quantityMilli: true, food: { select: { name: true, caloriesMilli: true, proteinMg: true } } } } } }),
-    prisma.lifeFoodLog.findMany({ where: { userId, localDate: { gte: shiftDateKey(localDate, -29), lte: localDate } }, orderBy: [{ localDate: "desc" }, { createdAt: "asc" }], select: { id: true, localDate: true, mealSlot: true, quantityMilli: true, nameSnapshot: true, servingLabelSnapshot: true, dataQualitySnapshot: true, caloriesMilliSnapshot: true, proteinMgSnapshot: true, carbsMgSnapshot: true, fatMgSnapshot: true, fiberMgSnapshot: true, calciumMcgSnapshot: true, potassiumMcgSnapshot: true, magnesiumMcgSnapshot: true, ironMcgSnapshot: true, vitaminDMcgSnapshot: true, vitaminB12McgSnapshot: true, omega3McgSnapshot: true, waterMgSnapshot: true } }),
-    prisma.lifeNutritionFeedback.findMany({ where: { userId }, select: { targetType: true, targetId: true, fullness: true, enjoyment: true, convenience: true, eatAgain: true } }),
+    database.lifeWeightEntry.findMany({ where: { userId }, orderBy: { localDate: "desc" }, take: 90, select: { id: true, localDate: true, weightGrams: true, note: true } }),
+    database.lifeFood.findMany({ where: { userId }, orderBy: { updatedAt: "desc" }, select: { id: true, name: true, brand: true, servingLabel: true, servingGramsMilli: true, caloriesMilli: true, proteinMg: true, carbsMg: true, fatMg: true, fiberMg: true, calciumMcg: true, potassiumMcg: true, magnesiumMcg: true, ironMcg: true, vitaminDMcg: true, vitaminB12Mcg: true, omega3Mcg: true, waterMg: true, source: true, externalId: true, dataQuality: true, favorite: true } }),
+    database.lifeMeal.findMany({ where: { userId }, orderBy: [{ pinned: "desc" }, { updatedAt: "desc" }], select: { id: true, name: true, pinned: true, defaultMealSlot: true, items: { orderBy: { position: "asc" }, select: { foodId: true, quantityMilli: true, food: { select: { name: true, caloriesMilli: true, proteinMg: true } } } } } }),
+    database.lifeFoodLog.findMany({ where: { userId, localDate: { gte: shiftDateKey(localDate, -29), lte: localDate } }, orderBy: [{ localDate: "desc" }, { createdAt: "asc" }], select: { id: true, localDate: true, mealSlot: true, quantityMilli: true, nameSnapshot: true, servingLabelSnapshot: true, dataQualitySnapshot: true, caloriesMilliSnapshot: true, proteinMgSnapshot: true, carbsMgSnapshot: true, fatMgSnapshot: true, fiberMgSnapshot: true, calciumMcgSnapshot: true, potassiumMcgSnapshot: true, magnesiumMcgSnapshot: true, ironMcgSnapshot: true, vitaminDMcgSnapshot: true, vitaminB12McgSnapshot: true, omega3McgSnapshot: true, waterMgSnapshot: true } }),
+    database.lifeNutritionFeedback.findMany({ where: { userId }, select: { targetType: true, targetId: true, fullness: true, enjoyment: true, convenience: true, eatAgain: true } }),
   ]);
   const foods = allFoods.filter((food) => food.favorite).map(({ favorite: _favorite, ...food }) => food);
   const removedFoods = allFoods.filter((food) => !food.favorite).map((food) => ({ id: food.id, name: food.name, brand: food.brand, source: food.source, externalId: food.externalId }));

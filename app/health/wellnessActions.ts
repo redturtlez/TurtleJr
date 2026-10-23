@@ -3,11 +3,13 @@
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/database";
+import { ensureLifeProfile } from "./profile";
 import { creativeProjectSchema, creativeProjectStatusSchema, creativeSessionSchema, workoutPlanSchema, workoutSessionSchema } from "./validation";
 
 async function requireUserId(): Promise<string> {
   const { userId } = await auth();
   if (!userId) throw new Error("You must be signed in to update activity tracking");
+  await ensureLifeProfile(userId);
   return userId;
 }
 
@@ -17,7 +19,7 @@ async function validateActivity(userId: string, activityId: string | null): Prom
   if (!activity) throw new Error("The linked routine activity is unavailable");
 }
 
-const refresh = (): void => revalidatePath("/health");
+const refresh = (): void => revalidatePath("/health", "layout");
 
 export async function createWorkoutPlan(input: unknown): Promise<void> {
   const userId = await requireUserId();

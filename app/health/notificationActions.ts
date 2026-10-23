@@ -22,7 +22,7 @@ export async function saveNotificationSettings(input: unknown): Promise<void> {
   } catch {
     throw new Error("Could not save notification settings");
   }
-  revalidatePath("/health");
+  revalidatePath("/health", "layout");
 }
 
 export async function subscribeToPush(input: unknown): Promise<void> {
@@ -44,7 +44,7 @@ export async function subscribeToPush(input: unknown): Promise<void> {
     if (error instanceof Error && error.message.includes("another account")) throw error;
     throw new Error("Could not save the push subscription");
   }
-  revalidatePath("/health");
+  revalidatePath("/health", "layout");
 }
 
 export async function unsubscribeFromPush(input: unknown): Promise<void> {
@@ -56,7 +56,7 @@ export async function unsubscribeFromPush(input: unknown): Promise<void> {
   } catch {
     throw new Error("Could not disable the push subscription");
   }
-  revalidatePath("/health");
+  revalidatePath("/health", "layout");
 }
 
 export async function sendTestPush(input: unknown): Promise<void> {

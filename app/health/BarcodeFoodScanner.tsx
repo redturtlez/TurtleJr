@@ -1,7 +1,7 @@
 "use client";
 
 import { Camera, ImageUp, ScanBarcode, Square } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { toast } from "react-toastify";
 import { hasValidGtinCheckDigit, selectBarcodeServing, type BarcodeFoodDraft } from "./barcodeData";
 import { lookupFoodBarcode, saveScannedFood } from "./nutritionActions";
@@ -18,6 +18,9 @@ const editableNutrients = [
 
 const nullableNumber = (value: FormDataEntryValue | null): number | null => String(value ?? "").trim() ? Number(value) : null;
 const inputNumber = (value: number | null): number | "" => value === null ? "" : Number(value.toFixed(3));
+const subscribeToHydration = (): (() => void) => () => {};
+const getClientSnapshot = (): true => true;
+const getServerSnapshot = (): false => false;
 
 export default function BarcodeFoodScanner() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -31,6 +34,7 @@ export default function BarcodeFoodScanner() {
   const [draft, setDraft] = useState<BarcodeFoodDraft | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const hydrated = useSyncExternalStore(subscribeToHydration, getClientSnapshot, getServerSnapshot);
 
   const stopCamera = useCallback(() => {
     if (animationRef.current !== null) cancelAnimationFrame(animationRef.current);
@@ -97,8 +101,8 @@ export default function BarcodeFoodScanner() {
 
   return <details className={styles.nutritionCard}><summary><ScanBarcode /> Scan a food barcode</summary><div className={styles.barcodeScanner}>
     <p>Camera images stay on this device. Only the detected barcode is sent for lookup. The serving description is the package portion (such as 1 packet); its serving weight is used to calculate nutrition.</p>
-    <div className={styles.scannerActions}><button type="button" disabled={pending} onClick={() => void startCamera()}><Camera />Use camera</button>{active ? <button type="button" onClick={stopCamera}><Square />Stop camera</button> : null}<label><ImageUp />Upload photo<input type="file" accept="image/*" capture="environment" onChange={(event) => { const file = event.target.files?.[0]; if (file) void scanPhoto(file); event.target.value = ""; }} /></label></div>
-    <video ref={videoRef} className={active ? styles.scannerVideo : styles.scannerVideoHidden} playsInline muted aria-label="Barcode camera preview" />
+    <div className={styles.scannerActions}><button type="button" disabled={pending || !hydrated} onClick={() => void startCamera()}><Camera />Use camera</button>{active ? <button type="button" onClick={stopCamera}><Square />Stop camera</button> : null}<label><ImageUp />Upload photo<input type="file" accept="image/*" capture="environment" onChange={(event) => { const file = event.target.files?.[0]; if (file) void scanPhoto(file); event.target.value = ""; }} /></label></div>
+    {hydrated ? <video ref={videoRef} className={active ? styles.scannerVideo : styles.scannerVideoHidden} playsInline muted aria-label="Barcode camera preview" /> : null}
     {cameraError ? <p className={styles.scanError} role="alert">{cameraError}</p> : null}
     <form className={styles.manualBarcode} action={(form) => findFood(String(form.get("barcode") ?? ""))}><label><span>Barcode digits</span><input name="barcode" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 14))} inputMode="numeric" pattern="[0-9]{6,14}" minLength={6} maxLength={14} required /></label><button disabled={pending}>Look up</button></form>
     {pending ? <p aria-live="polite">Looking up barcode…</p> : null}

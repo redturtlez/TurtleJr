@@ -7,13 +7,14 @@ import { prisma } from "@/lib/database";
 import { estimateMaintenance, kilogramsToGrams, poundsToGrams, proposeCalorieTarget, proposeProteinTarget } from "./nutrition";
 import { fetchUsdaFood, searchUsda, type UsdaSearchResult } from "./usda";
 import { lookupBarcode } from "./barcodeLookup";
+import { ensureLifeProfile } from "./profile";
 import type { BarcodeFoodDraft } from "./barcodeData";
 import { foodLogSchema, foodLogUpdateSchema, foodSchema, groceryStateSchema, mealLogSchema, mealPlanSchema, mealSchema, nutritionFeedbackSchema, nutritionSettingsSchema, recipeSchema, weightEntrySchema } from "./validation";
 
-async function requireUserId(): Promise<string> { const { userId } = await auth(); if (!userId) throw new Error("You must be signed in to update nutrition"); return userId; }
+async function requireUserId(): Promise<string> { const { userId } = await auth(); if (!userId) throw new Error("You must be signed in to update nutrition"); await ensureLifeProfile(userId); return userId; }
 const milli = (value: number | null): number | null => value === null ? null : Math.round(value * 1000);
 const whole = (value: number | null): number | null => value === null ? null : Math.round(value);
-const refresh = (): void => revalidatePath("/health");
+const refresh = (): void => revalidatePath("/health", "layout");
 const uniqueTerms = (values: string[]): string[] => [...new Map(values.map((value) => [value.trim().toLocaleLowerCase(), value.trim()])).values()];
 
 export async function saveWeight(input: unknown): Promise<void> {

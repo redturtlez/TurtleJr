@@ -1,4 +1,5 @@
-import { auth } from "@clerk/nextjs/server";
+import "server-only";
+
 import { prisma } from "@/lib/database";
 import { exerciseProgress, buildWellnessSummary } from "./wellness";
 import { shiftDateKey } from "./analytics";
@@ -19,9 +20,7 @@ export interface WellnessDashboardData {
   creativeSessions: Array<{ id: string; localDate: string; activityType: string; durationMinutes: number | null; note: string | null; projectName: string | null }>;
 }
 
-export async function getWellnessDashboardData(localDate: string): Promise<WellnessDashboardData> {
-  const { userId } = await auth();
-  if (!userId) throw new Error("You must be signed in to view activity tracking");
+export async function getWellnessDashboardData(userId: string, localDate: string): Promise<WellnessDashboardData> {
   const weekStart = shiftDateKey(localDate, -6);
   const [plans, projects, projectStats, creativeSessions, weeklyWorkoutSessions, weeklyCreativeSessions, activities] = await Promise.all([
     prisma.lifeWorkoutPlan.findMany({
