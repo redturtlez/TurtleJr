@@ -6,6 +6,7 @@ export type EnergyCost = PokemonType[];
 export type DexMode = "imperial" | "metric" | "custom";
 export type CardSupertype = "pokemon" | "trainer" | "energy";
 export type TrainerType = "item" | "tool" | "supporter" | "stadium";
+export type TrainerFrameStyle = "standard" | "fullArt" | "goldenFullArt";
 export type EnergyCardType = "base" | "special";
 export type CardEra = "swordAndShield" | "scarletAndViolet" | "sunAndMoon" | "xAndYBlackAndWhite" | "ex" | "exECard";
 export type ScarletVariation = "standard" | "ancient" | "future" | "stellarTera";
@@ -25,7 +26,8 @@ export interface PokemonCard {
   era: CardEra;
   supertype: CardSupertype;
   trainerType: TrainerType;
-  supporterStyle: "standard" | "fullArt";
+  trainerStyle: TrainerFrameStyle;
+  energyStyle: TrainerFrameStyle;
   energyCardType: EnergyCardType;
   description: string;
   energySymbol: PokemonType;
@@ -104,7 +106,8 @@ export const defaults: PokemonCard = {
   era: "swordAndShield",
   supertype: "pokemon",
   trainerType: "item",
-  supporterStyle: "standard",
+  trainerStyle: "standard",
+  energyStyle: "standard",
   energyCardType: "base",
   description: "Draw 2 cards.",
   energySymbol: "grass",
@@ -305,11 +308,16 @@ export const supportsFullArt = (card: PokemonCard) =>
   card.supertype === "pokemon" &&
   ((card.era === "scarletAndViolet" && !(isStandardExStage(card.stage) && card.exVariation === "tera" && card.scarletVariation === "standard")) ||
     (card.era === "xAndYBlackAndWhite" && (isXyBlackWhiteExStage(card.stage) || isXyBlackWhiteMegaStage(card.stage))));
+const frameStyleSuffix: Record<TrainerFrameStyle, string> = { standard: "", fullArt: "-full-art", goldenFullArt: "-golden-full-art" };
+export const trainerFrameStyleLabels: Record<TrainerFrameStyle, string> = { standard: "Standard", fullArt: "Full Art", goldenFullArt: "Golden Full Art" };
+/** True when a Trainer or Special Energy card uses a full-art or golden full-art frame (artwork fills the card). */
+export const isFullArtNonPokemon = (card: PokemonCard) =>
+  (card.supertype === "trainer" && card.trainerStyle !== "standard") || (card.supertype === "energy" && card.energyCardType === "special" && card.energyStyle !== "standard");
 export const framePath = (card: PokemonCard) =>
   card.supertype === "trainer"
-    ? `/pokemon-card-creator/frames/trainer/${card.trainerType === "supporter" && card.supporterStyle === "fullArt" ? "supporter-full-art" : card.trainerType}.png`
+    ? `/pokemon-card-creator/frames/trainer/${card.trainerType}${frameStyleSuffix[card.trainerStyle]}.png`
     : card.supertype === "energy"
-      ? `/pokemon-card-creator/frames/energy/${card.energyCardType}.png`
+      ? `/pokemon-card-creator/frames/energy/${card.energyCardType}${card.energyCardType === "special" ? frameStyleSuffix[card.energyStyle] : ""}.png`
       : card.era === "scarletAndViolet"
         ? `/pokemon-card-creator/frames/scarlet-violet/${card.type}-${card.stage}${
             supportsScarletVariation(card) && card.scarletVariation !== "standard"

@@ -149,7 +149,9 @@ export function renderCard(canvas: HTMLCanvasElement, card: Card, images: Images
     if(!drawText(ctx,materials,card.summon_materials,fonts,'#14100b',selected))errors.summon_materials='Summoning materials do not fit. Shorten the text.';
   }
   for (const field of fields) {
-    const color = field.id === 'name' && !errors.titleColor ? card.titleColor : '#14100b';
+    // Xyz frames are dark, so the official print uses white for the bottom-line fields.
+    const whiteOnXyz = card.templateId === 'xyz' && ['edition', 'credit', 'set_id', 'serial'].includes(field.id);
+    const color = whiteOnXyz ? '#ffffff' : field.id === 'name' && !errors.titleColor ? card.titleColor : '#14100b';
     const text=field.id==='monster_type' ? selected.category ? formattedTypeText(card) : typeText(card) : card[field.id];
     if (!errors[field.id] && !drawText(ctx,field,text,fonts,color,selected)) errors[field.id]=`${field.id==='lore' && card.templateId!=='normal' ? selected.category ? 'Card text' : 'Effect text' : labels[field.id]} does not fit. Shorten the text.`;
   }

@@ -1,0 +1,203 @@
+/**
+ * Print geometry for the 3 x 3 card sheet. Every grid cell is the size of a Pokémon card (63.5 x 88.9 mm) plus a
+ * 2 mm bleed on each side, 67.5 x 92.9 mm. Cards always print at their real size, centered in their cell: a smaller
+ * card (Yu-Gi-Oh, 59 x 86 mm) is never enlarged, the rest of the cell is bleed extended from the card's own edge.
+ * Pure functions, no DOM, so they can be tested directly.
+ */
+export const PPI = 300;
+export const MM_PER_INCH = 25.4;
+export const BLEED_MM = 2;
+export const GRID = { columns: 3, rows: 3, max: 9 } as const;
+
+const round3 = (value: number) => Math.round(value * 1000) / 1000;
+export const mmToPx = (mm: number) => Math.round((mm * PPI) / MM_PER_INCH);
+export const mmToPt = (mm: number) => (mm * 72) / MM_PER_INCH;
+
+export type CardKind = "pokemon" | "yugioh";
+export const CARD_KINDS: Record<CardKind, { label: string; widthMm: number; heightMm: number }> = {
+  pokemon: { label: "Pokémon (63.5 × 88.9 mm)", widthMm: 63.5, heightMm: 88.9 },
+  yugioh: { label: "Yu-Gi-Oh (59 × 86 mm)", widthMm: 59, heightMm: 86 },
+};
+/** Bleed (in millimetres) already present in an uploaded image, on each side of the card. */
+export type InputBleed = 0 | 1 | 2;
+export const INPUT_BLEEDS: readonly InputBleed[] = [0, 1, 2];
+
+export const CELL_MM = {
+  width: round3(CARD_KINDS.pokemon.widthMm + 2 * BLEED_MM),
+  height: round3(CARD_KINDS.pokemon.heightMm + 2 * BLEED_MM),
+} as const;
+
+/** Physical size of the uploaded artwork (the card plus whatever bleed it already has) and of the guided area. */
+export function cardFrame(kind: CardKind, inputBleed: InputBleed) {
+  const card = CARD_KINDS[kind];
+  if (!card || !INPUT_BLEEDS.includes(inputBleed)) throw new Error("Unsupported card type or bleed.");
+  return {
+    trimWidthMm: card.widthMm,
+    trimHeightMm: card.heightMm,
+    sourceWidthMm: round3(card.widthMm + 2 * inputBleed),
+    sourceHeightMm: round3(card.heightMm + 2 * inputBleed),
+    /** The 2 mm bleed boundary around the card; the white cut guides run along it. */
+    guideWidthMm: round3(card.widthMm + 2 * BLEED_MM),
+    guideHeightMm: round3(card.heightMm + 2 * BLEED_MM),
+  };
+}
+
+/** Pixel size of one cell at 300 PPI. */
+export function cellPixels() {
+  return { width: mmToPx(CELL_MM.width), height: mmToPx(CELL_MM.height) };
+}
+
+export interface SheetCell {
+  index: number;
+  row: number;
+  column: number;
+  /** Top-left of the cell (including bleed) in millimetres from the top-left of the page. */
+  xMm: number;
+  yMm: number;
+}
+export interface SheetLayout {
+  paper: PaperId;
+  pageWidthMm: number;
+  pageHeightMm: number;
+  gridWidthMm: number;
+  gridHeightMm: number;
+  /** Space between the page edge and the grid on each side. */
+  marginXMm: number;
+  marginYMm: number;
+  cells: SheetCell[];
+}
+export type PaperId = "letter" | "a4";
+export const PAPERS: Record<PaperId, { label: string; widthMm: number; heightMm: number }> = {
+  letter: { label: "US Letter (8.5 × 11 in)", widthMm: 215.9, heightMm: 279.4 },
+  a4: { label: "A4 (210 × 297 mm)", widthMm: 210, heightMm: 297 },
+};
+
+/** Centers the 3 x 3 grid on the page. Cells touch; their bleeds meet between the cards. */
+export function sheetLayout(paper: PaperId): SheetLayout {
+  const page = PAPERS[paper];
+  if (!page) throw new Error("Unsupported paper size.");
+  const gridWidthMm = round3(GRID.columns * CELL_MM.width),
+    gridHeightMm = round3(GRID.rows * CELL_MM.height),
+    marginXMm = round3((page.widthMm - gridWidthMm) / 2),
+    marginYMm = round3((page.heightMm - gridHeightMm) / 2);
+  if (marginXMm < 0 || marginYMm < 0) throw new Error("The card grid does not fit on this paper size.");
+  const cells: SheetCell[] = [];
+  for (let index = 0; index < GRID.max; index++) {
+    const row = Math.floor(index / GRID.columns),
+      column = index % GRID.columns;
+    cells.push({ index, row, column, xMm: round3(marginXMm + column * CELL_MM.width), yMm: round3(marginYMm + row * CELL_MM.height) });
+  }
+  return { paper, pageWidthMm: page.widthMm, pageHeightMm: page.heightMm, gridWidthMm, gridHeightMm, marginXMm, marginYMm, cells };
+}
+
+export interface PlacedCard {
+  cell: SheetCell;
+  kind: CardKind;
+}
+export interface Rect {
+  xMm: number;
+  yMm: number;
+  widthMm: number;
+  heightMm: number;
+}
+/** A card's cut rectangle: its real size, centered in the cell. */
+export function trimRect(card: PlacedCard): Rect {
+  const { trimWidthMm, trimHeightMm } = cardFrame(card.kind, 0);
+  return {
+    xMm: round3(card.cell.xMm + (CELL_MM.width - trimWidthMm) / 2),
+    yMm: round3(card.cell.yMm + (CELL_MM.height - trimHeightMm) / 2),
+    widthMm: trimWidthMm,
+    heightMm: trimHeightMm,
+  };
+}
+
+export interface Segment {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+/**
+ * White cut guides: the grid lines between cells, like a # sign (two vertical, two horizontal), never the outer edge
+ * of the grid and never inside a card. Each cell boundary is split per cell so only boundaries next to a filled slot
+ * are drawn. Because every cell is a Pokémon card plus 2 mm bleed, these lines run through the bleed shared by two
+ * neighbours; a smaller (Yu-Gi-Oh) card is centered with extra extended bleed between it and the line.
+ */
+export function gridGuides(layout: SheetLayout, cards: PlacedCard[]): Segment[] {
+  const filled = (row: number, column: number) => cards.some((card) => card.cell.row === row && card.cell.column === column);
+  const segments: Segment[] = [];
+  for (let column = 1; column < GRID.columns; column++) {
+    const x = round3(layout.marginXMm + column * CELL_MM.width);
+    for (let row = 0; row < GRID.rows; row++) {
+      if (!filled(row, column - 1) && !filled(row, column)) continue;
+      const y1 = round3(layout.marginYMm + row * CELL_MM.height);
+      segments.push({ x1: x, y1, x2: x, y2: round3(y1 + CELL_MM.height) });
+    }
+  }
+  for (let row = 1; row < GRID.rows; row++) {
+    const y = round3(layout.marginYMm + row * CELL_MM.height);
+    for (let column = 0; column < GRID.columns; column++) {
+      if (!filled(row - 1, column) && !filled(row, column)) continue;
+      const x1 = round3(layout.marginXMm + column * CELL_MM.width);
+      segments.push({ x1, y1: y, x2: round3(x1 + CELL_MM.width), y2: y });
+    }
+  }
+  return segments;
+}
+
+const MARK_GAP_MM = 0.3; // starts just outside the grid's bleed edge
+const MARK_MAX_LENGTH_MM = 3;
+const MARK_EDGE_CLEARANCE_MM = 0.2;
+/** Length of a crop mark that fits in the space outside the grid, or 0 when there is no room. */
+export function cropMarkLength(layout: SheetLayout): number {
+  const room = Math.min(layout.marginXMm, layout.marginYMm) - MARK_GAP_MM - MARK_EDGE_CLEARANCE_MM;
+  return room >= 1 ? Math.min(MARK_MAX_LENGTH_MM, round3(room)) : 0;
+}
+/**
+ * Crop marks for each card's own trim lines, drawn outside the outer edge of the grid. A card gets a mark on a side
+ * only if no other card sits between it and that edge, so marks never cross a neighbour's art. Empty when they do
+ * not fit on the page.
+ */
+export function cropMarks(layout: SheetLayout, cards: PlacedCard[]): Segment[] {
+  const length = cropMarkLength(layout);
+  if (!length) return [];
+  const gridLeft = layout.marginXMm,
+    gridTop = layout.marginYMm,
+    gridRight = gridLeft + layout.gridWidthMm,
+    gridBottom = gridTop + layout.gridHeightMm,
+    at = (row: number, column: number) => cards.some((card) => card.cell.row === row && card.cell.column === column);
+  const marks: Segment[] = [];
+  const seen = new Set<string>();
+  const add = (s: Segment) => {
+    const key = [s.x1, s.y1, s.x2, s.y2].map(round3).join(",");
+    if (!seen.has(key)) {
+      seen.add(key);
+      marks.push(s);
+    }
+  };
+  for (const card of cards) {
+    const trim = trimRect(card),
+      x1 = trim.xMm,
+      x2 = round3(trim.xMm + trim.widthMm),
+      y1 = trim.yMm,
+      y2 = round3(trim.yMm + trim.heightMm),
+      { row, column } = card.cell;
+    let blockedAbove = false,
+      blockedBelow = false,
+      blockedLeft = false,
+      blockedRight = false;
+    for (let r = 0; r < row; r++) blockedAbove ||= at(r, column);
+    for (let r = row + 1; r < GRID.rows; r++) blockedBelow ||= at(r, column);
+    for (let c = 0; c < column; c++) blockedLeft ||= at(row, c);
+    for (let c = column + 1; c < GRID.columns; c++) blockedRight ||= at(row, c);
+    if (!blockedAbove)
+      for (const x of [x1, x2]) add({ x1: x, y1: gridTop - MARK_GAP_MM, x2: x, y2: gridTop - MARK_GAP_MM - length });
+    if (!blockedBelow)
+      for (const x of [x1, x2]) add({ x1: x, y1: gridBottom + MARK_GAP_MM, x2: x, y2: gridBottom + MARK_GAP_MM + length });
+    if (!blockedLeft)
+      for (const y of [y1, y2]) add({ x1: gridLeft - MARK_GAP_MM, y1: y, x2: gridLeft - MARK_GAP_MM - length, y2: y });
+    if (!blockedRight)
+      for (const y of [y1, y2]) add({ x1: gridRight + MARK_GAP_MM, y1: y, x2: gridRight + MARK_GAP_MM + length, y2: y });
+  }
+  return marks;
+}

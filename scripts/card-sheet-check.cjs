@@ -1,0 +1,191 @@
+// Deterministic checks for the browser-only card sheet maker (layout math and PDF writer). No network or secrets.
+const fs = require("node:fs");
+const path = require("node:path");
+const ts = require("typescript");
+const { test } = require("node:test");
+const assert = require("node:assert/strict");
+const root = path.resolve(__dirname, "..");
+const names = ["lib/card-sheet/geometry", "lib/card-sheet/detect", "lib/card-sheet/pdf"];
+const compiled = Object.fromEntries(
+  names.map((name) => [
+    name,
+    ts.transpileModule(fs.readFileSync(path.join(root, name + ".ts"), "utf8"), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText,
+  ]),
+);
+const cache = {};
+function load(name) {
+  if (cache[name]) return cache[name].exports;
+  const loaded = { exports: {} };
+  cache[name] = loaded;
+  const req = (relative) => {
+    const target = path.posix.normalize(path.posix.join(path.posix.dirname(name), relative));
+    if (!compiled[target]) throw new Error("Unexpected test dependency: " + target);
+    return load(target);
+  };
+  new Function("require", "module", "exports", String(compiled[name]))(req, loaded, loaded.exports);
+  return loaded.exports;
+}
+const geometry = load("lib/card-sheet/geometry");
+const { buildPdf } = load("lib/card-sheet/pdf");
+const { guessCard } = load("lib/card-sheet/detect");
+
+const pk = (cell) => ({ cell, kind: "pokemon" }), yg = (cell) => ({ cell, kind: "yugioh" });
+const near = (a, b, eps = 1e-6) => Math.abs(a - b) < eps;
+
+test("cells are a Pokémon card plus 2 mm bleed on every side", () => {
+  assert.equal(geometry.CELL_MM.width, 67.5);
+  assert.equal(geometry.CELL_MM.height, 92.9);
+  const g = geometry.cellPixels();
+  assert.equal(g.width, 797);
+  assert.equal(g.height, 1097);
+});
+
+test("physical size of the artwork depends on card type and the bleed it already has", () => {
+  const p0 = geometry.cardFrame("pokemon", 0), p2 = geometry.cardFrame("pokemon", 2);
+  assert.ok(near(p0.sourceWidthMm, 63.5) && near(p0.sourceHeightMm, 88.9));
+  assert.ok(near(p2.sourceWidthMm, 67.5) && near(p2.sourceHeightMm, 92.9), "2 mm Pokémon bleed fills the whole cell");
+  const y0 = geometry.cardFrame("yugioh", 0), y1 = geometry.cardFrame("yugioh", 1);
+  assert.ok(near(y0.sourceWidthMm, 59) && near(y0.sourceHeightMm, 86), "Yu-Gi-Oh keeps its real size");
+  assert.ok(near(y1.sourceWidthMm, 61) && near(y1.sourceHeightMm, 88));
+  assert.ok(near(y0.guideWidthMm, 63) && near(y0.guideHeightMm, 90));
+  assert.throws(() => geometry.cardFrame("yugioh", 3));
+  assert.throws(() => geometry.cardFrame("magic", 0));
+});
+
+test("3 x 3 grid is centered, ordered row by row and non-overlapping", () => {
+  for (const paper of ["letter", "a4"]) {
+    const layout = geometry.sheetLayout(paper);
+    assert.equal(layout.cells.length, 9);
+    assert.equal(layout.gridWidthMm, 202.5);
+    assert.equal(layout.gridHeightMm, 278.7);
+    const first = layout.cells[0], last = layout.cells[8];
+    assert.equal(first.xMm, layout.marginXMm);
+    assert.equal(first.yMm, layout.marginYMm);
+    assert.ok(near(layout.marginXMm * 2 + layout.gridWidthMm, layout.pageWidthMm));
+    assert.ok(near(layout.marginYMm * 2 + layout.gridHeightMm, layout.pageHeightMm));
+    assert.ok(near(last.xMm + 67.5, layout.pageWidthMm - layout.marginXMm));
+    layout.cells.forEach((cell, index) => {
+      assert.equal(cell.index, index);
+      assert.equal(cell.row, Math.floor(index / 3));
+      assert.equal(cell.column, index % 3);
+    });
+  }
+});
+
+test("each card is cut at its real size, centered in its cell", () => {
+  const cell = geometry.sheetLayout("letter").cells[4];
+  const p = geometry.trimRect(pk(cell)), y = geometry.trimRect(yg(cell));
+  assert.ok(near(p.widthMm, 63.5) && near(p.heightMm, 88.9));
+  assert.ok(near(p.xMm, cell.xMm + 2) && near(p.yMm, cell.yMm + 2));
+  assert.ok(near(y.widthMm, 59) && near(y.heightMm, 86));
+  // Centered: equal space on opposite sides.
+  assert.ok(near(y.xMm - cell.xMm, cell.xMm + 67.5 - (y.xMm + y.widthMm)));
+  assert.ok(near(y.yMm - cell.yMm, cell.yMm + 92.9 - (y.yMm + y.heightMm)));
+});
+
+test("white guides are the # grid lines between cells, never inside a card or on the grid's outer edge", () => {
+  const layout = geometry.sheetLayout("letter");
+  const all = geometry.gridGuides(layout, layout.cells.map(pk));
+  // 2 vertical lines x 3 rows + 2 horizontal lines x 3 columns.
+  assert.equal(all.length, 12);
+  const xs = new Set(all.filter((s) => s.x1 === s.x2).map((s) => s.x1)), ys = new Set(all.filter((s) => s.y1 === s.y2).map((s) => s.y1));
+  assert.deepEqual([...xs].sort((a, b) => a - b), [layout.marginXMm + 67.5, layout.marginXMm + 135].map((v) => Math.round(v * 1000) / 1000));
+  assert.deepEqual([...ys].sort((a, b) => a - b), [layout.marginYMm + 92.9, layout.marginYMm + 185.8].map((v) => Math.round(v * 1000) / 1000));
+  for (const s of all) {
+    assert.ok(s.x1 > layout.marginXMm && s.x1 < layout.marginXMm + 202.5 || s.x1 !== s.x2);
+    assert.ok(near(Math.hypot(s.x2 - s.x1, s.y2 - s.y1), s.x1 === s.x2 ? 92.9 : 67.5), "one cell long");
+  }
+  // Same lines for a Yu-Gi-Oh card: they stay on the cell boundary, outside the smaller card's trim.
+  const yugi = [yg(layout.cells[4])];
+  const around = geometry.gridGuides(layout, yugi);
+  assert.equal(around.length, 4, "only boundaries next to the filled slot");
+  const trim = geometry.trimRect(yugi[0]);
+  for (const s of around) {
+    if (s.x1 === s.x2) assert.ok(s.x1 < trim.xMm - 2 || s.x1 > trim.xMm + trim.widthMm + 2, "outside 2 mm bleed");
+    else assert.ok(s.y1 < trim.yMm - 2 || s.y1 > trim.yMm + trim.heightMm + 2, "outside 2 mm bleed");
+  }
+  assert.equal(geometry.gridGuides(layout, []).length, 0);
+  assert.equal(geometry.gridGuides(layout, [pk(layout.cells[0])]).length, 2, "corner card: one vertical and one horizontal boundary");
+});
+
+test("Letter has no room for crop marks; on A4 they follow each card's own trim lines", () => {
+  const letter = geometry.sheetLayout("letter");
+  assert.equal(geometry.cropMarkLength(letter), 0);
+  assert.equal(geometry.cropMarks(letter, letter.cells.map(pk)).length, 0);
+  const a4 = geometry.sheetLayout("a4");
+  const full = geometry.cropMarks(a4, a4.cells.map(pk));
+  // 6 vertical + 6 horizontal cut lines, a mark at each end.
+  assert.equal(full.length, 24);
+  for (const m of full) {
+    for (const v of [m.x1, m.x2]) assert.ok(v >= 0 && v <= a4.pageWidthMm);
+    for (const v of [m.y1, m.y2]) assert.ok(v >= 0 && v <= a4.pageHeightMm);
+    for (const [x, y] of [[m.x1, m.y1], [m.x2, m.y2]]) {
+      const inside = x > a4.marginXMm + 1e-6 && x < a4.marginXMm + a4.gridWidthMm - 1e-6 && y > a4.marginYMm + 1e-6 && y < a4.marginYMm + a4.gridHeightMm - 1e-6;
+      assert.equal(inside, false, "marks stay outside the grid");
+    }
+  }
+  // A lone Yu-Gi-Oh card in the center cell: marks at its real trim lines, on all four sides.
+  const center = a4.cells[4];
+  const lone = geometry.cropMarks(a4, [yg(center)]);
+  assert.equal(lone.length, 8);
+  const trim = geometry.trimRect(yg(center));
+  assert.ok(lone.some((m) => near(m.x1, trim.xMm) && m.y1 < a4.marginYMm));
+  assert.ok(lone.some((m) => near(m.y1, trim.yMm + trim.heightMm) && m.x1 > a4.marginXMm + a4.gridWidthMm));
+  // A card with a neighbour between it and an edge gets no mark on that side.
+  const stacked = geometry.cropMarks(a4, [pk(a4.cells[1]), pk(a4.cells[4])]);
+  assert.equal(stacked.length, 12); // top marks only for the upper card, bottom only for the lower; left/right for both
+});
+
+test("PDF is structurally valid, deterministic and sized to the page", () => {
+  const layout = geometry.sheetLayout("letter");
+  const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+  const spec = {
+    widthMm: layout.pageWidthMm,
+    heightMm: layout.pageHeightMm,
+    images: layout.cells.slice(0, 2).map((cell) => ({ jpeg, pixelWidth: 797, pixelHeight: 1097, xMm: cell.xMm, yMm: cell.yMm, widthMm: 67.5, heightMm: 92.9 })),
+    lines: [{ segments: geometry.gridGuides(layout, [pk(layout.cells[0]), pk(layout.cells[1])]), gray: 1, widthPt: 0.24 }],
+  };
+  const a = buildPdf(spec), b = buildPdf(spec);
+  assert.deepEqual(a, b);
+  const text = Buffer.from(a).toString("latin1");
+  assert.ok(text.startsWith("%PDF-1.4"));
+  assert.ok(text.trimEnd().endsWith("%%EOF"));
+  assert.match(text, /\/MediaBox \[0 0 612 792\]/);
+  assert.equal((text.match(/\/Subtype \/Image/g) || []).length, 2);
+  assert.equal((text.match(/\/Filter \/DCTDecode/g) || []).length, 2);
+  assert.ok(!/\/Producer|\/CreationDate/.test(text), "no timestamps or producer strings");
+  const startxref = Number(/startxref\n(\d+)\n%%EOF/.exec(text)?.[1]);
+  assert.equal(text.slice(startxref, startxref + 4), "xref");
+  const entries = text.slice(startxref).split("\n").filter((line) => /^\d{10} 00000 n $/.test(line));
+  assert.equal(entries.length, 6); // catalog, pages, page, contents, 2 images
+  entries.forEach((entry, index) => assert.ok(text.slice(Number(entry.slice(0, 10))).startsWith(`${index + 1} 0 obj`)));
+  const a4 = buildPdf({ ...spec, widthMm: 210, heightMm: 297 });
+  assert.match(Buffer.from(a4).toString("latin1"), /\/MediaBox \[0 0 595\.276 841\.89\]/);
+});
+
+test("PDF rejects an invalid page size", () => {
+  assert.throws(() => buildPdf({ widthMm: 0, heightMm: 10, images: [], lines: [] }));
+});
+
+test("type and bleed are guessed from proportions, never from a poor match", () => {
+  // Exact shapes of every real combination, at several pixel scales.
+  for (const kind of ["pokemon", "yugioh"]) {
+    for (const bleed of [0, 1, 2]) {
+      const frame = geometry.cardFrame(kind, bleed);
+      for (const scale of [10, 11.811, 20.3]) {
+        const guess = guessCard(Math.round(frame.sourceWidthMm * scale), Math.round(frame.sourceHeightMm * scale));
+        assert.deepEqual(guess, { kind, bleed }, `${kind} ${bleed} mm at ${scale} px/mm`);
+      }
+    }
+  }
+  // Common real-world pixel sizes.
+  assert.deepEqual(guessCard(421, 614), { kind: "yugioh", bleed: 0 });
+  assert.deepEqual(guessCard(797, 1097), { kind: "pokemon", bleed: 2 });
+  assert.deepEqual(guessCard(750, 1050), { kind: "pokemon", bleed: 0 });
+  // Unrelated shapes are left for the user to choose.
+  assert.equal(guessCard(1000, 1000), null);
+  assert.equal(guessCard(600, 800), null);
+  assert.equal(guessCard(1920, 1080), null);
+  assert.equal(guessCard(0, 100), null);
+  assert.equal(guessCard(NaN, 100), null);
+});

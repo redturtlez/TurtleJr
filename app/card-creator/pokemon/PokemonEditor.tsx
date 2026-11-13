@@ -24,6 +24,7 @@ import {
   supertypeLabels,
   supportsFullArt,
   supportsScarletVariation,
+  trainerFrameStyleLabels,
   trainerTypeLabels,
   type PokemonCard,
 } from "../../../lib/pokemon-card-creator/model";
@@ -556,7 +557,7 @@ export default function PokemonEditor() {
               {card.supertype === "pokemon"
                 ? `${eraLabels[card.era]} · ${labels[card.type]} · ${stageLabels[card.stage]}${pokemonPreviewSuffix(card)}`
                 : card.supertype === "trainer"
-                  ? trainerTypeLabels[card.trainerType] + (card.trainerType === "supporter" && card.supporterStyle === "fullArt" ? " · Full Art" : "")
+                  ? trainerTypeLabels[card.trainerType] + (card.trainerStyle !== "standard" ? ` · ${trainerFrameStyleLabels[card.trainerStyle]}` : "")
                   : energyCardTypeLabels[card.energyCardType]}
             </span>
           </div>
@@ -742,12 +743,27 @@ function NonPokemonControls({
         )}
         {card.supertype === "energy" && <TypeSelect label="Energy symbol" value={card.energySymbol} onChange={(value) => set("energySymbol", value)} />}
       </div>
-      {card.supertype === "trainer" && card.trainerType === "supporter" && (
+      {card.supertype === "trainer" && (
         <div className={styles.field}>
-          <label htmlFor="pk-supporter-style">Supporter frame</label>
-          <select id="pk-supporter-style" value={card.supporterStyle} onChange={(e) => set("supporterStyle", e.target.value as PokemonCard["supporterStyle"])}>
-            <option value="standard">Standard</option>
-            <option value="fullArt">Full Art</option>
+          <label htmlFor="pk-trainer-style">Trainer frame</label>
+          <select id="pk-trainer-style" value={card.trainerStyle} onChange={(e) => set("trainerStyle", e.target.value as PokemonCard["trainerStyle"])}>
+            {(Object.keys(trainerFrameStyleLabels) as PokemonCard["trainerStyle"][]).map((value) => (
+              <option key={value} value={value}>
+                {trainerFrameStyleLabels[value]}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      {card.supertype === "energy" && card.energyCardType === "special" && (
+        <div className={styles.field}>
+          <label htmlFor="pk-energy-style">Energy frame</label>
+          <select id="pk-energy-style" value={card.energyStyle} onChange={(e) => set("energyStyle", e.target.value as PokemonCard["energyStyle"])}>
+            {(Object.keys(trainerFrameStyleLabels) as PokemonCard["energyStyle"][]).map((value) => (
+              <option key={value} value={value}>
+                {trainerFrameStyleLabels[value]}
+              </option>
+            ))}
           </select>
         </div>
       )}

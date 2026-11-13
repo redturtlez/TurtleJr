@@ -11,8 +11,8 @@ export default function HomePage() {
       <div className={styles.hero}>
         <div className={styles.copy}>
           <p className={styles.eyebrow}><span>Hello, I&apos;m</span><strong>Simonè Mineo.</strong></p>
-          <h1>I build software for <em>busy systems</em> and curious people.</h1>
-          <p className={styles.intro}>By day, I engineer logistics software that has to keep moving. After hours, I turn useful ideas, including a few wonderfully niche ones, into things you can actually use.</p>
+          <h1><em>Software engineer</em> by trade. I build small, useful tools on the side.</h1>
+          <p className={styles.intro}>This is where I keep the things I make: card creators for Yu-Gi-Oh and Pokémon, a print-sheet maker, a protein cost tracker and my art. Take a look around and try them out.</p>
           <div className={styles.actions}>
             <Link href="/projects" className={styles.primaryAction}>See what I&apos;ve built <span aria-hidden="true">↗</span></Link>
             <Link href="/about#resume" className={styles.secondaryAction}>Open my résumé</Link>

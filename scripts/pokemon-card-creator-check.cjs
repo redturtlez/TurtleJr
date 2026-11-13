@@ -131,12 +131,13 @@ test("every supported frame mapping exists at its era source size", () => {
     for (const type of model.pokemonTypes) cards.push({ ...model.defaults, supertype: "pokemon", stage: "vmax", type, vmaxVariation });
   for (const vstarStyle of ["standard", "fullArt"])
     for (const type of model.vstarTypes) cards.push({ ...model.defaults, supertype: "pokemon", stage: "vstar", type, vstarStyle });
-  for (const trainerType of ["item", "tool", "supporter", "stadium"]) cards.push({ ...model.defaults, supertype: "trainer", trainerType, supporterStyle: "standard" });
-  cards.push({ ...model.defaults, supertype: "trainer", trainerType: "supporter", supporterStyle: "fullArt" });
-  for (const energyCardType of ["base", "special"]) cards.push({ ...model.defaults, supertype: "energy", energyCardType });
+  for (const trainerType of ["item", "tool", "supporter", "stadium"])
+    for (const trainerStyle of ["standard", "fullArt", "goldenFullArt"]) cards.push({ ...model.defaults, supertype: "trainer", trainerType, trainerStyle });
+  cards.push({ ...model.defaults, supertype: "energy", energyCardType: "base" });
+  for (const energyStyle of ["standard", "fullArt", "goldenFullArt"]) cards.push({ ...model.defaults, supertype: "energy", energyCardType: "special", energyStyle });
   const urls = new Set(cards.map(model.framePath));
-  assert.equal(cards.length, 1125);
-  assert.equal(urls.size, 1125);
+  assert.equal(cards.length, 1134);
+  assert.equal(urls.size, 1134);
   for (const card of cards) {
     const url = model.framePath(card),
       file = publicFile(url);
