@@ -591,7 +591,7 @@ export default function PokemonEditor() {
 }
 function CollectorFields({ card, set }: { card: PokemonCard; set: Setter }) {
   return (
-    <details>
+    <details open>
       <summary>Collector details</summary>
       <div className={styles.field}>
         <label htmlFor="pk-illustrator">Illustrator</label>

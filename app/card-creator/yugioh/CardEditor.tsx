@@ -193,7 +193,7 @@ export default function CardEditor() {
         </fieldset>}
         {textControl('lore')}
         {!selectedTemplate.category&&<div className={styles.row}>{textControl('attack')}{card.templateId!=='link'&&textControl('defense')}</div>}
-        <details className={styles.optional}><summary>Edition & finishing details</summary>
+        <details className={styles.optional} open><summary>Edition & finishing details</summary>
           {(['set_id','serial'] as const).map(textControl)}
           <div className={styles.field}><label htmlFor="card-edition">Edition</label>
             <select id="card-edition" value={card.edition} onChange={event=>change('edition',event.target.value)}>
