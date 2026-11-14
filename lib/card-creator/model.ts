@@ -77,7 +77,7 @@ export function layoutFields(card: Card): Field[] {
     ? {...field,bounds:cardType?.icon ? selected.iconTypeRegion! : selected.normalTypeRegion!,align:'right'}
     : field.id === 'edition' && card.editionPosition === 'set-line'
     ? { ...field, bounds: rect([85, set.bounds[1], 400, set.bounds[3]]) }
-    : field.id === 'credit' && !card.sticker ? { ...field, bounds: rect([field.bounds[0],field.bounds[1],785,field.bounds[3]]) } : field);
+    : field.id === 'credit' ? { ...field, bounds: rect([380,field.bounds[1],card.sticker ? field.bounds[2] : 785,field.bounds[3]]) } : field); // starts after the edition field (ends at 365)
 }
 export function fieldText(id: FieldId, raw: string): string {
   if (id === 'monster_type') return raw ? `[${raw.toUpperCase()}]` : '';

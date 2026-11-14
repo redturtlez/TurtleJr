@@ -202,7 +202,13 @@ if (process.argv.includes('--serve')) {
     assert.equal(edition.bounds[1],set.bounds[1]);assert.equal(edition.bounds[3],set.bounds[3]);
     assert.ok(edition.bounds[2]<set.bounds[0]);
     assert.deepEqual(upper.filter(f=>!['edition','credit'].includes(f.id)),fields.filter(f=>!['edition','credit'].includes(f.id)));
-    assert.deepEqual(layoutFields({...defaults,sticker:true}),fields);
+    const stickered=layoutFields({...defaults,sticker:true});
+    assert.deepEqual(stickered.filter(f=>f.id!=='credit'),fields.filter(f=>f.id!=='credit'));
+    // Credit starts after the edition field (ends at 365) for extra width; the sticker keeps the original right edge.
+    const edField=fields.find(f=>f.id==='edition');
+    assert.deepEqual(stickered.find(f=>f.id==='credit').bounds,[380,fields.find(f=>f.id==='credit').bounds[1],fields.find(f=>f.id==='credit').bounds[2],fields.find(f=>f.id==='credit').bounds[3]]);
+    assert.ok(stickered.find(f=>f.id==='credit').bounds[0]>edField.bounds[2]);
+    assert.equal(layoutFields(defaults).find(f=>f.id==='credit').bounds[0],380);
     assert.equal(layoutFields(defaults).find(f=>f.id==='credit').bounds[2],785);
     const gold=graphics({...defaults,sticker:true,stickerColor:'gold'}),silver=graphics({...defaults,sticker:true});
     assert.equal(gold.length,silver.length);assert.notDeepEqual(gold,silver);
