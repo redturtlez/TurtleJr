@@ -483,10 +483,11 @@ async function drawAttackEnergy(
   iconSize = 39,
   iconGap = 41,
   outlined = false,
+  leftEdge?: number,
 ) {
   const visibleEnergy = energy.slice(0, 4),
     icons = visibleEnergy.length > 0 ? visibleEnergy.map((type) => typeIconPath(type, era)) : [noCostIconPath(era)],
-    energyStart = attackEnergyStart(nameX, iconSize, iconGap, icons.length);
+    energyStart = leftEdge ?? attackEnergyStart(nameX, iconSize, iconGap, icons.length);
   for (const [index, src] of icons.entries()) drawIcon(ctx, await image(src), energyStart + index * iconGap, y, iconSize, outlined);
 }
 function cover(ctx: CanvasRenderingContext2D, art: ImageBitmap, x: number, y: number, w: number, h: number, cropX: number, cropY: number, zoom: number) {
@@ -1762,8 +1763,13 @@ async function drawMove(
   const scarlet = era === "scarletAndViolet",
     iconSize = 39,
     iconGap = 41,
-    nameX = scarlet ? 240 : 220;
-  await drawAttackEnergy(ctx, energy, era, nameX, y - iconSize + 7, iconSize, iconGap, outlineEnergy);
+    nameX = scarlet ? 240 : 220,
+    // Scarlet & Violet full art has no inset panel, so energy, text and damage sit nearer the card border (as on PokeCardMaker).
+    fullArtScarlet = scarlet && (strokeOutline || outline),
+    textX = fullArtScarlet ? 58 : 84,
+    textWidth = fullArtScarlet ? 632 : 578,
+    damageRight = fullArtScarlet ? 692 : 680;
+  await drawAttackEnergy(ctx, energy, era, nameX, y - iconSize + 7, iconSize, iconGap, outlineEnergy, fullArtScarlet ? 50 : undefined);
   ctx.save();
   strokeOutline = strokeOutline || outline; // outlined text over art always gets a real outline, not a glow
   if (strokeOutline) {
@@ -1777,18 +1783,18 @@ async function drawMove(
   ctx.fillText(name, nameX, y);
   ctx.textAlign = "right";
   ctx.font = "700 34px PokemonFuturaStdHeavy,PokemonFutura,Arial,sans-serif";
-  if (strokeOutline) ctx.strokeText(damage, 680, y);
-  ctx.fillText(damage, 680, y);
+  if (strokeOutline) ctx.strokeText(damage, damageRight, y);
+  ctx.fillText(damage, damageRight, y);
   ctx.textAlign = "left";
   ctx.font = "400 27px PokemonGill,Arial,sans-serif";
   if (strokeOutline) {
     ctx.lineWidth = 3.5;
-    for (const [index, line] of lineWrap(ctx, description, 578, descriptionLines).entries()) {
+    for (const [index, line] of lineWrap(ctx, description, textWidth, descriptionLines).entries()) {
       const lineY = y + 38 + index * 29;
-      ctx.strokeText(line, 84, lineY);
-      ctx.fillText(line, 84, lineY);
+      ctx.strokeText(line, textX, lineY);
+      ctx.fillText(line, textX, lineY);
     }
-  } else wrap(ctx, description, 84, y + 38, 578, 29, descriptionLines);
+  } else wrap(ctx, description, textX, y + 38, textWidth, 29, descriptionLines);
   ctx.restore();
 }
 
