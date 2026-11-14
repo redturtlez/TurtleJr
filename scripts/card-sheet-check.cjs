@@ -5,7 +5,7 @@ const ts = require("typescript");
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const root = path.resolve(__dirname, "..");
-const names = ["lib/card-sheet/geometry", "lib/card-sheet/detect", "lib/card-sheet/pdf"];
+const names = ["lib/card-sheet/geometry", "lib/card-sheet/detect", "lib/card-sheet/pdf", "lib/card-sheet/merge"];
 const compiled = Object.fromEntries(
   names.map((name) => [
     name,
@@ -18,6 +18,7 @@ function load(name) {
   const loaded = { exports: {} };
   cache[name] = loaded;
   const req = (relative) => {
+    if (!relative.startsWith(".")) return require(relative); // installed packages such as pdf-lib
     const target = path.posix.normalize(path.posix.join(path.posix.dirname(name), relative));
     if (!compiled[target]) throw new Error("Unexpected test dependency: " + target);
     return load(target);
@@ -28,6 +29,7 @@ function load(name) {
 const geometry = load("lib/card-sheet/geometry");
 const { buildPdf } = load("lib/card-sheet/pdf");
 const { guessCard } = load("lib/card-sheet/detect");
+const merge = load("lib/card-sheet/merge");
 
 const pk = (cell) => ({ cell, kind: "pokemon" }), yg = (cell) => ({ cell, kind: "yugioh" });
 const near = (a, b, eps = 1e-6) => Math.abs(a - b) < eps;
@@ -188,4 +190,62 @@ test("type and bleed are guessed from proportions, never from a poor match", () 
   assert.equal(guessCard(1920, 1080), null);
   assert.equal(guessCard(0, 100), null);
   assert.equal(guessCard(NaN, 100), null);
+});
+
+function sheetPdf(paper, cards) {
+  const layout = geometry.sheetLayout(paper);
+  const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+  return buildPdf({
+    widthMm: layout.pageWidthMm,
+    heightMm: layout.pageHeightMm,
+    images: layout.cells.slice(0, cards).map((cell) => ({ jpeg, pixelWidth: 797, pixelHeight: 1097, xMm: cell.xMm, yMm: cell.yMm, widthMm: 67.5, heightMm: 92.9 })),
+    lines: [],
+  });
+}
+const text = (bytes) => Buffer.from(bytes).toString("latin1");
+
+test("page sizes are named from the PDF itself, in either orientation", () => {
+  assert.equal(merge.describePageSize(215.9, 279.4), "Letter");
+  assert.equal(merge.describePageSize(279.4, 215.9), "Letter");
+  assert.equal(merge.describePageSize(210, 297), "A4");
+  assert.equal(merge.describePageSize(150.2, 200.4), "150 × 200 mm");
+});
+
+test("a card sheet PDF is read back with its page count and size", async () => {
+  const info = await merge.inspectPdf("sheet.pdf", sheetPdf("letter", 3));
+  assert.equal(info.pageCount, 1);
+  assert.equal(info.pages[0].label, "Letter");
+  assert.ok(Math.abs(info.pages[0].widthMm - 215.9) < 0.2 && Math.abs(info.pages[0].heightMm - 279.4) < 0.2);
+  assert.equal((await merge.inspectPdf("a4.pdf", sheetPdf("a4", 1))).pages[0].label, "A4");
+});
+
+test("sheets are combined in order, keeping each page's size and its embedded images", async () => {
+  const a = sheetPdf("letter", 4), b = sheetPdf("a4", 2), c = sheetPdf("letter", 1);
+  const result = await merge.mergePdfs([{ name: "a.pdf", bytes: a }, { name: "b.pdf", bytes: b }, { name: "c.pdf", bytes: c }]);
+  assert.equal(result.pageCount, 3);
+  assert.deepEqual(result.pages.map((page) => page.label), ["Letter", "A4", "Letter"]);
+  const body = text(result.bytes);
+  assert.ok(body.startsWith("%PDF-"));
+  assert.equal((body.match(/DCTDecode/g) || []).length, 4 + 2 + 1, "images are copied, not dropped or duplicated");
+  const reread = await merge.inspectPdf("combined.pdf", result.bytes);
+  assert.equal(reread.pageCount, 3);
+  assert.deepEqual(reread.pages.map((page) => page.label), ["Letter", "A4", "Letter"]);
+  // Order matters: swapping inputs swaps the pages.
+  const swapped = await merge.mergePdfs([{ name: "b.pdf", bytes: b }, { name: "a.pdf", bytes: a }]);
+  assert.deepEqual(swapped.pages.map((page) => page.label), ["A4", "Letter"]);
+  // Deterministic output.
+  const again = await merge.mergePdfs([{ name: "a.pdf", bytes: a }, { name: "b.pdf", bytes: b }, { name: "c.pdf", bytes: c }]);
+  assert.deepEqual(again.bytes, result.bytes);
+  assert.ok(!/pdf-lib/i.test(body.slice(body.indexOf("/Producer"), body.indexOf("/Producer") + 40)), "no tool name in the producer field");
+});
+
+test("bad, empty, oversized and too many files are rejected with clear messages", async () => {
+  const good = sheetPdf("letter", 1);
+  await assert.rejects(merge.mergePdfs([]), /at least one/i);
+  await assert.rejects(merge.mergePdfs([{ name: "notes.pdf", bytes: new TextEncoder().encode("hello world") }]), /not a PDF/);
+  await assert.rejects(merge.mergePdfs([{ name: "empty.pdf", bytes: new Uint8Array(0) }]), /empty/);
+  await assert.rejects(merge.mergePdfs([{ name: "cut.pdf", bytes: good.slice(0, Math.floor(good.length / 2)) }]), /incomplete or damaged/);
+  await assert.rejects(merge.mergePdfs([{ name: "big.pdf", bytes: new Uint8Array(merge.MERGE_LIMITS.maxFileBytes + 1) }]), /larger than/);
+  const many = Array.from({ length: merge.MERGE_LIMITS.maxFiles + 1 }, (_, i) => ({ name: `${i}.pdf`, bytes: good }));
+  await assert.rejects(merge.mergePdfs(many), /at most/);
 });

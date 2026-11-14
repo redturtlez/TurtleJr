@@ -5,6 +5,7 @@ import { cloneCell, cellToJpeg, composeCell } from "../../../lib/card-sheet/blee
 import { CARD_KINDS, CELL_MM, GRID, INPUT_BLEEDS, PAPERS, cropMarkLength, cropMarks, gridGuides, sheetLayout, trimRect, type CardKind, type InputBleed, type PaperId, type PlacedCard, type SheetLayout } from "../../../lib/card-sheet/geometry";
 import { guessCard } from "../../../lib/card-sheet/detect";
 import { buildPdf, type PdfLines } from "../../../lib/card-sheet/pdf";
+import PdfCombiner from "./PdfCombiner";
 import styles from "./sheet.module.css";
 
 type Slot = {
@@ -557,6 +558,7 @@ export default function SheetEditor() {
           )}
         </section>
       </div>
+      <PdfCombiner />
       {fullOpen && <FullPreview slots={slots} paper={paper} guides={guides} marks={marksOn} onClose={() => setFullOpen(false)} />}
     </div>
   );

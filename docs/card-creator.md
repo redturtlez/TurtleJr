@@ -345,3 +345,14 @@ card's edge pixels, a card already at 2 mm gets nothing added, and a smaller car
 of the cell left blank. White guides are only the grid lines between cells (a # sign: two vertical, two horizontal), never inside a card or on the grid's outer edge; A4 crop marks follow each card's own trim lines on the grid's outer sides. Originals are
 kept in memory only so a card can be rebuilt when its settings change. Measured at 300 PPI in the browser, card
 frames printed within one pixel of their expected size and were centered within 0.08 mm.
+
+### Combine sheet PDFs
+
+Below the sheet maker, "Combine sheet PDFs" joins several PDFs (for example sheets downloaded above) into one multi-page
+file, `card-sheets-combined.pdf`, so a run of sheets prints from a single file. It uses `pdf-lib` (MIT, added with
+approval, loaded only when needed) via `lib/card-sheet/merge.ts`. Pages are copied as-is, so the embedded images are not
+re-encoded, and each page keeps its own size: the paper type is read from each PDF's page dimensions (shown as Letter, A4
+or a size in mm), so nothing needs selecting and Letter and A4 sheets can be mixed. Limits: 20 files, 25 MB each, 60 pages
+in total. Files that are not PDFs, are empty, look cut off (no `%%EOF`), are password-protected or fail to parse are
+rejected with a message. Output metadata is blank and timestamps are fixed, so the same inputs give identical bytes.
+Everything runs in the browser.
