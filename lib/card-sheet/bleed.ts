@@ -51,22 +51,42 @@ export function composeCell(source: CanvasImageSource & { width: number; height:
   ctx.beginPath();
   ctx.rect(bleedX, bleedY, bleedWidth, bleedHeight);
   ctx.clip();
-  // Edge pixels are sampled a few pixels inside the card so rounded or anti-aliased corners are never smeared.
-  const edge = Math.min(Math.max(2, Math.round(w * 0.003)), Math.floor(w / 2) - 1),
-    corner = Math.min(Math.round(w * 0.055), Math.floor(Math.min(w, h) / 2) - 1),
-    right = g.width - x - w,
-    bottom = g.height - y - h,
-    midY = Math.floor(h / 2);
-  // Corner blocks use a single edge pixel from the middle of the side.
-  ctx.drawImage(art, edge, midY, 1, 1, 0, 0, x + corner, y + corner);
-  ctx.drawImage(art, w - edge - 1, midY, 1, 1, x + w - corner, 0, right + corner, y + corner);
-  ctx.drawImage(art, edge, midY, 1, 1, 0, y + h - corner, x + corner, bottom + corner);
-  ctx.drawImage(art, w - edge - 1, midY, 1, 1, x + w - corner, y + h - corner, right + corner, bottom + corner);
-  // Straight edges are stretched outward.
-  ctx.drawImage(art, corner, edge, w - corner * 2, 1, x, 0, w, y + corner);
-  ctx.drawImage(art, corner, h - edge - 1, w - corner * 2, 1, x, y + h - corner, w, bottom + corner);
-  ctx.drawImage(art, edge, corner, 1, h - corner * 2, 0, y, x + corner, h);
-  ctx.drawImage(art, w - edge - 1, corner, 1, h - corner * 2, x + w - corner, y, right + corner, h);
+  const right = g.width - x - w,
+    bottom = g.height - y - h;
+  if (kind === "yugioh") {
+    // Same method as the Yu-Gi-Oh card creator: the outermost row/column of pixels is stretched outward with no
+    // smoothing, and each corner is filled from the card's own corner pixel, so the bleed is one seamless border.
+    ctx.imageSmoothingEnabled = false;
+    const opaque = (px: number, py: number) => (artCtx.getImageData(px, py, 1, 1).data[3] ?? 0) === 255;
+    const midY = Math.floor(h / 2);
+    // Rounded or transparent corner pixels would smear, so fall back to the side's middle pixel in that case.
+    const corners: Array<[number, number, number, number, number, number]> = [
+      [0, 0, 0, 0, x, y],
+      [w - 1, 0, x + w, 0, right, y],
+      [0, h - 1, 0, y + h, x, bottom],
+      [w - 1, h - 1, x + w, y + h, right, bottom],
+    ];
+    ctx.drawImage(art, 0, 0, w, 1, x, 0, w, y);
+    ctx.drawImage(art, 0, h - 1, w, 1, x, y + h, w, bottom);
+    ctx.drawImage(art, 0, 0, 1, h, 0, y, x, h);
+    ctx.drawImage(art, w - 1, 0, 1, h, x + w, y, right, h);
+    for (const [sx, sy, dx, dy, dw, dh] of corners) ctx.drawImage(art, sx, opaque(sx, sy) ? sy : midY, 1, 1, dx, dy, dw, dh);
+  } else {
+    // Edge pixels are sampled a few pixels inside the card so rounded or anti-aliased corners are never smeared.
+    const edge = Math.min(Math.max(2, Math.round(w * 0.003)), Math.floor(w / 2) - 1),
+      corner = Math.min(Math.round(w * 0.055), Math.floor(Math.min(w, h) / 2) - 1),
+      midY = Math.floor(h / 2);
+    // Corner blocks use a single edge pixel from the middle of the side.
+    ctx.drawImage(art, edge, midY, 1, 1, 0, 0, x + corner, y + corner);
+    ctx.drawImage(art, w - edge - 1, midY, 1, 1, x + w - corner, 0, right + corner, y + corner);
+    ctx.drawImage(art, edge, midY, 1, 1, 0, y + h - corner, x + corner, bottom + corner);
+    ctx.drawImage(art, w - edge - 1, midY, 1, 1, x + w - corner, y + h - corner, right + corner, bottom + corner);
+    // Straight edges are stretched outward.
+    ctx.drawImage(art, corner, edge, w - corner * 2, 1, x, 0, w, y + corner);
+    ctx.drawImage(art, corner, h - edge - 1, w - corner * 2, 1, x, y + h - corner, w, bottom + corner);
+    ctx.drawImage(art, edge, corner, 1, h - corner * 2, 0, y, x + corner, h);
+    ctx.drawImage(art, w - edge - 1, corner, 1, h - corner * 2, x + w - corner, y, right + corner, h);
+  }
   ctx.restore();
 
   ctx.drawImage(art, x, y);
