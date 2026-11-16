@@ -295,4 +295,19 @@ if (process.argv.includes('--serve')) {
     assert.deepEqual(inspectImage(jpeg),{type:'image/jpeg',width:20,height:10});
     jpeg[7]=255;jpeg[8]=255;assert.throws(()=>inspectImage(jpeg));
   });
+  test('WebP headers report type and size for lossy, lossless and extended files',()=>{
+    const riff=(chunk,body)=>Buffer.concat([Buffer.from('RIFF'),Buffer.alloc(4),Buffer.from('WEBP'),Buffer.from(chunk),Buffer.alloc(4),body]);
+    const lossy=riff('VP8 ',Buffer.from([0,0,0,0x9d,0x01,0x2a,20,0,10,0,0,0]));
+    assert.deepEqual(inspectImage(lossy),{type:'image/webp',width:20,height:10});
+    const bits=(20-1)|((10-1)<<14);
+    const lossless=riff('VP8L',Buffer.from([0x2f,bits&255,(bits>>8)&255,(bits>>16)&255,(bits>>>24)&255,0,0,0,0,0,0,0]));
+    assert.deepEqual(inspectImage(lossless),{type:'image/webp',width:20,height:10});
+    const extended=riff('VP8X',Buffer.from([0,0,0,0,19,0,0,9,0,0,0,0]));
+    assert.deepEqual(inspectImage(extended),{type:'image/webp',width:20,height:10});
+    const huge=riff('VP8X',Buffer.from([0,0,0,0,0xff,0x3f,0,0xff,0x3f,0,0,0]));
+    assert.throws(()=>inspectImage(huge));
+    const badStart=Buffer.from(lossy);badStart[23]=0;assert.throws(()=>inspectImage(badStart));
+    assert.throws(()=>inspectImage(riff('ABCD',Buffer.alloc(12))));
+    assert.throws(()=>inspectImage(lossy.subarray(0,20)));
+  });
 }

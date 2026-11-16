@@ -415,7 +415,7 @@ export default function SheetEditor() {
             ref={addInput}
             className={styles.hidden}
             type="file"
-            accept="image/png,image/jpeg"
+            accept="image/png,image/jpeg,image/webp"
             multiple
             aria-label="Add card images"
             onChange={(e) => {
@@ -427,14 +427,14 @@ export default function SheetEditor() {
             ref={replaceInput}
             className={styles.hidden}
             type="file"
-            accept="image/png,image/jpeg"
+            accept="image/png,image/jpeg,image/webp"
             aria-label="Replace card image"
             onChange={(e) => {
               void replaceFile(e.target.files?.[0]);
               e.target.value = "";
             }}
           />
-          <p className={styles.note}>PNG or JPEG, up to 10 MB each. After adding images, the type and bleed are detected from the image's proportions where possible. Check them, and choose the type yourself for any card left unset, so each prints at its real size and is never stretched. Bleed is extended up to 2 mm per side where missing. Add the same image to several slots, or use Copy, for duplicates.</p>
+          <p className={styles.note}>PNG, JPEG or WebP, up to 10 MB each. After adding images, the type and bleed are detected from the image's proportions where possible. Check them, and choose the type yourself for any card left unset, so each prints at its real size and is never stretched. Bleed is extended up to 2 mm per side where missing. Add the same image to several slots, or use Copy, for duplicates.</p>
           <ol className={styles.slots}>
             {slots.map((slot, index) => (
               <li key={slot ? slot.id : `empty-${index}`} className={slot ? styles.slot : `${styles.slot} ${styles.empty}`}>

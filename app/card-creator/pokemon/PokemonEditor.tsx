@@ -453,13 +453,13 @@ export default function PokemonEditor() {
                 <input
                   id="pk-art"
                   type="file"
-                  accept="image/png,image/jpeg"
+                  accept="image/png,image/jpeg,image/webp"
                   onChange={(e) => {
                     void choose(e.target.files?.[0]);
                     e.target.value = "";
                   }}
                 />
-                <p>PNG or JPEG · up to 10 MB and 16 megapixels.</p>
+                <p>PNG, JPEG or WebP · up to 10 MB and 16 megapixels.</p>
                 {art && (
                   <>
                     <div className={styles.field}>
@@ -695,7 +695,7 @@ function EvolutionArtworkControls({
       <input
         id="pk-evolution-art"
         type="file"
-        accept="image/png,image/jpeg"
+        accept="image/png,image/jpeg,image/webp"
         onChange={(e) => {
           void choose(e.target.files?.[0]);
           e.target.value = "";
@@ -844,13 +844,13 @@ function NonPokemonControls({
         <input
           id="pk-art"
           type="file"
-          accept="image/png,image/jpeg"
+          accept="image/png,image/jpeg,image/webp"
           onChange={(e) => {
             void choose(e.target.files?.[0]);
             e.target.value = "";
           }}
         />
-        <p>PNG or JPEG · up to 10 MB and 16 megapixels.</p>
+        <p>PNG, JPEG or WebP · up to 10 MB and 16 megapixels.</p>
         {art && (
           <>
             <div className={styles.field}>

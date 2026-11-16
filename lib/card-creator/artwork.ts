@@ -4,6 +4,24 @@ export function checkDimensions(width: number, height: number): void {
     throw new Error('Artwork must be at most 8192 pixels per side and 16 megapixels.');
   }
 }
+const ascii = (bytes: Uint8Array, start: number, length: number) => String.fromCharCode(...bytes.subarray(start, start + length));
+/** Reads the canvas size from a WebP header (lossy VP8, lossless VP8L or extended VP8X). Returns null if it is not WebP. */
+function inspectWebp(bytes: Uint8Array): { width: number; height: number } | null {
+  if (bytes.length < 30 || ascii(bytes, 0, 4) !== 'RIFF' || ascii(bytes, 8, 4) !== 'WEBP') return null;
+  const chunk = ascii(bytes, 12, 4);
+  const u24 = (at: number) => bytes[at]! | (bytes[at + 1]! << 8) | (bytes[at + 2]! << 16);
+  if (chunk === 'VP8 ') {
+    if (bytes[23] !== 0x9d || bytes[24] !== 0x01 || bytes[25] !== 0x2a) throw new Error('Invalid WebP header.');
+    return { width: (bytes[26]! | (bytes[27]! << 8)) & 0x3fff, height: (bytes[28]! | (bytes[29]! << 8)) & 0x3fff };
+  }
+  if (chunk === 'VP8L') {
+    if (bytes[20] !== 0x2f) throw new Error('Invalid WebP header.');
+    const bits = (bytes[21]! | (bytes[22]! << 8) | (bytes[23]! << 16) | (bytes[24]! << 24)) >>> 0;
+    return { width: (bits & 0x3fff) + 1, height: ((bits >>> 14) & 0x3fff) + 1 };
+  }
+  if (chunk === 'VP8X') return { width: u24(24) + 1, height: u24(27) + 1 };
+  throw new Error('Invalid WebP header.');
+}
 export function inspectImage(bytes: Uint8Array): { type: string; width: number; height: number } {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   if (bytes.length >= 33 && [137, 80, 78, 71, 13, 10, 26, 10].every((n, i) => bytes[i] === n)) {
@@ -31,7 +49,12 @@ export function inspectImage(bytes: Uint8Array): { type: string; width: number; 
       offset += length;
     }
   }
-  throw new Error('Choose a valid PNG or JPEG image. SVG and other formats are not supported.');
+  const webp = inspectWebp(bytes);
+  if (webp) {
+    checkDimensions(webp.width, webp.height);
+    return { type: 'image/webp', width: webp.width, height: webp.height };
+  }
+  throw new Error('Choose a valid PNG, JPEG or WebP image. SVG and other formats are not supported.');
 }
 export async function decodeArtwork(file: File): Promise<ImageBitmap> {
   if (file.size === 0 || file.size > MAX_FILE_BYTES) throw new Error('Choose an image smaller than 10 MB.');
@@ -40,7 +63,7 @@ export async function decodeArtwork(file: File): Promise<ImageBitmap> {
   if (file.type && file.type !== info.type) throw new Error('The file contents do not match its image type.');
   let bitmap: ImageBitmap;
   try { bitmap = await createImageBitmap(new Blob([bytes], { type: info.type }), { imageOrientation: 'from-image' }); }
-  catch { throw new Error('This image could not be decoded. Try another PNG or JPEG.'); }
+  catch { throw new Error('This image could not be decoded. Try another PNG, JPEG or WebP.'); }
   try { checkDimensions(bitmap.width, bitmap.height); }
   catch (error) { bitmap.close(); throw error; }
   return bitmap;

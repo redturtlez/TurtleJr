@@ -155,9 +155,9 @@ export default function CardEditor() {
         <EditorSection number="02" title="Artwork" classes={styles} />
         <div className={styles.upload}>
           <label htmlFor="card-artwork">Choose your artwork</label>
-          <input ref={upload} id="card-artwork" type="file" accept="image/png,image/jpeg" aria-describedby="artwork-help artwork-status"
+          <input ref={upload} id="card-artwork" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="artwork-help artwork-status"
             onChange={event=>{ void chooseArtwork(event.target.files?.[0]); event.target.value=''; }} />
-          <p id="artwork-help">PNG or JPEG · up to 10 MB and 16 megapixels. Adjust the crop after uploading.</p>
+          <p id="artwork-help">PNG, JPEG or WebP · up to 10 MB and 16 megapixels. Adjust the crop after uploading.</p>
           <p id="artwork-status" role="status">{uploading ? 'Reading artwork…' : artName || 'Your artwork stays in this browser. Nothing is uploaded.'}</p>
           {artwork && <button type="button" onClick={clearArtwork}>Remove artwork</button>}
           {artwork && <fieldset><legend>Artwork position</legend>
