@@ -2,6 +2,8 @@ import { assets, cardTemplate, typeText, formattedTypeText, fieldText, layoutFie
 import { coverCrop, wrapText } from './layout';
 import { fontStyle, type CardFonts } from './fonts';
 
+const CREDIT_HORIZONTAL_SCALE = 0.93;
+
 export type Images = Record<string, HTMLImageElement>;
 export async function loadGraphics(): Promise<Images> {
   const pairs = await Promise.all(Object.values(assets).map(async asset => {
@@ -24,7 +26,7 @@ function drawText(ctx: CanvasRenderingContext2D, field: Field, raw: string, font
   const multiline = field.id === 'lore';
   const style = fontStyle(field.id,fonts,selected.description);
   const maxSize = field.id === 'name' ? (fonts.name ? 86 : 54) : multiline ? selected.maxSize : field.id === 'monster_type' ? (selected.typeMaxSize ?? 31)
-    : field.id === 'attack' || field.id === 'defense' ? (fonts.name ? 42 : 34) : 26;
+    : field.id === 'attack' || field.id === 'defense' ? (fonts.name ? 42 : 34) : field.id === 'credit' ? 22 : 26;
   const minSize = field.id === 'name' ? 24 : multiline ? 20 : 16;
   for (let size = maxSize; size >= minSize; size--) {
     ctx.font = `${style.prefix}${size}px ${style.family}`;
@@ -73,7 +75,8 @@ function drawText(ctx: CanvasRenderingContext2D, field: Field, raw: string, font
       return Math.max(metric.width, metric.actualBoundingBoxLeft + metric.actualBoundingBoxRight);
     };
     // Match the PSD's near-98% horizontal scale and justified paragraph setting.
-    const textScale = multiline ? selected.horizontalScale : 1;
+    // The credit line is condensed horizontally to resemble the printed card.
+    const textScale = multiline ? selected.horizontalScale : field.id === 'credit' ? CREDIT_HORIZONTAL_SCALE : 1;
     const lineWidth = width/textScale;
     let lines: string[];
     const paragraphEnds: number[] = [];
@@ -102,6 +105,10 @@ function drawText(ctx: CanvasRenderingContext2D, field: Field, raw: string, font
           const space=(lineWidth-words.reduce((sum,word)=>sum+ctx.measureText(word).width,0))/(words.length-1);
           let offset=0;for(const word of words){ctx.fillText(word,offset,0);offset+=ctx.measureText(word).width+space;}
         }else ctx.fillText(line,Math.max(0,metric.actualBoundingBoxLeft),0);
+        ctx.restore();
+      }else if(textScale!==1){
+        ctx.save();ctx.scale(textScale,1);
+        ctx.fillText(line,field.align === 'right' ? right/textScale - Math.max(metric.width, metric.actualBoundingBoxRight) : x/textScale,y);
         ctx.restore();
       }else ctx.fillText(line,x,y);
     });

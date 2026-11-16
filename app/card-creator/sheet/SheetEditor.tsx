@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { decodeArtwork } from "../../../lib/card-creator/artwork";
-import { cloneCell, cellToJpeg, composeCell } from "../../../lib/card-sheet/bleed";
+import { cloneCell, cellToJpeg, composeCell, loadYugiohBorder } from "../../../lib/card-sheet/bleed";
 import { CARD_KINDS, CELL_MM, GRID, INPUT_BLEEDS, PAPERS, cropMarkLength, cropMarks, gridGuides, sheetLayout, trimRect, type CardKind, type InputBleed, type PaperId, type PlacedCard, type SheetLayout } from "../../../lib/card-sheet/geometry";
 import { guessCard } from "../../../lib/card-sheet/detect";
 import { buildPdf, type PdfLines } from "../../../lib/card-sheet/pdf";
@@ -235,7 +235,7 @@ export default function SheetEditor() {
   async function buildCell(file: File, kind: CardKind, bleed: InputBleed): Promise<HTMLCanvasElement> {
     const bitmap = await decodeArtwork(file);
     try {
-      return composeCell(bitmap, kind, bleed);
+      return composeCell(bitmap, kind, bleed, kind === "yugioh" ? await loadYugiohBorder().catch(() => undefined) : undefined);
     } finally {
       bitmap.close();
     }
@@ -246,7 +246,7 @@ export default function SheetEditor() {
       const guess = guessCard(bitmap.width, bitmap.height);
       const kind = guess ? guess.kind : fallback.kind,
         bleed = guess ? guess.bleed : fallback.bleed;
-      return { id: nextId.current++, name: file.name.slice(0, 80), file, kind, bleed, guessed: Boolean(guess), rev: 0, pending: false, cell: composeCell(bitmap, kind ?? "pokemon", bleed) };
+      return { id: nextId.current++, name: file.name.slice(0, 80), file, kind, bleed, guessed: Boolean(guess), rev: 0, pending: false, cell: composeCell(bitmap, kind ?? "pokemon", bleed, kind === "yugioh" ? await loadYugiohBorder().catch(() => undefined) : undefined) };
     } finally {
       bitmap.close();
     }

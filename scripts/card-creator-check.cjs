@@ -22,7 +22,7 @@ const xyzJson = fs.readFileSync(path.join(root,'lib/card-creator/xyz.json'),'utf
 const linkJson = fs.readFileSync(path.join(root,'lib/card-creator/link.json'),'utf8');
 const spellJson = fs.readFileSync(path.join(root,'lib/card-creator/spell.json'),'utf8');
 const trapJson = fs.readFileSync(path.join(root,'lib/card-creator/trap.json'),'utf8');
-const css = fs.readFileSync(path.join(root,'app/card-creator/yugioh/editor.module.css'),'utf8');
+const css = fs.readFileSync(path.join(root,'app/card-creator/shared/editor-shared.module.css'),'utf8');
 const classes = Object.fromEntries(Array.from(css.matchAll(/\.([A-Za-z][A-Za-z0-9_-]*)/g),match=>[match[1],match[1]]));
 const compiled = Object.fromEntries(names.map(name=>[name,source(name)]));
 function localModule(name) {
@@ -52,7 +52,7 @@ if (process.argv.includes('--serve')) {
   for (const [name,code] of Object.entries(compiled)) bundle += `modules[${JSON.stringify(name)}]=(require,module,exports)=>{${code}\n};\n`;
   bundle += `const cache={};function load(name){if(cache[name])return cache[name].exports;const m={exports:{}};cache[name]=m;
     function req(p){if(p==='react')return window.React;const a=name.split('/');a.pop();for(const v of p.split('/')){if(v==='..')a.pop();else if(v!=='.')a.push(v);}const key=a.join('/');
-    if(key.endsWith('normal.json'))return ${json};if(key.endsWith('effect.json'))return ${effectJson};if(key.endsWith('fusion.json'))return ${fusionJson};if(key.endsWith('ritual.json'))return ${ritualJson};if(key.endsWith('synchro.json'))return ${synchroJson};if(key.endsWith('xyz.json'))return ${xyzJson};if(key.endsWith('link.json'))return ${linkJson};if(key.endsWith('spell.json'))return ${spellJson};if(key.endsWith('trap.json'))return ${trapJson};if(key.endsWith('editor.module.css'))return {__esModule:true,default:${JSON.stringify(classes)}};return load(key);}
+    if(key.endsWith('normal.json'))return ${json};if(key.endsWith('effect.json'))return ${effectJson};if(key.endsWith('fusion.json'))return ${fusionJson};if(key.endsWith('ritual.json'))return ${ritualJson};if(key.endsWith('synchro.json'))return ${synchroJson};if(key.endsWith('xyz.json'))return ${xyzJson};if(key.endsWith('link.json'))return ${linkJson};if(key.endsWith('spell.json'))return ${spellJson};if(key.endsWith('trap.json'))return ${trapJson};if(key.endsWith('editor-shared.module.css'))return {__esModule:true,default:${JSON.stringify(classes)}};return load(key);}
     modules[name](req,m,m.exports);return m.exports;}
     ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(load('app/card-creator/yugioh/CardEditor').default));`;
   const server = http.createServer((req,res)=>{
@@ -80,6 +80,7 @@ if (process.argv.includes('--serve')) {
   const {test} = require('node:test');
   const assert = require('node:assert/strict');
   const {defaults,validateCard,graphics,assets,fields,layoutFields,fieldText,typeText,formattedTypeText,templates} = localModule('lib/card-creator/model');
+  const plain={...defaults,sticker:false,stickerColor:'silver',editionPosition:'bottom'}; // defaults now ship with a gold sticker and set-line edition
   const {fontStyle} = localModule('lib/card-creator/fonts');
   test('Effect swaps only the frame, uses upright text and adds one type suffix',()=>{
     const effect={...defaults,templateId:'effect'};
@@ -152,8 +153,8 @@ if (process.argv.includes('--serve')) {
     assert.ok(!validateCard({...link,level:0,defense:'invalid'}).defense);
   });
   test('Spell and Trap use their own frames, type labels and valid subtype icons',()=>{
-    const spell={...defaults,templateId:'spell',spellTrapType:'quick-play',level:0,attack:'invalid',defense:'invalid'};
-    const trap={...defaults,templateId:'trap',spellTrapType:'counter'};
+    const spell={...plain,templateId:'spell',spellTrapType:'quick-play',level:0,attack:'invalid',defense:'invalid'};
+    const trap={...plain,templateId:'trap',spellTrapType:'counter'};
     for(const [card,label] of [[spell,'SPELL CARD'],[trap,'TRAP CARD']]){
       const spec=templates[card.templateId],selected=graphics(card);
       assert.ok(selected.includes(assets[spec.frameId]));
@@ -178,7 +179,7 @@ if (process.argv.includes('--serve')) {
     for(const id of ['attack','defense'])assert.deepEqual(fontStyle(id,fonts),{family:'"Matrix"',prefix:'700 '});
     for(const id of ['serial','set_id','credit'])assert.deepEqual(fontStyle(id,fonts),{family:'"Times New Roman", serif',prefix:'400 '});
     assert.deepEqual(fontStyle('edition',fonts),{family:'"Stone"',prefix:'600 '});
-    for(const value of ['Creator','© Creator',' © © Creator '])assert.equal(fieldText('credit',value),'© CREATOR');
+    for(const [value,expected] of [['Creator','©CREATOR'],[' Creator','© CREATOR'],['© Creator','© CREATOR'],[' © © Creator ','© CREATOR'],['©Creator','©CREATOR'],['  ','']])assert.equal(fieldText('credit',value),expected);
     assert.equal(fieldText('monster_type','beast-warrior'),'[BEAST-WARRIOR]');
     assert.deepEqual(fontStyle('lore',{lore:'StoneItalic'}),{family:'"StoneItalic"',prefix:'italic '});
     assert.equal(fieldText('credit',' '),'');
@@ -197,23 +198,23 @@ if (process.argv.includes('--serve')) {
     }
   });
   test('edition can share set line without changing other fields or source layout',()=>{
-    const upper=layoutFields({...defaults,editionPosition:'set-line'});
+    const upper=layoutFields({...plain,editionPosition:'set-line'});
     const edition=upper.find(f=>f.id==='edition'),set=upper.find(f=>f.id==='set_id');
     assert.equal(edition.bounds[1],set.bounds[1]);assert.equal(edition.bounds[3],set.bounds[3]);
     assert.ok(edition.bounds[2]<set.bounds[0]);
     assert.deepEqual(upper.filter(f=>!['edition','credit'].includes(f.id)),fields.filter(f=>!['edition','credit'].includes(f.id)));
-    const stickered=layoutFields({...defaults,sticker:true});
+    const stickered=layoutFields({...plain,sticker:true});
     assert.deepEqual(stickered.filter(f=>f.id!=='credit'),fields.filter(f=>f.id!=='credit'));
     // Credit starts after the edition field (ends at 365) for extra width; the sticker keeps the original right edge.
     const edField=fields.find(f=>f.id==='edition');
     assert.deepEqual(stickered.find(f=>f.id==='credit').bounds,[380,fields.find(f=>f.id==='credit').bounds[1],fields.find(f=>f.id==='credit').bounds[2],fields.find(f=>f.id==='credit').bounds[3]]);
     assert.ok(stickered.find(f=>f.id==='credit').bounds[0]>edField.bounds[2]);
-    assert.equal(layoutFields(defaults).find(f=>f.id==='credit').bounds[0],380);
-    assert.equal(layoutFields(defaults).find(f=>f.id==='credit').bounds[2],785);
-    const gold=graphics({...defaults,sticker:true,stickerColor:'gold'}),silver=graphics({...defaults,sticker:true});
+    assert.equal(layoutFields(plain).find(f=>f.id==='credit').bounds[0],380);
+    assert.equal(layoutFields(plain).find(f=>f.id==='credit').bounds[2],785);
+    const gold=graphics({...plain,sticker:true,stickerColor:'gold'}),silver=graphics({...plain,sticker:true});
     assert.equal(gold.length,silver.length);assert.notDeepEqual(gold,silver);
-    assert.ok(validateCard({...defaults,editionPosition:'invalid'}).editionPosition);
-    assert.ok(validateCard({...defaults,titleColor:'red; invalid'}).titleColor);
+    assert.ok(validateCard({...plain,editionPosition:'invalid'}).editionPosition);
+    assert.ok(validateCard({...plain,titleColor:'red; invalid'}).titleColor);
     assert.ok(!validateCard({...defaults,titleColor:'#aAbB09'}).titleColor);
   });
   const {wrapText,coverCrop} = localModule('lib/card-creator/layout');

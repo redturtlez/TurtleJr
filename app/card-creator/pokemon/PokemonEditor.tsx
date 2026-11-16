@@ -30,6 +30,10 @@ import {
 } from "../../../lib/pokemon-card-creator/model";
 import { exportPokemon, pokemonPrintGeometry, renderPokemon, type PokemonBleed } from "../../../lib/pokemon-card-creator/render";
 import styles from "./pokemon.module.css";
+import shared from "../shared/editor-shared.module.css";
+import EditorSection from "../shared/EditorSection";
+import PreviewDock from "../shared/PreviewDock";
+import AdvancedToggle, { AdvancedHint } from "../shared/AdvancedToggle";
 
 function pokemonPreviewSuffix(card: PokemonCard) {
   const variationLabel = card.scarletVariation === "ancient" ? "Ancient" : card.scarletVariation === "future" ? "Future" : "Stellar Tera";
@@ -63,7 +67,9 @@ export default function PokemonEditor() {
   const [status, setStatus] = useState("Loading card graphics…");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [advanced, setAdvanced] = useState(false);
   const canvas = useRef<HTMLCanvasElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
   const current = useRef<ImageBitmap | null>(null);
   const evolutionCurrent = useRef<ImageBitmap | null>(null);
   const url = useRef<string | null>(null);
@@ -161,17 +167,18 @@ export default function PokemonEditor() {
   );
   return (
     <main className={styles.page}>
-      <header>
+      <header className={styles.header}>
         <div>
           <p className={styles.eyebrow}>THE CARD WORKSHOP</p>
           <h1>Pokémon Card Creator</h1>
           <p>Create a custom card across classic and modern eras. Artwork remains on your device.</p>
         </div>
-        <span>No sign-in needed</span>
+        <span className={styles.badge}>No sign-in needed</span>
       </header>
       <div className={styles.workspace}>
         <section className={styles.controls} aria-label="Pokémon card settings">
-          <h2>Card & artwork</h2>
+          <AdvancedToggle checked={advanced} onChange={setAdvanced} classes={shared} />
+          <EditorSection number="01" title="Card & artwork" classes={shared} />
           <div className={styles.field}>
             <label htmlFor="pk-supertype">Card family</label>
             <select id="pk-supertype" value={card.supertype} onChange={(e) => set("supertype", e.target.value as PokemonCard["supertype"])}>
@@ -288,7 +295,7 @@ export default function PokemonEditor() {
                   </select>
                 </div>
               )}
-              {card.era === "ex" && (card.stage === "basic" || card.stage === "stage1" || card.stage === "stage2") && (
+              {advanced && card.era === "ex" && (card.stage === "basic" || card.stage === "stage1" || card.stage === "stage2") && (
                 <div className={styles.field}>
                   <label htmlFor="pk-ex-secondary-type">Secondary type</label>
                   <select
@@ -309,7 +316,7 @@ export default function PokemonEditor() {
                   </select>
                 </div>
               )}
-              {card.era === "ex" && (
+              {advanced && card.era === "ex" && (
                 <div className={styles.field}>
                   <label htmlFor="pk-ex-era-variation">EX-era variation</label>
                   <select
@@ -406,10 +413,13 @@ export default function PokemonEditor() {
                 {text("name", "Pokémon name")}
                 {text("hp", "HP")}
               </div>
-              <div className={styles.row}>
-                {text("subname", "Subname")}
-                {text("suffix", "Suffix")}
-              </div>
+              {advanced && (
+                <div className={styles.row}>
+                  {text("subname", "Subname")}
+                  {text("suffix", "Suffix")}
+                </div>
+              )}
+              {advanced && (
               <fieldset>
                 <legend>Name formatting</legend>
                 <div className={styles.row}>
@@ -431,6 +441,7 @@ export default function PokemonEditor() {
                   </label>
                 </div>
               </fieldset>
+              )}
               {isEvolvedStage(card.stage) && (
                 <>
                   {text("evolvesFrom", "Evolves from")}
@@ -476,14 +487,14 @@ export default function PokemonEditor() {
                   </>
                 )}
               </div>
-              <h2>Ability & attacks</h2>
+              <EditorSection number="02" title="Ability & attacks" classes={shared} />
               {text("abilityName", "Ability name")}
               {text("abilityText", "Ability text", true)}
               <MoveFields number={1} card={card} set={set} />
               <MoveFields number={2} card={card} set={set} />
               {isGxStage(card.stage) && <GxMoveFields card={card} set={set} />}
               {card.stage === "vstar" && <VstarPowerFields card={card} set={set} />}
-              <h2>Card details</h2>
+              <EditorSection number="03" title="Card details" classes={shared} />
               <div className={styles.row}>
                 <TypeSelect label="Weakness" value={card.weakness} onChange={(v) => set("weakness", v)} />
                 {text("weaknessAmount", "Weakness modifier")}
@@ -527,11 +538,11 @@ export default function PokemonEditor() {
                 card.era !== "exECard" &&
                 card.illustrationStyle !== "fullArt" && (
                 <>
-                  <DexFields card={card} set={set} />
+                  {advanced && <DexFields card={card} set={set} />}
                   {text("flavorText", "Flavor text", true)}
                 </>
               )}
-              <CollectorFields card={card} set={set} />
+              <CollectorFields card={card} set={set} advanced={advanced} />
             </>
           ) : (
             <NonPokemonControls
@@ -539,6 +550,7 @@ export default function PokemonEditor() {
               set={set}
               art={art}
               choose={choose}
+              advanced={advanced}
               removeArt={() => {
                 current.current?.close();
                 current.current = null;
@@ -546,6 +558,7 @@ export default function PokemonEditor() {
               }}
             />
           )}
+          <AdvancedHint advanced={advanced} onChange={setAdvanced} examples="card number, set total, Pokédex info or name formatting" classes={shared} />
           <button className={styles.reset} type="button" onClick={() => setCard({ ...defaults })}>
             Reset card
           </button>
@@ -561,35 +574,39 @@ export default function PokemonEditor() {
                   : energyCardTypeLabels[card.energyCardType]}
             </span>
           </div>
-          <div className={styles.stage}>
+          <div className={styles.stage} ref={stage}>
             <canvas ref={canvas} width={747} height={1038}>
               Canvas preview unavailable.
             </canvas>
           </div>
-          <p role="status">{error || status}</p>
-          <div className={styles.field}>
-            <label htmlFor="pk-bleed">Print bleed</label>
-            <select id="pk-bleed" value={bleed} onChange={(e) => setBleed(Number(e.target.value) as PokemonBleed)}>
-              <option value={0}>None — 63.5 × 88.9 mm</option>
-              <option value={1}>1 mm per edge — 65.5 × 90.9 mm</option>
-              <option value={2}>2 mm per edge — 67.5 × 92.9 mm</option>
-            </select>
-          </div>
-          <button type="button" disabled={busy || !!error} onClick={() => void download()}>
+          <p role="status" className={styles.previewStatus}>{error || status}</p>
+          <button type="button" className={styles.primary} disabled={busy || !!error} onClick={() => void download()}>
             {busy ? "Working…" : "Download 300 PPI PNG"}
           </button>
-          <p className={styles.note}>
-            {geometry.width} × {geometry.height} pixels · 300 PPI. Trim size: 63.5 × 88.9 mm.
-          </p>
-          {bleed > 0 && <p className={styles.note}>Bleed extends only sampled outer-border pixels beneath the unchanged trim card, including its rounded transparent corners.</p>}
+          <details className={styles.optional}>
+            <summary>Export options</summary>
+            <div className={styles.field}>
+              <label htmlFor="pk-bleed">Print bleed</label>
+              <select id="pk-bleed" value={bleed} onChange={(e) => setBleed(Number(e.target.value) as PokemonBleed)}>
+                <option value={0}>None — 63.5 × 88.9 mm</option>
+                <option value={1}>1 mm per edge — 65.5 × 90.9 mm</option>
+                <option value={2}>2 mm per edge — 67.5 × 92.9 mm</option>
+              </select>
+            </div>
+            <p className={styles.note}>
+              {geometry.width} × {geometry.height} pixels · 300 PPI. Trim size: 63.5 × 88.9 mm.
+            </p>
+            {bleed > 0 && <p className={styles.note}>Bleed extends only sampled outer-border pixels beneath the unchanged trim card, including its rounded transparent corners.</p>}
+          </details>
           <p className={styles.note}>Includes Pokémon, Trainer, and Energy card families.</p>
           <p className={styles.attribution}>Adapted with permission from Pokécardmaker.net.</p>
         </section>
       </div>
+      <PreviewDock source={canvas} stage={stage} classes={shared} />
     </main>
   );
 }
-function CollectorFields({ card, set }: { card: PokemonCard; set: Setter }) {
+function CollectorFields({ card, set, advanced }: { card: PokemonCard; set: Setter; advanced: boolean }) {
   return (
     <details open>
       <summary>Collector details</summary>
@@ -602,11 +619,15 @@ function CollectorFields({ card, set }: { card: PokemonCard; set: Setter }) {
           <label htmlFor="pk-set-code">Set code</label>
           <input id="pk-set-code" value={card.setCode} maxLength={16} onChange={(e) => set("setCode", e.target.value)} />
         </div>
-        <div className={styles.field}>
-          <label htmlFor="pk-card-number">Card number</label>
-          <input id="pk-card-number" value={card.cardNumber} maxLength={12} onChange={(e) => set("cardNumber", e.target.value)} />
-        </div>
+        {advanced && (
+          <div className={styles.field}>
+            <label htmlFor="pk-card-number">Card number</label>
+            <input id="pk-card-number" value={card.cardNumber} maxLength={12} onChange={(e) => set("cardNumber", e.target.value)} />
+          </div>
+        )}
       </div>
+      {advanced && (
+        <>
       <div className={styles.row}>
         <div className={styles.field}>
           <label htmlFor="pk-set-total">Set total</label>
@@ -640,6 +661,8 @@ function CollectorFields({ card, set }: { card: PokemonCard; set: Setter }) {
           </select>
         </div>
       </div>
+        </>
+      )}
       <CopyrightField card={card} set={set} />
     </details>
   );
@@ -707,7 +730,9 @@ function NonPokemonControls({
   art,
   choose,
   removeArt,
+  advanced,
 }: {
+  advanced: boolean;
   card: PokemonCard;
   set: Setter;
   art: ImageBitmap | null;
@@ -785,6 +810,7 @@ function NonPokemonControls({
             <label htmlFor="pk-name">Card name</label>
             <input id="pk-name" value={card.name} maxLength={60} onChange={(e) => set("name", e.target.value)} />
           </div>
+          {advanced && (
           <fieldset>
             <legend>Name formatting</legend>
             <div className={styles.row}>
@@ -806,6 +832,7 @@ function NonPokemonControls({
               </label>
             </div>
           </fieldset>
+          )}
           <div className={styles.field}>
             <label htmlFor="pk-description">Card text</label>
             <textarea id="pk-description" value={card.description} maxLength={520} rows={6} onChange={(e) => set("description", e.target.value)} />
@@ -844,7 +871,7 @@ function NonPokemonControls({
           </>
         )}
       </div>
-      {card.energyCardType !== "base" || card.supertype === "trainer" ? <CollectorFields card={card} set={set} /> : <CopyrightField card={card} set={set} />}
+      {card.energyCardType !== "base" || card.supertype === "trainer" ? <CollectorFields card={card} set={set} advanced={advanced} /> : <CopyrightField card={card} set={set} />}
     </>
   );
 }

@@ -67,7 +67,7 @@ export const template = data;
 export const assets: Record<string, Asset> = {...data.catalog,[effect.frameId]:effect.asset,[fusion.frameId]:fusion.asset,[ritual.frameId]:ritual.asset,[synchro.frameId]:synchro.asset,[xyz.frameId]:xyz.asset,...xyz.extraAssets,[link.frameId]:link.asset,...link.extraAssets,[spell.frameId]:spell.asset,...spell.extraAssets,[trap.frameId]:trap.asset,...trap.extraAssets};
 export const attributes: Record<string, string> = data.attributes;
 export const defaults: Card = { templateId:'normal', name: 'Custom Normal Monster', monster_type: 'WARRIOR', lore: '', summon_materials:'', linkArrows:['down-left','down-right'], spellTrapType:'normal', attack: '0', defense: '0',
-  set_id: '', serial: '', edition: '', credit: '', attribute: 'Dark', level: 4, sticker: false, stickerColor: 'silver', editionPosition: 'bottom', titleColor: titleColors.Black, artX:0.5, artY:0.5, artZoom:1 };
+  set_id: 'ABC-123', serial: '00000001', edition: '1st Edition', credit: '1996 KAZUKI TAKAHASHI', attribute: 'Dark', level: 4, sticker: true, stickerColor: 'gold', editionPosition: 'set-line', titleColor: titleColors.Black, artX:0.5, artY:0.5, artZoom:1 };
 export type Issues = Partial<Record<FieldId | 'summon_materials' | 'linkArrows' | 'spellTrapType' | 'attribute' | 'level' | 'editionPosition' | 'titleColor' | 'artwork' | 'templateId', string>>;
 export function layoutFields(card: Card): Field[] {
   // Alternate placement is an editor layout choice, not recovered PSD geometry.
@@ -82,8 +82,9 @@ export function layoutFields(card: Card): Field[] {
 export function fieldText(id: FieldId, raw: string): string {
   if (id === 'monster_type') return raw ? `[${raw.toUpperCase()}]` : '';
   if (id !== 'credit') return raw;
-  const credit = raw.replace(/^(?:\s*©)+\s*/, '').trim();
-  return credit ? `© ${credit.toUpperCase()}` : '';
+  // No automatic space after ©: a leading space the user types is kept. A typed © is not doubled.
+  const credit = raw.replace(/^(?:\s*©)+/, '').trimEnd();
+  return credit.trim() ? `©${credit.toUpperCase()}` : '';
 }
 export function validateCard(card: Card): Issues {
   const errors: Issues = {};
