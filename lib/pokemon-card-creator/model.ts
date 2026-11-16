@@ -103,7 +103,7 @@ export interface PokemonCard {
 }
 
 export const defaults: PokemonCard = {
-  era: "swordAndShield",
+  era: "scarletAndViolet",
   supertype: "pokemon",
   trainerType: "item",
   trainerStyle: "standard",

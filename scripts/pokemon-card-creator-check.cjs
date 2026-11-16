@@ -70,7 +70,7 @@ test("every supported frame mapping exists at its era source size", () => {
   const cards = [];
   for (const stage of ["basic", "stage1", "stage2"])
     for (const type of model.pokemonTypes) {
-      cards.push({ ...model.defaults, supertype: "pokemon", stage, type });
+      cards.push({ ...model.defaults, era: "swordAndShield", supertype: "pokemon", stage, type });
       cards.push({ ...model.defaults, era: "scarletAndViolet", supertype: "pokemon", stage, type });
       cards.push({ ...model.defaults, era: "sunAndMoon", supertype: "pokemon", stage, type });
       cards.push({ ...model.defaults, era: "xAndYBlackAndWhite", supertype: "pokemon", stage, type });
@@ -126,15 +126,15 @@ test("every supported frame mapping exists at its era source size", () => {
     for (const type of model.stellarTeraTypes)
       for (const illustrationStyle of ["standard", "fullArt"])
         cards.push({ ...model.defaults, era: "scarletAndViolet", supertype: "pokemon", stage, type, scarletVariation: "stellarTera", illustrationStyle });
-  for (const vStyle of ["fullArt", "goldenFullArt"]) for (const type of model.vTypes) cards.push({ ...model.defaults, supertype: "pokemon", stage: "v", type, vStyle });
+  for (const vStyle of ["fullArt", "goldenFullArt"]) for (const type of model.vTypes) cards.push({ ...model.defaults, era: "swordAndShield", supertype: "pokemon", stage: "v", type, vStyle });
   for (const vmaxVariation of ["dynamax", "gigantamax"])
-    for (const type of model.pokemonTypes) cards.push({ ...model.defaults, supertype: "pokemon", stage: "vmax", type, vmaxVariation });
+    for (const type of model.pokemonTypes) cards.push({ ...model.defaults, era: "swordAndShield", supertype: "pokemon", stage: "vmax", type, vmaxVariation });
   for (const vstarStyle of ["standard", "fullArt"])
-    for (const type of model.vstarTypes) cards.push({ ...model.defaults, supertype: "pokemon", stage: "vstar", type, vstarStyle });
+    for (const type of model.vstarTypes) cards.push({ ...model.defaults, era: "swordAndShield", supertype: "pokemon", stage: "vstar", type, vstarStyle });
   for (const trainerType of ["item", "tool", "supporter", "stadium"])
-    for (const trainerStyle of ["standard", "fullArt", "goldenFullArt"]) cards.push({ ...model.defaults, supertype: "trainer", trainerType, trainerStyle });
-  cards.push({ ...model.defaults, supertype: "energy", energyCardType: "base" });
-  for (const energyStyle of ["standard", "fullArt", "goldenFullArt"]) cards.push({ ...model.defaults, supertype: "energy", energyCardType: "special", energyStyle });
+    for (const trainerStyle of ["standard", "fullArt", "goldenFullArt"]) cards.push({ ...model.defaults, era: "swordAndShield", supertype: "trainer", trainerType, trainerStyle });
+  cards.push({ ...model.defaults, era: "swordAndShield", supertype: "energy", energyCardType: "base" });
+  for (const energyStyle of ["standard", "fullArt", "goldenFullArt"]) cards.push({ ...model.defaults, era: "swordAndShield", supertype: "energy", energyCardType: "special", energyStyle });
   const urls = new Set(cards.map(model.framePath));
   assert.equal(cards.length, 1134);
   assert.equal(urls.size, 1134);
@@ -204,7 +204,7 @@ test("all selectable energy and rarity icons are local valid images", () => {
 });
 test("modern set marks follow the selected card era", () => {
   for (const [card, size] of [
-    [{ ...model.defaults }, [40, 40]],
+    [{ ...model.defaults, era: "swordAndShield" }, [40, 40]],
     [{ ...model.defaults, era: "scarletAndViolet" }, [40, 23]],
     [{ ...model.defaults, era: "sunAndMoon" }, [500, 500]],
     [{ ...model.defaults, supertype: "trainer", era: "scarletAndViolet" }, [40, 40]],
