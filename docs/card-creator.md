@@ -356,3 +356,10 @@ or a size in mm), so nothing needs selecting and Letter and A4 sheets can be mix
 in total. Files that are not PDFs, are empty, look cut off (no `%%EOF`), are password-protected or fail to parse are
 rejected with a message. Output metadata is blank and timestamps are fixed, so the same inputs give identical bytes.
 Everything runs in the browser.
+
+## Performance notes
+
+- **Yu-Gi-Oh layers load on demand.** `loadGraphics(urls)` in `lib/card-creator/render.ts` fetches only the layers a card draws (`requiredGraphicUrls(card)`, which mirrors `renderCard`/`renderPrint`, including the print border) and caches them. A default Normal Monster downloads 11 of the 63 layers (about 0.8 MB, not 5 MB); switching template or options loads the extra layers when needed. The editor renders only once every required layer is present. Keep `requiredGraphicUrls` in step with `graphics()` and the border lookup in `print.ts`.
+- **Bundled card fonts load in parallel** (`loadBundledCardFonts`); none is registered unless all five load.
+- **Pokémon frames use lossless WebP in five folders** (`ex`, `ex-ecard`, `scarlet-violet`, `sun-and-moon`, `x-and-y-black-white`; 1,025 files, about 137 MB smaller). Each file was verified pixel-identical to its PNG (same dimensions and alpha, same colour wherever a pixel is visible). Frames in the top-level, `trainer` and `energy` folders stay PNG because WebP saved little there and made seven files larger. `framePath` in `lib/pokemon-card-creator/model.ts` and `exTexturePath` in `render.ts` encode this split, so a new frame must use the extension its folder uses. `scripts/prepare-trainer-full-art-frames.cjs` still writes PNGs (trainer folder), which is consistent. Original PNGs were kept outside the repo.
+- **Icons** live in `components/icons/` (import from `@/components/icons`), not `public/`, so they are not served as downloadable files.

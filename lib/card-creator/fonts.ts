@@ -9,12 +9,14 @@ const bundled = [
 ] as const;
 export async function loadBundledCardFonts(prefix: string): Promise<{fonts:CardFonts;faces:FontFace[]}> {
   const fonts:CardFonts={},faces:FontFace[]=[];
+  const pending=bundled.map(item=>{
+    const family=`CardBundled${prefix}${item.role}`;
+    return {item,family,face:new FontFace(family,`url(${JSON.stringify(item.url)})`,{weight:item.weight,style:item.style})};
+  });
   try {
-    for(const item of bundled){
-      const family=`CardBundled${prefix}${item.role}`;
-      const face=new FontFace(family,`url(${JSON.stringify(item.url)})`,{weight:item.weight,style:item.style});
-      await face.load();document.fonts.add(face);faces.push(face);fonts[item.role]=family;
-    }
+    // Fetch all five fonts in parallel; nothing is registered unless every one loads.
+    await Promise.all(pending.map(({face})=>face.load()));
+    for(const {item,family,face} of pending){document.fonts.add(face);faces.push(face);fonts[item.role]=family;}
     return {fonts,faces};
   } catch(error) { faces.forEach(face=>document.fonts.delete(face));throw error; }
 }

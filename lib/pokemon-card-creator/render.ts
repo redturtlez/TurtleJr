@@ -42,7 +42,7 @@ function preloadFonts() {
   if (!fontsReady) fontsReady = Promise.all(fontSpecs.map((spec) => document.fonts.load(spec))).then(() => undefined);
   return fontsReady;
 }
-const exTexturePath = (card: PokemonCard) => `/pokemon-card-creator/frames/scarlet-violet/${card.type}-basic.png`;
+const exTexturePath = (card: PokemonCard) => `/pokemon-card-creator/frames/scarlet-violet/${card.type}-basic.webp`;
 function image(src: string) {
   let pending = cache.get(src);
   if (!pending) {

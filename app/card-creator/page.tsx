@@ -5,8 +5,8 @@ import styles from "./selector.module.css";
 export const metadata: Metadata = { title: "Card Creators", description: "Create custom Yu-Gi-Oh and Pokémon inspired trading cards." };
 
 const creators = [
-  { href: "/card-creator/yugioh", number: "01", label: "Yu-Gi-Oh", title: "Yu-Gi-Oh Card Creator", description: "Build Monster, Spell, and Trap cards with calibrated typography and print-ready export.", tags: ["9 templates", "300 PPI", "Optional bleed"], className: styles.yugioh },
-  { href: "/card-creator/pokemon", number: "02", label: "Pokémon", title: "Pokémon Card Creator", description: "Create cards across classic and modern eras, including full-art and ex layouts.", tags: ["Multiple eras", "Full art", "Print export"], className: styles.pokemon },
+  { href: "/card-creator/yugioh", number: "01", label: "Yu-Gi-Oh", title: "Yu-Gi-Oh Card Creator", description: "Build Monster, Spell, and Trap cards with calibrated typography and print-ready export.", tags: ["9 templates", "Link arrows", "Spell & Trap types", "Edition & set ID", "Corner sticker"], className: styles.yugioh },
+  { href: "/card-creator/pokemon", number: "02", label: "Pokémon", title: "Pokémon Card Creator", description: "Create cards across classic and modern eras, including full-art and ex layouts.", tags: ["6 eras", "Trainer & Energy", "V, VMAX & VSTAR", "Golden full art", "Rarity & set marks"], className: styles.pokemon },
   { href: "/card-creator/sheet", number: "03", label: "Print", title: "Card Sheet Maker", description: "Upload up to 9 card images and download a 3 × 3 PDF with 2 mm bleed, ready to print and cut.", tags: ["3 × 3 grid", "2 mm bleed", "PDF"], className: styles.sheet },
 ] as const;
 

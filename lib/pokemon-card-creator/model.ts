@@ -327,9 +327,9 @@ export const framePath = (card: PokemonCard) =>
                 : isStandardExStage(card.stage) && card.exVariation === "tera"
                   ? "-tera"
                   : ""
-          }.png`
+          }.webp`
         : card.era === "sunAndMoon"
-          ? `/pokemon-card-creator/frames/sun-and-moon/${card.type}-${card.stage}${isGxStage(card.stage) && card.gxStyle === "fullArt" ? "-fullArt" : ""}.png`
+          ? `/pokemon-card-creator/frames/sun-and-moon/${card.type}-${card.stage}${isGxStage(card.stage) && card.gxStyle === "fullArt" ? "-fullArt" : ""}.webp`
           : card.era === "xAndYBlackAndWhite"
             ? `/pokemon-card-creator/frames/x-and-y-black-white/${card.type}-${card.stage}${
                 isXyBlackWhiteExStage(card.stage) && card.xyBlackWhiteVariation === "teamPlasma"
@@ -337,13 +337,13 @@ export const framePath = (card: PokemonCard) =>
                   : (isXyBlackWhiteExStage(card.stage) || isXyBlackWhiteMegaStage(card.stage)) && card.illustrationStyle === "fullArt"
                     ? "-fullArt"
                     : ""
-              }.png`
+              }.webp`
           : card.era === "ex" || card.era === "exECard"
             ? `/pokemon-card-creator/frames/${card.era === "ex" ? "ex" : "ex-ecard"}/${card.type}-${
                 card.stage === "legacyExBasic" ? "exBasic" : card.stage === "legacyExStage1" ? "exStage1" : card.stage === "legacyExStage2" ? "exStage2" : card.stage
               }${card.era === "ex" && card.exSecondaryType !== "none" ? `-dual-${card.exSecondaryType}` : ""}${
                 card.era === "ex" && card.exEraVariation !== "standard" ? `-${card.exEraVariation}` : ""
-              }.png`
+              }.webp`
         : card.stage === "vstar"
           ? `/pokemon-card-creator/frames/${card.type}-vstar${card.vstarStyle === "fullArt" ? "-fullArt" : ""}.png`
         : card.stage === "v"

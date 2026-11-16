@@ -1,4 +1,5 @@
 import { generateMetadata } from "@/lib/server";
+import ToastHost from "../_utilityComponents/toastHost";
 import HealthNav from "./HealthNav";
 import styles from "./health.module.css";
 
@@ -16,6 +17,7 @@ export default function HealthLayout({ children }: { children: React.ReactNode }
         <HealthNav />
       </header>
       {children}
+      <ToastHost />
     </div>
   );
 }

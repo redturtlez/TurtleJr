@@ -2,8 +2,8 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { CalendarClock, CircleAlert, Landmark, PiggyBank, RefreshCw, Target, TrendingUp, WalletCards } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,6 +17,8 @@ import type { FinanceBudgetData } from "./financeBudgetData";
 import type { FinanceGoalData } from "./financeGoalData";
 import styles from "./budget.module.css";
 
+const CashHistoryChart = dynamic(() => import("./CashHistoryChart"), { ssr: false, loading: () => <div aria-hidden="true" style={{ height: "100%" }} /> });
+
 function todayKey(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -24,10 +26,6 @@ function todayKey(): string {
 
 function readableDate(date: string): string {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(`${date}T12:00:00`));
-}
-
-function compactMoney(value: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 }).format(value / 100);
 }
 
 function accountStatus(account: FinanceAccountData, today: string): { label: string; state: "missing" | "stale" | "current" } {
@@ -90,7 +88,7 @@ export default function FinanceOverview({ accounts, budget, goals }: { accounts:
         <section className={styles.overviewPanel} aria-labelledby="history-title">
           <div className={styles.overviewPanelHead}><div><small>Actual snapshots</small><h2 id="history-title">Tracked cash history</h2></div><span>{balanceChange ? `${balanceChange.changeCents >= BigInt(0) ? "+" : ""}${formatUsdCents(balanceChange.changeCents)} since ${readableDate(balanceChange.fromDate)}` : "Comparable change unavailable"}</span></div>
           {chartData.length > 1 ? <figure className={styles.historyFigure}>
-            <ResponsiveContainer width="100%" height="100%"><LineChart data={chartData} accessibilityLayer margin={{ top: 12, right: 10, bottom: 4, left: 2 }}><CartesianGrid stroke="rgba(255,255,255,.06)" vertical={false} /><XAxis dataKey="date" tickFormatter={(value) => String(value).slice(5)} tick={{ fill: "rgba(255,255,255,.4)", fontSize: 9 }} axisLine={false} tickLine={false} minTickGap={28} /><YAxis tickFormatter={compactMoney} tick={{ fill: "rgba(255,255,255,.4)", fontSize: 9 }} axisLine={false} tickLine={false} width={58} /><Tooltip labelFormatter={(value) => readableDate(String(value))} formatter={(value) => [formatUsdCents(BigInt(Math.round(Number(value)))), "Tracked cash"]} contentStyle={{ background: "rgb(19 25 23)", border: "1px solid rgba(91,107,101,.45)", borderRadius: 10, fontSize: 11 }} /><Line type="linear" dataKey="totalCents" stroke="rgb(16 185 129)" strokeWidth={2.5} dot={{ r: 3, fill: "rgb(16 185 129)", strokeWidth: 0 }} activeDot={{ r: 5 }} /></LineChart></ResponsiveContainer>
+            <CashHistoryChart data={chartData} />
             <figcaption>Each point combines the latest non-corrected balance known for each tracked account on that date. Changes are unexplained actual balance differences—not inferred savings, spending, or interest.</figcaption>
           </figure> : <div className={styles.overviewEmpty}>{history.length > 1 && !chartSafe ? "History values exceed the chart range; exact summary values remain available." : "Record at least two dated balances to display history."}</div>}
         </section>

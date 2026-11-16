@@ -52,7 +52,8 @@ const formSchema = z
     type: z.enum(["expense", "income"]),
     frequency: z.enum(["one-time", "daily", "weekly", "monthly", "yearly"]),
     date: z.date({
-      required_error: "Date is required",
+      // Zod 4 replacement for v3's `required_error`: only customize the "value is missing" case.
+      error: (issue) => (issue.input === undefined ? "Date is required" : undefined),
     }),
     icon: z.string().min(1, "Icon is required"),
     subitems: z.array(

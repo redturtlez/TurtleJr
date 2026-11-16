@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @config '../tailwind.config.cjs';
 
+/* `sq:` variant (landscape or square viewports). Declared here because a raw media
+   query under `screens` in the legacy config generates invalid CSS in Tailwind v4. */
+@custom-variant sq (@media (min-aspect-ratio: 1/1));
+
 .flex-1 {
   flex: 1 1 0px !important;
 }
@@ -142,7 +146,7 @@
   }
 }
 
-.app-toast-container {
+.app-toast-container.Toastify__toast-container {
   width: min(370px, calc(100vw - 32px));
   padding: 0;
 }
@@ -211,7 +215,7 @@
   color: rgb(var(--text) / 0.8);
 }
 
-.app-toast-progress {
+.Toastify__progress-bar.app-toast-progress {
   height: 2px;
   background: rgb(var(--accent));
   opacity: 0.82;
@@ -237,5 +241,25 @@
     width: 100%;
     margin-bottom: 8px;
     border-radius: 14px;
+  }
+}
+
+/* Page fade-in (replaces the animate.css package; same 1s fade as animate__fadeIn). */
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.page-fade-in {
+  animation: page-fade-in 1s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-fade-in {
+    animation: none;
   }
 }

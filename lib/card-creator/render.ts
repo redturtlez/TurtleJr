@@ -1,18 +1,48 @@
-import { assets, cardTemplate, typeText, formattedTypeText, fieldText, layoutFields, graphics, labels, rect, template, validateCard, type Card, type Field, type Issues } from './model';
+import { assets, cardTemplate, typeText, formattedTypeText, fieldText, layoutFields, graphics, labels, rect, template, validateCard, type Asset, type Card, type Field, type Issues } from './model';
 import { coverCrop, wrapText } from './layout';
 import { fontStyle, type CardFonts } from './fonts';
 
 const CREDIT_HORIZONTAL_SCALE = 0.93;
 
 export type Images = Record<string, HTMLImageElement>;
-export async function loadGraphics(): Promise<Images> {
-  const pairs = await Promise.all(Object.values(assets).map(async asset => {
-    const image = new Image();
-    image.src = asset.url;
-    try { await image.decode(); } catch { throw new Error('Card graphics could not load. Reload to try again.'); }
-    const [l, t, r, b] = rect(asset.bounds);
-    if (image.naturalWidth !== r-l || image.naturalHeight !== b-t) throw new Error('Card graphic dimensions do not match the template.');
-    return [asset.url, image] as const;
+
+// Layers are loaded on demand: a card only downloads the graphics it draws, not every template's.
+const assetsByUrl = new Map(Object.values(assets).map(asset => [asset.url, asset] as const));
+const graphicCache = new Map<string, Promise<HTMLImageElement>>();
+
+function loadGraphic(asset: Asset): Promise<HTMLImageElement> {
+  let pending = graphicCache.get(asset.url);
+  if (!pending) {
+    pending = (async () => {
+      const image = new Image();
+      image.src = asset.url;
+      try { await image.decode(); } catch { throw new Error('Card graphics could not load. Reload to try again.'); }
+      const [l, t, r, b] = rect(asset.bounds);
+      if (image.naturalWidth !== r-l || image.naturalHeight !== b-t) throw new Error('Card graphic dimensions do not match the template.');
+      return image;
+    })();
+    // Failed loads are not cached, so "retry" really retries.
+    pending.catch(() => { if (graphicCache.get(asset.url) === pending) graphicCache.delete(asset.url); });
+    graphicCache.set(asset.url, pending);
+  }
+  return pending;
+}
+
+/** URLs of every layer needed to preview or export `card`: the drawn graphics plus the print border. */
+export function requiredGraphicUrls(card: Card): string[] {
+  const errors = validateCard(card);
+  const urls = graphics({ ...card, level: errors.level ? 1 : card.level }).map(asset => asset.url);
+  const borderId = template.fixed.find(item => item.role === 'border')?.layer_id;
+  const border = borderId ? assets[borderId] : undefined;
+  if (border) urls.push(border.url);
+  return [...new Set(urls)];
+}
+
+export async function loadGraphics(urls: readonly string[]): Promise<Images> {
+  const pairs = await Promise.all(urls.map(async url => {
+    const asset = assetsByUrl.get(url);
+    if (!asset) throw new Error('Unknown card graphic requested.');
+    return [url, await loadGraphic(asset)] as const;
   }));
   return Object.fromEntries(pairs);
 }

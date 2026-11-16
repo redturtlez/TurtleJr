@@ -5,7 +5,7 @@ import clsx from "clsx";
 import Image from "next/image";
 import Link from "next/link";
 import type { JSX } from "react";
-import { CaretDown, Cross, Menu } from "@/public/svg";
+import { CaretDown, Cross, Menu } from "@/components/icons";
 import styles from "./navbar.module.css";
 import { useNavbar } from "./use-navbar";
 
@@ -58,7 +58,11 @@ export default function Navbar(): JSX.Element {
                 </div>
               </div>
             )}
-            {!user.isSignedIn ? (
+            {!user.isLoaded ? (
+              // Pages are prerendered, so auth state arrives once Clerk loads. Reserve the button's space
+              // (hidden from everyone) so a signed-in visitor never sees a wrong "Log in" flash.
+              <button type="button" className={styles.loginButton} style={{ visibility: "hidden" }} tabIndex={-1} aria-hidden="true">Log in</button>
+            ) : !user.isSignedIn ? (
               <SignInButton mode="modal" oauthFlow="redirect"><button type="button" className={styles.loginButton}>Log in</button></SignInButton>
             ) : (
               <SignOutButton><button type="button" className={styles.loginButton} onClick={handleNavClick}>Log out</button></SignOutButton>

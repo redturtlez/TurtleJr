@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { attributes, cardTemplate, defaults, editions, fields, labels, templates, titleColors, type Card, type FieldId, type Issues } from '../../../lib/card-creator/model';
 import { decodeArtwork } from '../../../lib/card-creator/artwork';
-import { loadGraphics, type Images } from '../../../lib/card-creator/render';
+import { loadGraphics, requiredGraphicUrls, type Images } from '../../../lib/card-creator/render';
 import { DIGITAL_CORNER_RADIUS_MM, exportPng, printGeometry, renderPrint, type Bleed, type CornerStyle } from '../../../lib/card-creator/print';
 import { loadBundledCardFonts, type CardFonts } from '../../../lib/card-creator/fonts';
 import styles from '../shared/editor-shared.module.css';
@@ -13,7 +13,7 @@ import AdvancedToggle, { AdvancedHint } from '../shared/AdvancedToggle';
 
 export default function CardEditor() {
   const [card, setCard] = useState<Card>({ ...defaults });
-  const [images, setImages] = useState<Images | null>(null);
+  const [images, setImages] = useState<Images>({});
   const [artwork, setArtwork] = useState<ImageBitmap | null>(null);
   const [artName, setArtName] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -35,6 +35,10 @@ export default function CardEditor() {
   const downloadUrls=useRef<string[]>([]);
   const geometry=printGeometry(bleed);
   const selectedTemplate=cardTemplate(card);
+  // Only the layers this card draws are downloaded; switching template or options loads the rest on demand.
+  const neededUrls=requiredGraphicUrls(card);
+  const neededKey=neededUrls.join('|');
+  const ready=neededUrls.every(url=>images[url]);
   const canvas = useRef<HTMLCanvasElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const upload = useRef<HTMLInputElement>(null);
@@ -44,10 +48,10 @@ export default function CardEditor() {
   useEffect(() => {
     let cancelled = false;
     setFailure('');
-    loadGraphics().then(result => { if (!cancelled) setImages(result); })
+    loadGraphics(neededKey.split('|')).then(result => { if (!cancelled) setImages(previous => ({ ...previous, ...result })); })
       .catch((error: unknown) => { if (!cancelled) setFailure(error instanceof Error ? error.message : 'Could not load template.'); });
     return () => { cancelled = true; };
-  }, [retry]);
+  }, [neededKey, retry]);
 
   useEffect(() => () => { generation.current++; fontGeneration.current++; currentBitmap.current?.close();
     faces.current.forEach(face=>document.fonts.delete(face));downloadUrls.current.forEach(url=>URL.revokeObjectURL(url)); }, []);
@@ -61,13 +65,13 @@ export default function CardEditor() {
     return()=>{cancelled=true;};
   },[]);
   useEffect(() => {
-    if (!images || !canvas.current) return;
+    if (!ready || !canvas.current) return;
     try { setIssues(renderPrint(canvas.current,card,images,artwork,bleed,overlay,fonts,cornerStyle)); }
     catch (error: unknown) { setFailure(error instanceof Error ? error.message : 'Preview failed.'); }
-  }, [images,card,artwork,overlay,bleed,fonts,cornerStyle]);
+  }, [ready,images,card,artwork,overlay,bleed,fonts,cornerStyle]);
 
   async function download() {
-    if(!images)return;
+    if(!ready)return;
     setExportBusy(true);setExportStatus('Preparing PNG…');
     try{
       const blob=await exportPng(card,images,artwork,bleed,fonts,cornerStyle);
@@ -232,10 +236,10 @@ export default function CardEditor() {
             : `${card.name || 'Untitled'} ${selectedTemplate.label} card preview. ${card.attribute}, ${card.templateId==='link'?`Link Rating ${card.linkArrows.length}`:`${card.templateId==='xyz'?'rank':'level'} ${card.level}`}. ATK ${card.attack}${card.templateId==='link'?'':`, DEF ${card.defense}`}.`}>
             Your browser needs Canvas support to display the card preview.
           </canvas>
-          {!images && !failure && <p className={styles.loading} role="status">Loading card graphics…</p>}
+          {!ready && !failure && <p className={styles.loading} role="status">Loading card graphics…</p>}
         </div>
         {failure && <div role="alert" className={styles.error}><p>{failure}</p><button type="button" onClick={()=>setRetry(value=>value+1)}>Retry preview</button></div>}
-        <p role="status" className={styles.previewStatus}>{Object.keys(issues).length ? 'Some text does not fit or needs correction. Check the highlighted fields.' : images ? 'Preview is up to date.' : ''}</p>
+        <p role="status" className={styles.previewStatus}>{Object.keys(issues).length ? 'Some text does not fit or needs correction. Check the highlighted fields.' : ready ? 'Preview is up to date.' : ''}</p>
         <div className={styles.field}><label htmlFor="card-export-mode">Download as</label>
           <select id="card-export-mode" value={cornerStyle==='rounded' ? 'image' : 'print'} onChange={event=>{
             if(event.target.value==='print'){setCornerStyle('square');setBleed(previous=>previous===0?2:previous);}
@@ -248,7 +252,7 @@ export default function CardEditor() {
           <select id="card-bleed" value={bleed} onChange={event=>setBleed(Number(event.target.value) as Bleed)}>
             <option value={0}>None — 59 × 86 mm</option><option value={1}>1 mm per edge — 61 × 88 mm</option><option value={2}>2 mm per edge — 63 × 90 mm</option>
           </select></div>}
-        <button type="button" className={styles.primary} disabled={!images||!!failure||uploading||fontBusy||exportBusy||Object.keys(issues).length>0} onClick={()=>void download()}>{exportBusy?'Preparing image…':cornerStyle==='rounded'?'Save as image':'Download print-ready PNG'}</button>
+        <button type="button" className={styles.primary} disabled={!ready||!!failure||uploading||fontBusy||exportBusy||Object.keys(issues).length>0} onClick={()=>void download()}>{exportBusy?'Preparing image…':cornerStyle==='rounded'?'Save as image':'Download print-ready PNG'}</button>
         <p className={styles.note} role="status">{exportStatus}</p>
         <p className={styles.note}>{geometry.width} × {geometry.height} pixels · 300 PPI. Trim size: 59 × 86 mm.</p>
         {cornerStyle==='rounded'&&<p className={styles.note}>Transparent {DIGITAL_CORNER_RADIUS_MM} mm corners are intended for screen use. Choose Print-ready for printing.</p>}

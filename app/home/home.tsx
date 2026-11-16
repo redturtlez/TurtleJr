@@ -1,8 +1,6 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import { Github, Linkedin } from "@/public/svg";
+import { Github, Linkedin } from "@/components/icons";
 import styles from "./home.module.css";
 
 export default function HomePage() {
