@@ -347,6 +347,29 @@ async function drawSetSlot(ctx: CanvasRenderingContext2D, card: PokemonCard, x: 
   return Math.min(maxWidth, ctx.measureText(text).width);
 }
 
+// Long names are condensed horizontally by up to 15% before the font size is reduced.
+export const NAME_SQUEEZE_FLOOR = 0.85;
+const NAME_MIN_SIZE = 20;
+/** Picks the largest font size whose text fits `maxWidth` after at most a 15% squeeze. Leaves ctx.font set; returns the horizontal scale to draw with. */
+export function fitName(ctx: CanvasRenderingContext2D, text: string, style: string, weight: string, startSize: number, maxWidth: number) {
+  let size = startSize;
+  while (size > NAME_MIN_SIZE) {
+    ctx.font = `${style}${weight} ${size}px PokemonGill,Arial,sans-serif`;
+    if (ctx.measureText(text).width * NAME_SQUEEZE_FLOOR <= maxWidth) break;
+    size--;
+  }
+  ctx.font = `${style}${weight} ${size}px PokemonGill,Arial,sans-serif`;
+  const width = ctx.measureText(text).width;
+  return width > maxWidth && width > 0 ? Math.max(NAME_SQUEEZE_FLOOR, maxWidth / width) : 1;
+}
+function drawName(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, scale: number, stroke = false) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, 1);
+  if (stroke) ctx.strokeText(text, 0, 0);
+  ctx.fillText(text, 0, 0);
+  ctx.restore();
+}
 function defaultNameInk(card: PokemonCard, fallback: string) {
   const selected = card.nameColor.trim().toLowerCase();
   return card.type === "dark" && (!selected || selected === "#111111") ? "#fff" : card.nameColor || fallback;
@@ -564,12 +587,8 @@ async function renderXyBlackWhitePokemon(ctx: CanvasRenderingContext2D, card: Po
     nameStyle = card.nameItalic ? "italic " : "";
   let nameSize = Math.min(51, Math.max(28, card.nameSize));
   const name = card.name || "Untitled";
-  while (nameSize > 20) {
-    ctx.font = `${nameStyle}${nameWeight} ${nameSize}px PokemonGill,Arial,sans-serif`;
-    if (ctx.measureText(name).width <= 320) break;
-    nameSize--;
-  }
-  ctx.fillText(name, 183, 84);
+  const nameScale = fitName(ctx, name, nameStyle, nameWeight, nameSize, 320);
+  drawName(ctx, name, 183, 84, nameScale);
 
   ctx.fillStyle = ink;
   ctx.textAlign = "right";
@@ -703,17 +722,12 @@ async function renderXyBlackWhiteExPokemon(ctx: CanvasRenderingContext2D, card: 
     ctx.drawImage(megaSymbol, titleX, 39, megaWidth, megaHeight);
     titleX += megaWidth + 5;
   }
-  while (nameSize > 20) {
-    ctx.font = `${nameStyle}${nameWeight} ${nameSize}px PokemonGill,Arial,sans-serif`;
-    if (ctx.measureText(name).width <= (mega ? 205 : 305)) break;
-    nameSize--;
-  }
-  if (fullArt) ctx.strokeText(name, titleX, 84);
-  ctx.fillText(name, titleX, 84);
+  const nameScale = fitName(ctx, name, nameStyle, nameWeight, nameSize, (mega ? 205 : 305));
+  drawName(ctx, name, titleX, 84, nameScale, Boolean(fullArt));
   const symbol = await image(fullArt ? "/pokemon-card-creator/icons/ex-xybw-outlined.png" : "/pokemon-card-creator/icons/ex-xybw.webp");
   const symbolHeight = fullArt ? 50 : 44,
     symbolWidth = (symbol.naturalWidth / symbol.naturalHeight) * symbolHeight;
-  ctx.drawImage(symbol, titleX + ctx.measureText(name).width + 4, fullArt ? 42 : 40, symbolWidth, symbolHeight);
+  ctx.drawImage(symbol, titleX + ctx.measureText(name).width * nameScale + 4, fullArt ? 42 : 40, symbolWidth, symbolHeight);
 
   ctx.fillStyle = ink;
   ctx.textAlign = "right";
@@ -843,13 +857,9 @@ async function renderLegacyPokemon(ctx: CanvasRenderingContext2D, card: PokemonC
     nameStyle = card.nameItalic ? "italic " : "";
   let nameSize = Math.min(49, Math.max(27, card.nameSize));
   const name = card.name || "Untitled";
-  while (nameSize > 20) {
-    ctx.font = `${nameStyle}${nameWeight} ${nameSize}px PokemonGill,Arial,sans-serif`;
-    if (ctx.measureText(name).width <= 390) break;
-    nameSize--;
-  }
-  ctx.fillText(name, 58, 88);
-  const titleEnd = 58 + ctx.measureText(name).width + 6;
+  const nameScale = fitName(ctx, name, nameStyle, nameWeight, nameSize, 390);
+  drawName(ctx, name, 58, 88, nameScale);
+  const titleEnd = 58 + ctx.measureText(name).width * nameScale + 6;
   if (isLegacyExStage(card.stage)) {
     const symbol = await image("/pokemon-card-creator/icons/ex-legacy.webp"),
       height = 37,
@@ -950,13 +960,9 @@ async function renderSunMoonPokemon(ctx: CanvasRenderingContext2D, card: Pokemon
   const nameStyle = card.nameItalic ? "italic " : "";
   let nameSize = Math.min(58, Math.max(28, card.nameSize));
   const name = card.name || "Untitled";
-  while (nameSize > 20) {
-    ctx.font = `${nameStyle}${nameWeight} ${nameSize}px PokemonGill,Arial,sans-serif`;
-    if (ctx.measureText(name).width <= 410 - (titleX - 134)) break;
-    nameSize--;
-  }
-  ctx.fillText(name, titleX, 80);
-  titleX += ctx.measureText(name).width + 8;
+  const nameScale = fitName(ctx, name, nameStyle, nameWeight, nameSize, 410 - (titleX - 134));
+  drawName(ctx, name, titleX, 80, nameScale);
+  titleX += ctx.measureText(name).width * nameScale + 8;
   if (card.suffix) {
     ctx.font = "700 29px PokemonGill,Arial,sans-serif";
     ctx.fillText(card.suffix, titleX, 80);
@@ -1073,14 +1079,9 @@ async function renderSunMoonGxPokemon(ctx: CanvasRenderingContext2D, card: Pokem
   const nameStyle = card.nameItalic ? "italic " : "";
   let nameSize = Math.min(52, Math.max(28, card.nameSize));
   const name = card.name || "Untitled";
-  while (nameSize > 20) {
-    ctx.font = `${nameStyle}${nameWeight} ${nameSize}px PokemonGill,Arial,sans-serif`;
-    if (ctx.measureText(name).width <= 410 - gxWidth - 4 - (titleX - 141)) break;
-    nameSize--;
-  }
-  if (fullArt) ctx.strokeText(name, titleX, 81);
-  ctx.fillText(name, titleX, 81);
-  titleX += ctx.measureText(name).width + 4;
+  const nameScale = fitName(ctx, name, nameStyle, nameWeight, nameSize, 410 - gxWidth - 4 - (titleX - 141));
+  drawName(ctx, name, titleX, 81, nameScale, Boolean(fullArt));
+  titleX += ctx.measureText(name).width * nameScale + 4;
   ctx.drawImage(gx, titleX, 39, gxWidth, gxHeight);
 
   ctx.fillStyle = ink;
@@ -1176,13 +1177,8 @@ async function renderSwordShieldVstar(ctx: CanvasRenderingContext2D, card: Pokem
     nameStyle = card.nameItalic ? "italic " : "";
   let nameSize = Math.min(52, Math.max(28, card.nameSize));
   const name = card.name || "Untitled";
-  while (nameSize > 20) {
-    ctx.font = `${nameStyle}${nameWeight} ${nameSize}px PokemonGill,Arial,sans-serif`;
-    if (ctx.measureText(name).width <= 385 - (titleX - 145)) break;
-    nameSize--;
-  }
-  if (fullArt) ctx.strokeText(name, titleX, 82);
-  ctx.fillText(name, titleX, 82);
+  const nameScale = fitName(ctx, name, nameStyle, nameWeight, nameSize, 385 - (titleX - 145));
+  drawName(ctx, name, titleX, 82, nameScale, Boolean(fullArt));
 
   ctx.fillStyle = ink;
   ctx.textAlign = "right";
@@ -1354,14 +1350,9 @@ export async function renderPokemon(canvas: HTMLCanvasElement, card: PokemonCard
     nameStyle = card.nameItalic ? "italic " : "";
   let nameSize = Math.min(58, Math.max(28, card.nameSize));
   const name = card.name || "Untitled";
-  while (nameSize > 20) {
-    ctx.font = `${nameStyle}${nameWeight} ${nameSize}px PokemonGill,Arial,sans-serif`;
-    if (ctx.measureText(name).width <= 390 - (titleX - 142)) break;
-    nameSize--;
-  }
-  if (vmax) ctx.strokeText(name, titleX, nameBaseline);
-  ctx.fillText(name, titleX, nameBaseline);
-  titleX += ctx.measureText(name).width + 10;
+  const nameScale = fitName(ctx, name, nameStyle, nameWeight, nameSize, 390 - (titleX - 142));
+  drawName(ctx, name, titleX, nameBaseline, nameScale, Boolean(vmax));
+  titleX += ctx.measureText(name).width * nameScale + 10;
   if (card.suffix) {
     ctx.font = "700 25px PokemonGill,Arial,sans-serif";
     if (vmax) ctx.strokeText(card.suffix, titleX, nameBaseline);
@@ -1520,13 +1511,13 @@ async function renderScarletFullArtPokemon(ctx: CanvasRenderingContext2D, card: 
     nameStyle = card.nameItalic ? "italic " : "";
   let nameSize = Math.min(51, Math.max(28, card.nameSize));
   const name = card.name || "Untitled";
-  while (nameSize > 20) {
-    ctx.font = `${nameStyle}${nameWeight} ${nameSize}px PokemonGill,Arial,sans-serif`;
-    if (ctx.measureText(name).width <= 340 - (titleX - 134)) break;
-    nameSize--;
-  }
-  ctx.strokeText(name, titleX, 81);
-  ctx.fillText(name, titleX, 81);
+  // Full art has no symbol after the title, so the title may use the gap up to the "HP" label (18px clear).
+  ctx.font = "700 56px PokemonFutura,PokemonGill,Arial,sans-serif";
+  const fullArtHpWidth = ctx.measureText(card.hp || "—").width;
+  ctx.font = "700 21px PokemonGillExtraBold,PokemonGill,Arial,sans-serif";
+  const fullArtHpLabelLeft = 641 - fullArtHpWidth - ctx.measureText("HP").width;
+  const nameScale = fitName(ctx, name, nameStyle, nameWeight, nameSize, Math.max(474, fullArtHpLabelLeft - 18) - titleX);
+  drawName(ctx, name, titleX, 81, nameScale, true);
   ctx.fillStyle = ink;
   ctx.textAlign = "right";
   ctx.font = "700 56px PokemonFutura,PokemonGill,Arial,sans-serif";
@@ -1580,14 +1571,9 @@ async function renderScarletExPokemon(ctx: CanvasRenderingContext2D, card: Pokem
   let nameSize = Math.min(51, Math.max(28, card.nameSize));
   const rawName = card.name || "Untitled",
     name = mega ? `Mega ${rawName}` : rawName;
-  while (nameSize > 20) {
-    ctx.font = `${nameStyle}${nameWeight} ${nameSize}px PokemonGill,Arial,sans-serif`;
-    if (ctx.measureText(name).width <= (mega ? 260 : 325)) break;
-    nameSize--;
-  }
-  if (mega || fullArt) ctx.strokeText(name, titleX, 81);
-  ctx.fillText(name, titleX, 81);
-  titleX += ctx.measureText(name).width + 3;
+  const nameScale = fitName(ctx, name, nameStyle, nameWeight, nameSize, (mega ? 260 : 325));
+  drawName(ctx, name, titleX, 81, nameScale, Boolean(mega || fullArt));
+  titleX += ctx.measureText(name).width * nameScale + 3;
   ctx.drawImage(
     await image(mega ? "/pokemon-card-creator/icons/ex-sv-mega.webp" : fullArt ? "/pokemon-card-creator/icons/ex-sv-outlined.webp" : "/pokemon-card-creator/icons/ex-sv.webp"),
     titleX,
@@ -1668,13 +1654,9 @@ async function renderScarletPokemon(ctx: CanvasRenderingContext2D, card: Pokemon
     nameStyle = card.nameItalic ? "italic " : "";
   let nameSize = Math.min(51, Math.max(28, card.nameSize));
   const name = card.name || "Untitled";
-  while (nameSize > 20) {
-    ctx.font = `${nameStyle}${nameWeight} ${nameSize}px PokemonGill,Arial,sans-serif`;
-    if (ctx.measureText(name).width <= 340 - (titleX - 134)) break;
-    nameSize--;
-  }
-  ctx.fillText(name, titleX, 81);
-  titleX += ctx.measureText(name).width + 8;
+  const nameScale = fitName(ctx, name, nameStyle, nameWeight, nameSize, 340 - (titleX - 134));
+  drawName(ctx, name, titleX, 81, nameScale);
+  titleX += ctx.measureText(name).width * nameScale + 8;
   if (card.suffix) {
     ctx.font = "700 25px PokemonGill,Arial,sans-serif";
     ctx.fillText(card.suffix, titleX, 81);
@@ -1712,8 +1694,9 @@ async function renderNonPokemon(ctx: CanvasRenderingContext2D, card: PokemonCard
   ctx.textBaseline = "alphabetic";
   if (card.supertype === "trainer") {
     ctx.fillStyle = card.nameColor || "#111";
-    ctx.font = `${card.nameItalic ? "italic " : ""}${card.nameBold ? "700" : "400"} ${Math.min(58, Math.max(28, card.nameSize))}px PokemonGill,Arial,sans-serif`;
-    ctx.fillText(card.name || "Untitled Trainer", 48, 122);
+    const trainerName = card.name || "Untitled Trainer";
+    const trainerScale = fitName(ctx, trainerName, card.nameItalic ? "italic " : "", card.nameBold ? "700" : "400", Math.min(58, Math.max(28, card.nameSize)), 640);
+    drawName(ctx, trainerName, 48, 122, trainerScale);
     ctx.font = "400 27px PokemonGill,Arial,sans-serif";
     ctx.save();
     const fullArtText = isFullArtNonPokemon(card);
@@ -1728,8 +1711,9 @@ async function renderNonPokemon(ctx: CanvasRenderingContext2D, card: PokemonCard
   }
   if (card.energyCardType === "special") {
     ctx.fillStyle = card.nameColor || "#111";
-    ctx.font = `${card.nameItalic ? "italic " : ""}${card.nameBold ? "700" : "400"} ${Math.min(52, Math.max(28, card.nameSize))}px PokemonGill,Arial,sans-serif`;
-    ctx.fillText(card.name || "Custom Energy", 48, 121);
+    const energyName = card.name || "Custom Energy";
+    const energyScale = fitName(ctx, energyName, card.nameItalic ? "italic " : "", card.nameBold ? "700" : "400", Math.min(52, Math.max(28, card.nameSize)), 450);
+    drawName(ctx, energyName, 48, 121, energyScale);
     ctx.font = "400 27px PokemonGill,Arial,sans-serif";
     ctx.save();
     if (isFullArtNonPokemon(card)) whiteOutline(ctx, 4);
