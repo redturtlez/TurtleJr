@@ -1,4 +1,5 @@
 import { PAPERS, type PaperId } from "./geometry";
+import { isShadowLevel, type ShadowLevel } from "./shadow";
 
 /** Limits that keep a malformed or oversized file from exhausting the browser. */
 export const MERGE_LIMITS = { maxFiles: 20, maxFileBytes: 25 * 1024 * 1024, maxTotalPages: 60 } as const;
@@ -24,6 +25,15 @@ export interface MergeResult {
   bytes: Uint8Array;
   pageCount: number;
   pages: PdfPageInfo[];
+  /** Images re-encoded with the shadow lift, and images left as they were because they are not RGB JPEGs. */
+  liftedImages: number;
+  skippedImages: number;
+}
+export interface MergeOptions {
+  /** Clear sticker shadow lift level; 0 or omitted leaves every image untouched. */
+  shadowLevel?: ShadowLevel;
+  /** Re-encodes one JPEG with the lift applied. Supplied by the browser; required when shadowLevel is above 0. */
+  liftJpeg?: (jpeg: Uint8Array, level: ShadowLevel) => Promise<Uint8Array>;
 }
 
 /** Names a page size from its dimensions; this is read from the PDF itself, so nothing needs selecting. */
@@ -77,12 +87,15 @@ export async function inspectPdf(name: string, bytes: Uint8Array): Promise<Inspe
 
 /**
  * Combines PDFs, in the order given, into one file. Pages are copied as they are, so embedded images are not
- * re-encoded and each page keeps its own size (a Letter sheet and an A4 sheet can share one file). Entirely local.
+ * re-encoded (unless a shadow lift level is chosen, which re-encodes the RGB JPEGs) and each page keeps its own size (a Letter sheet and an A4 sheet can share one file). Entirely local.
  */
-export async function mergePdfs(inputs: MergeInput[]): Promise<MergeResult> {
+export async function mergePdfs(inputs: MergeInput[], options: MergeOptions = {}): Promise<MergeResult> {
+  const level = options.shadowLevel ?? 0;
+  if (!isShadowLevel(level)) throw new Error("Unsupported shadow lift level.");
+  if (level > 0 && !options.liftJpeg) throw new Error("Shadow lift is unavailable here.");
   if (!inputs.length) throw new Error("Add at least one PDF to combine.");
   if (inputs.length > MERGE_LIMITS.maxFiles) throw new Error(`Combine at most ${MERGE_LIMITS.maxFiles} PDFs at a time.`);
-  const { PDFDocument } = await import("pdf-lib");
+  const { PDFDocument, PDFName, PDFNumber, PDFRawStream, PDFArray } = await import("pdf-lib");
   const output = await PDFDocument.create();
   const pages: PdfPageInfo[] = [];
   for (const input of inputs) {
@@ -96,6 +109,27 @@ export async function mergePdfs(inputs: MergeInput[]): Promise<MergeResult> {
     }
   }
   if (!pages.length) throw new Error("The selected PDFs have no pages.");
+  let liftedImages = 0,
+    skippedImages = 0;
+  if (level > 0 && options.liftJpeg) {
+    // Every image XObject in the combined file, once each even when several pages share it. Only RGB JPEGs are
+    // re-encoded (that is what the sheet maker writes); any other image is left exactly as it was and counted.
+    const nameOf = (value: unknown) => (value instanceof PDFName ? value.decodeText() : undefined);
+    for (const [ref, object] of output.context.enumerateIndirectObjects()) {
+      if (!(object instanceof PDFRawStream) || nameOf(object.dict.get(PDFName.of("Subtype"))) !== "Image") continue;
+      const filter = object.dict.get(PDFName.of("Filter"));
+      const filterName = filter instanceof PDFArray && filter.size() === 1 ? nameOf(filter.get(0)) : nameOf(filter);
+      const colorSpace = nameOf(object.dict.get(PDFName.of("ColorSpace")));
+      if (filterName !== "DCTDecode" || colorSpace !== "DeviceRGB" || object.dict.has(PDFName.of("SMask")) || object.dict.has(PDFName.of("Mask"))) {
+        skippedImages++;
+        continue;
+      }
+      const lifted = await options.liftJpeg(object.getContents(), level);
+      object.dict.set(PDFName.of("Length"), PDFNumber.of(lifted.length));
+      output.context.assign(ref, PDFRawStream.of(object.dict, lifted));
+      liftedImages++;
+    }
+  }
   // Deterministic, minimal metadata: no title, author, producer or timestamps that could vary or identify anyone.
   output.setTitle("");
   output.setProducer("");
@@ -104,5 +138,5 @@ export async function mergePdfs(inputs: MergeInput[]): Promise<MergeResult> {
   output.setCreationDate(epoch);
   output.setModificationDate(epoch);
   const bytes = await output.save({ useObjectStreams: false, updateFieldAppearances: false });
-  return { bytes, pageCount: pages.length, pages };
+  return { bytes, pageCount: pages.length, pages, liftedImages, skippedImages };
 }

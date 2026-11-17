@@ -337,6 +337,18 @@ more bleed than the sheet bleed is cropped evenly to it. Always print at 100% / 
 The "Open full-size preview" dialog draws the sheet at the PDF's 300 PPI; zoom with the buttons, slider, +/-/0 keys or
 Ctrl+wheel, and drag to pan.
 
+### Card Sheet Maker: clear sticker shadow lift
+
+Laser printers have no white toner, so on clear sticker stock dark tones fill in and fine shadow detail clogs (plain paper prints fine).
+The shadow lift (levels 0 to 5, 0 = off; `lib/card-sheet/shadow.ts`) raises the black point up to 8% and brightens the darker tones with a
+gamma of up to 2, per color channel, leaving white and light tones alone. It is applied only to the downloaded PDF (the on-screen preview is unchanged).
+The "Download test sheet" button (`lib/card-sheet/shadow-image.ts`) makes a one-page 300 PPI PDF: one of your cards at all six levels, each with a strip of
+dark gray squares, labelled, with every element at least 8 mm from the page edge. Print it on the sticker stock at 100%, pick the lowest level that keeps the
+dark detail, then set that level for the sheet download. On browsers with the Web Share API for files (most phones) "Share test sheet…" and "Share PDF…" open the
+share sheet (email, print). The PDF combiner has the same setting: it re-encodes every RGB JPEG in the combined file (JPEG quality 0.95, same pixel size);
+other image types are left unchanged and counted in the status line. Do not lift sheets that were already downloaded with a lift (it would apply twice).
+Tests: `scripts/card-sheet-check.cjs` (tone curve, calibration layout, combiner).
+
 ### Card Sheet Maker: card types and input bleed
 
 Each slot has a type (Pokémon 63 x 88 mm or Yu-Gi-Oh 59 x 86 mm) and the bleed already in the image (0, 1 or 2 mm

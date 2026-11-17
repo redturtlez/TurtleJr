@@ -5,7 +5,7 @@ const ts = require("typescript");
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const root = path.resolve(__dirname, "..");
-const names = ["lib/card-sheet/geometry", "lib/card-sheet/detect", "lib/card-sheet/pdf", "lib/card-sheet/merge"];
+const names = ["lib/card-sheet/geometry", "lib/card-sheet/detect", "lib/card-sheet/pdf", "lib/card-sheet/merge", "lib/card-sheet/shadow"];
 const compiled = Object.fromEntries(
   names.map((name) => [
     name,
@@ -30,6 +30,7 @@ const geometry = load("lib/card-sheet/geometry");
 const { buildPdf } = load("lib/card-sheet/pdf");
 const { guessCard } = load("lib/card-sheet/detect");
 const merge = load("lib/card-sheet/merge");
+const shadow = load("lib/card-sheet/shadow");
 
 const pk = (cell) => ({ cell, kind: "pokemon" }), yg = (cell) => ({ cell, kind: "yugioh" });
 const near = (a, b, eps = 1e-6) => Math.abs(a - b) < eps;
@@ -268,4 +269,83 @@ test("bad, empty, oversized and too many files are rejected with clear messages"
   await assert.rejects(merge.mergePdfs([{ name: "big.pdf", bytes: new Uint8Array(merge.MERGE_LIMITS.maxFileBytes + 1) }]), /larger than/);
   const many = Array.from({ length: merge.MERGE_LIMITS.maxFiles + 1 }, (_, i) => ({ name: `${i}.pdf`, bytes: good }));
   await assert.rejects(merge.mergePdfs(many), /at most/);
+});
+
+test("shadow lift: off is identity, white is untouched, darks get lighter with each level", () => {
+  const off = shadow.shadowLut(0);
+  for (let v = 0; v < 256; v++) assert.equal(off[v], v);
+  let previousBlack = -1, previousDark = -1;
+  for (const level of shadow.SHADOW_LEVELS) {
+    const lut = shadow.shadowLut(level);
+    assert.equal(lut[255], 255, "white stays white");
+    for (let v = 1; v < 256; v++) assert.ok(lut[v] >= lut[v - 1], "monotonic: no tones swap order");
+    for (let v = 0; v < 256; v++) assert.ok(lut[v] >= v, "never darker than the input");
+    assert.ok(lut[0] >= previousBlack && lut[40] >= previousDark);
+    if (level > 0) assert.ok(lut[40] > previousDark && lut[0] > previousBlack, "each level lightens the darks");
+    previousBlack = lut[0];
+    previousDark = lut[40];
+  }
+  assert.equal(shadow.shadowLut(5)[0], 20, "level 5 black point is 8% of white");
+  assert.throws(() => shadow.shadowLut(6));
+  assert.throws(() => shadow.shadowLut(1.5));
+});
+
+test("shadow lift changes color channels only, never alpha, and level 0 changes nothing", () => {
+  const pixels = new Uint8ClampedArray([0, 10, 20, 77, 255, 255, 255, 0]);
+  const copy = pixels.slice();
+  shadow.applyShadowLift(copy, 0);
+  assert.deepEqual([...copy], [...pixels]);
+  shadow.applyShadowLift(copy, 3);
+  assert.equal(copy[3], 77);
+  assert.equal(copy[7], 0);
+  assert.ok(Number(copy[0]) > 0 && Number(copy[1]) > 10 && Number(copy[2]) > 20);
+  assert.deepEqual([...copy.slice(4, 7)], [255, 255, 255]);
+});
+
+test("calibration sheet lays out 6 levels in reading order, well inside the page on Letter and A4", () => {
+  for (const paper of ["letter", "a4"]) {
+    const page = geometry.PAPERS[paper];
+    const layout = shadow.calibrationLayout(paper, 90 / 65);
+    assert.deepEqual(layout.tiles.map((t) => t.level), [0, 1, 2, 3, 4, 5]);
+    assert.equal(layout.tiles[0].steps.length, shadow.CALIBRATION_STEPS.length);
+    const rects = layout.tiles.flatMap((t) => [t.image, ...t.steps]);
+    for (const r of rects) {
+      assert.ok(r.xMm >= 8 - 1e-6 && r.yMm >= 8 - 1e-6, "8 mm from the left and top");
+      assert.ok(r.xMm + r.widthMm <= page.widthMm - 8 + 1e-6, "8 mm from the right");
+      assert.ok(r.yMm + r.heightMm <= page.heightMm - 8, "8 mm from the bottom");
+    }
+    assert.ok(layout.footer.yMm < page.heightMm - 8);
+    for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) {
+      const a = rects[i], b = rects[j];
+      const apart = a.xMm + a.widthMm <= b.xMm + 1e-6 || b.xMm + b.widthMm <= a.xMm + 1e-6 || a.yMm + a.heightMm <= b.yMm + 1e-6 || b.yMm + b.heightMm <= a.yMm + 1e-6;
+      assert.ok(apart, "tiles and squares never overlap");
+    }
+  }
+  assert.throws(() => shadow.calibrationLayout("letter", 0));
+});
+
+test("combining with a shadow lift re-encodes only RGB JPEGs, once each, and leaves other images alone", async () => {
+  const { PDFDocument } = require("pdf-lib");
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+  const other = await PDFDocument.create();
+  other.addPage([100, 100]).drawImage(await other.embedPng(png), { x: 0, y: 0, width: 50, height: 50 });
+  const otherBytes = await other.save();
+  const calls = [];
+  const liftJpeg = async (jpeg, level) => { calls.push(level); return new Uint8Array([0xff, 0xd8, 9, 9, 9, 0xff, 0xd9]); };
+  const sheet = sheetPdf("letter", 3);
+  const lifted = await merge.mergePdfs([{ name: "a.pdf", bytes: sheet }, { name: "o.pdf", bytes: otherBytes }], { shadowLevel: 2, liftJpeg });
+  assert.equal(lifted.liftedImages, 3);
+  assert.ok(lifted.skippedImages >= 1);
+  assert.deepEqual(calls, [2, 2, 2]);
+  const body = Buffer.from(lifted.bytes).toString("latin1");
+  assert.equal((body.match(/ÿØ			ÿÙ/g) || []).length, 3, "new JPEG bytes were written");
+  assert.equal((await merge.inspectPdf("lifted.pdf", lifted.bytes)).pageCount, 2, "still a valid, readable PDF");
+  // Level 0 and no options behave exactly as before: no transform is called.
+  calls.length = 0;
+  const plain = await merge.mergePdfs([{ name: "a.pdf", bytes: sheet }], { shadowLevel: 0, liftJpeg });
+  assert.equal(calls.length, 0);
+  assert.equal(plain.liftedImages, 0);
+  assert.deepEqual((await merge.mergePdfs([{ name: "a.pdf", bytes: sheet }])).bytes, plain.bytes);
+  await assert.rejects(merge.mergePdfs([{ name: "a.pdf", bytes: sheet }], { shadowLevel: 3 }), /unavailable/);
+  await assert.rejects(merge.mergePdfs([{ name: "a.pdf", bytes: sheet }], { shadowLevel: 9, liftJpeg }), /Unsupported/);
 });

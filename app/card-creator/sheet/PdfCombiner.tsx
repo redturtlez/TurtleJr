@@ -1,5 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
+import { DEFAULT_SHADOW_LEVEL, SHADOW_LEVELS, shadowLevelLabel, type ShadowLevel } from "../../../lib/card-sheet/shadow";
+import { liftJpegBytes } from "../../../lib/card-sheet/shadow-image";
 import { MERGE_LIMITS, inspectPdf, mergePdfs, type PdfPageInfo } from "../../../lib/card-sheet/merge";
 import styles from "./sheet.module.css";
 
@@ -16,6 +18,7 @@ export default function PdfCombiner() {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [lift, setLift] = useState<ShadowLevel>(DEFAULT_SHADOW_LEVEL);
   const nextId = useRef(1);
   const input = useRef<HTMLInputElement>(null);
   const totalPages = items.reduce((sum, item) => sum + item.pages.length, 0);
@@ -66,7 +69,10 @@ export default function PdfCombiner() {
     setBusy(true);
     setError("");
     try {
-      const result = await mergePdfs(items.map((item) => ({ name: item.name, bytes: item.bytes })));
+      const result = await mergePdfs(
+        items.map((item) => ({ name: item.name, bytes: item.bytes })),
+        { shadowLevel: lift, liftJpeg: liftJpegBytes },
+      );
       const buffer = new ArrayBuffer(result.bytes.byteLength);
       new Uint8Array(buffer).set(result.bytes);
       const url = URL.createObjectURL(new Blob([buffer], { type: "application/pdf" }));
@@ -77,7 +83,7 @@ export default function PdfCombiner() {
       link.click();
       link.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
-      setStatus(`Downloaded card-sheets-combined.pdf with ${result.pageCount} page${result.pageCount === 1 ? "" : "s"}.`);
+      setStatus(`Downloaded card-sheets-combined.pdf with ${result.pageCount} page${result.pageCount === 1 ? "" : "s"}${lift ? `; shadow lift level ${lift} applied to ${result.liftedImages} image${result.liftedImages === 1 ? "" : "s"}${result.skippedImages ? `, ${result.skippedImages} other image${result.skippedImages === 1 ? "" : "s"} left unchanged` : ""}` : ""}.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "The PDFs could not be combined.");
     } finally {
@@ -143,6 +149,17 @@ export default function PdfCombiner() {
           ))}
         </ol>
       )}
+      <div className={styles.field}>
+        <label htmlFor="combine-lift">Clear sticker shadow lift</label>
+        <select id="combine-lift" value={lift} onChange={(e) => setLift(Number(e.target.value) as ShadowLevel)} disabled={busy}>
+          {SHADOW_LEVELS.map((value) => (
+            <option key={value} value={value}>
+              {shadowLevelLabel(value)}
+            </option>
+          ))}
+        </select>
+      </div>
+      {lift > 0 && <p className={styles.note}>Applied to every JPEG image in the combined file, so use PDFs made without a shadow lift; sheets already lifted would be lightened twice. Pages keep their size.</p>}
       <button type="button" className={styles.download} onClick={() => void combine()} disabled={busy || items.length === 0}>
         {busy ? "Working…" : `Combine into one PDF (${totalPages} page${totalPages === 1 ? "" : "s"})`}
       </button>

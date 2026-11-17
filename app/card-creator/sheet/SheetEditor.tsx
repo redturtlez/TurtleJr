@@ -4,6 +4,8 @@ import { decodeArtwork } from "../../../lib/card-creator/artwork";
 import { cloneCell, cellToJpeg, composeCell, loadYugiohBorder } from "../../../lib/card-sheet/bleed";
 import { CARD_KINDS, DEFAULT_SHEET_BLEED, GRID, INPUT_BLEEDS, PAPERS, PRINTER_MARGIN_MM, SHEET_BLEEDS, cropMarkLength, cropMarks, gridGuides, sheetLayout, trimRect, type CardKind, type InputBleed, type PaperId, type PlacedCard, type SheetBleed, type SheetLayout } from "../../../lib/card-sheet/geometry";
 import { guessCard } from "../../../lib/card-sheet/detect";
+import { DEFAULT_SHADOW_LEVEL, SHADOW_LEVELS, shadowLevelLabel, type ShadowLevel } from "../../../lib/card-sheet/shadow";
+import { buildCalibrationPdf, canSharePdf, liftCanvas, savePdf, sharePdf } from "../../../lib/card-sheet/shadow-image";
 import { buildPdf, type PdfLines } from "../../../lib/card-sheet/pdf";
 import PdfCombiner from "./PdfCombiner";
 import styles from "./sheet.module.css";
@@ -210,6 +212,9 @@ function FullPreview({ slots, paper, sheetBleed, guides, marks, onClose }: { slo
 export default function SheetEditor() {
   const [slots, setSlots] = useState<Slot[]>(emptySlots);
   const [paper, setPaper] = useState<PaperId>("letter");
+  const [lift, setLift] = useState<ShadowLevel>(DEFAULT_SHADOW_LEVEL);
+  const [calibrationCard, setCalibrationCard] = useState(0);
+  const [canShare, setCanShare] = useState(false);
   const [sheetBleed, setSheetBleed] = useState<SheetBleed>(DEFAULT_SHEET_BLEED);
   const [guides, setGuides] = useState(true);
   const [marks, setMarks] = useState(false);
@@ -229,6 +234,9 @@ export default function SheetEditor() {
   const pending = slots.some((slot) => slot?.pending);
   const untyped = slots.filter((slot) => slot && !slot.kind).length;
 
+  useEffect(() => {
+    setCanShare(canSharePdf());
+  }, []);
   useEffect(() => {
     if (preview.current) drawPreview(preview.current, slots, paper, sheetBleed, guides, marksOn);
   }, [slots, paper, sheetBleed, guides, marksOn]);
@@ -364,13 +372,32 @@ export default function SheetEditor() {
     setSlots((old) => old.map((value, i) => (i === free ? { ...source, id: nextId.current++, rev: 0, cell: cloneCell(source.cell) } : value)));
     setStatus(`Copied card ${index + 1} into position ${free + 1}.`);
   }
+  async function calibrate(mode: "save" | "share") {
+    setBusy(true);
+    setError("");
+    try {
+      const slot = slots[calibrationCard] ?? slots.find(Boolean);
+      if (!slot) throw new Error("Add a card image first; the test sheet uses one of your cards.");
+      const pdf = await buildCalibrationPdf(slot.cell, paper);
+      setStatus(await deliver(pdf, `shadow-lift-test-${paper}.pdf`, mode));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "The test sheet could not be created.");
+    } finally {
+      setBusy(false);
+    }
+  }
   function clearAll() {
     setSlots(emptySlots());
     setStatus("Cleared all cards.");
     setError("");
   }
 
-  async function download() {
+  async function deliver(pdf: Uint8Array, filename: string, mode: "save" | "share") {
+    if (mode === "share" && (await sharePdf(pdf, filename))) return "Shared " + filename + ".";
+    savePdf(pdf, filename);
+    return "Downloaded " + filename + ".";
+  }
+  async function download(mode: "save" | "share" = "save") {
     setBusy(true);
     setError("");
     try {
@@ -378,7 +405,7 @@ export default function SheetEditor() {
       const cells = placed.map((card) => ({ cell: card.cell, canvas: (slots[card.cell.index] as NonNullable<Slot>).cell }));
       const images = await Promise.all(
         cells.map(async ({ cell, canvas }) => ({
-          jpeg: await cellToJpeg(canvas),
+          jpeg: await cellToJpeg(lift ? liftCanvas(canvas, lift) : canvas),
           pixelWidth: canvas.width,
           pixelHeight: canvas.height,
           xMm: cell.xMm,
@@ -391,17 +418,9 @@ export default function SheetEditor() {
       if (guides) lines.push({ segments: gridGuides(layout, placed), gray: 1 as const, widthPt: 0.24 });
       if (marksOn) lines.push({ segments: cropMarks(layout, placed), gray: 0 as const, widthPt: 0.35 });
       const pdf = buildPdf({ widthMm: layout.pageWidthMm, heightMm: layout.pageHeightMm, images, lines });
-      const bytes = new ArrayBuffer(pdf.byteLength);
-      new Uint8Array(bytes).set(pdf);
-      const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `card-sheet-${paper}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
-      setStatus(`Downloaded card-sheet-${paper}.pdf with ${cells.length} card${cells.length === 1 ? "" : "s"}.`);
+      const filename = lift ? `card-sheet-${paper}-sticker-lift-${lift}.pdf` : `card-sheet-${paper}.pdf`;
+      const done = await deliver(pdf, filename, mode);
+      setStatus(`${done} ${cells.length} card${cells.length === 1 ? "" : "s"}${lift ? `, shadow lift level ${lift}` : ""}.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "The PDF could not be created.");
     } finally {
@@ -553,6 +572,34 @@ export default function SheetEditor() {
             <input type="checkbox" checked={marksOn} disabled={!marksAvailable} onChange={(e) => setMarks(e.target.checked)} />
             Crop marks{marksAvailable ? "" : " (needs more margin; available on A4)"}
           </label>
+          <h2>Clear sticker stock</h2>
+          <div className={styles.field}>
+            <label htmlFor="sheet-lift">Shadow lift</label>
+            <select id="sheet-lift" value={lift} onChange={(e) => setLift(Number(e.target.value) as ShadowLevel)} disabled={busy}>
+              {SHADOW_LEVELS.map((value) => (
+                <option key={value} value={value}>
+                  {shadowLevelLabel(value)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <p className={styles.note}>Lightens dark areas in the downloaded PDF so fine detail does not clog on clear stickers. The preview above stays unchanged. Use the test sheet to choose a level.</p>
+          <div className={styles.field}>
+            <label htmlFor="sheet-lift-card">Test sheet card</label>
+            <select id="sheet-lift-card" value={slots[calibrationCard] ? calibrationCard : Math.max(0, slots.findIndex(Boolean))} onChange={(e) => setCalibrationCard(Number(e.target.value))} disabled={!filled}>
+              {slots.map((slot, index) => (slot ? <option key={slot.id} value={index}>{`${index + 1}. ${slot.name}`}</option> : null))}
+            </select>
+          </div>
+          <div className={styles.actions}>
+            <button type="button" onClick={() => void calibrate("save")} disabled={busy || pending || !filled}>
+              Download test sheet
+            </button>
+            {canShare && (
+              <button type="button" onClick={() => void calibrate("share")} disabled={busy || pending || !filled}>
+                Share test sheet…
+              </button>
+            )}
+          </div>
           {paper === "letter" && (
             <p className={styles.warning}>
               {layout.marginYMm >= PRINTER_MARGIN_MM
@@ -577,6 +624,11 @@ export default function SheetEditor() {
           <button type="button" className={styles.download} onClick={() => void download()} disabled={busy || pending || !filled || untyped > 0}>
             {busy || pending ? "Working…" : `Download PDF (${filled} card${filled === 1 ? "" : "s"})`}
           </button>
+          {canShare && (
+            <button type="button" className={styles.secondary} onClick={() => void download("share")} disabled={busy || pending || !filled || untyped > 0}>
+              Share PDF…
+            </button>
+          )}
           {untyped > 0 && (
             <p className={styles.warning}>
               Choose a card type (Pokémon or Yu-Gi-Oh) for {untyped} card{untyped === 1 ? "" : "s"} before downloading, so each prints at its real size.
