@@ -271,13 +271,14 @@ test("bad, empty, oversized and too many files are rejected with clear messages"
   await assert.rejects(merge.mergePdfs(many), /at most/);
 });
 
-test("shadow lift: off is identity, white is untouched, darks get lighter with each level", () => {
+test("shadow lift: off is identity, everything from 55% brightness up is untouched, darks get lighter with each level", () => {
   const off = shadow.shadowLut(0);
   for (let v = 0; v < 256; v++) assert.equal(off[v], v);
   let previousBlack = -1, previousDark = -1;
   for (const level of shadow.SHADOW_LEVELS) {
     const lut = shadow.shadowLut(level);
     assert.equal(lut[255], 255, "white stays white");
+    for (let v = Math.ceil(shadow.SHADOW_REACH * 255); v < 256; v++) assert.equal(lut[v], v, "light tones and midtones are exactly unchanged");
     for (let v = 1; v < 256; v++) assert.ok(lut[v] >= lut[v - 1], "monotonic: no tones swap order");
     for (let v = 0; v < 256; v++) assert.ok(lut[v] >= v, "never darker than the input");
     assert.ok(lut[0] >= previousBlack && lut[40] >= previousDark);
@@ -285,7 +286,8 @@ test("shadow lift: off is identity, white is untouched, darks get lighter with e
     previousBlack = lut[0];
     previousDark = lut[40];
   }
-  assert.equal(shadow.shadowLut(5)[0], 20, "level 5 black point is 8% of white");
+  assert.equal(shadow.shadowLut(5)[0], 64, "level 5 black is 25% of white");
+  assert.equal(shadow.shadowLut(5)[128], 128, "midtones are not faded");
   assert.throws(() => shadow.shadowLut(6));
   assert.throws(() => shadow.shadowLut(1.5));
 });
