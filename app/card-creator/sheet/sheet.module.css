@@ -66,3 +66,9 @@
 .pdfList small{font-size:12px;color:rgb(var(--text)/.62);white-space:nowrap}
 .pdfList .slotActions{flex:none}
 @media(max-width:860px){.pdfList li{flex-wrap:wrap}.combiner{padding:18px}}
+.options{border-top:1px solid rgb(var(--border)/.55);margin-top:18px;padding-top:14px}
+.options>summary{cursor:pointer;font-size:14px;font-weight:600;color:rgb(var(--accent));margin-bottom:2px}
+.options>summary small{font-weight:400;color:rgb(var(--text)/.68);font-size:12px;margin-left:6px}
+.options[open]>summary{margin-bottom:14px}
+.radioGroup{border:0;padding:0;margin:0 0 14px;display:flex;flex-direction:column;gap:6px}
+.radioGroup legend{font-size:13px;font-weight:600;padding:0;margin-bottom:6px}

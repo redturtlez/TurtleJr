@@ -18,7 +18,9 @@ export default function PdfCombiner() {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [lift, setLift] = useState<ShadowLevel>(DEFAULT_SHADOW_LEVEL);
+  const [liftOn, setLiftOn] = useState(false);
+  const [level, setLevel] = useState<ShadowLevel>(3);
+  const lift: ShadowLevel = liftOn ? level : DEFAULT_SHADOW_LEVEL;
   const nextId = useRef(1);
   const input = useRef<HTMLInputElement>(null);
   const totalPages = items.reduce((sum, item) => sum + item.pages.length, 0);
@@ -149,16 +151,29 @@ export default function PdfCombiner() {
           ))}
         </ol>
       )}
-      <div className={styles.field}>
-        <label htmlFor="combine-lift">Clear sticker shadow lift</label>
-        <select id="combine-lift" value={lift} onChange={(e) => setLift(Number(e.target.value) as ShadowLevel)} disabled={busy}>
-          {SHADOW_LEVELS.map((value) => (
-            <option key={value} value={value}>
-              {shadowLevelLabel(value)}
-            </option>
-          ))}
-        </select>
-      </div>
+      <fieldset className={styles.radioGroup} disabled={busy}>
+        <legend>Apply clear sticker shadow lift?</legend>
+        <label className={styles.check}>
+          <input type="radio" name="combine-lift-on" checked={!liftOn} onChange={() => setLiftOn(false)} />
+          No (keep the sheets as they are)
+        </label>
+        <label className={styles.check}>
+          <input type="radio" name="combine-lift-on" checked={liftOn} onChange={() => setLiftOn(true)} />
+          Yes, for printing on clear sticker paper
+        </label>
+      </fieldset>
+      {liftOn && (
+        <div className={styles.field}>
+          <label htmlFor="combine-lift">Shadow lift level</label>
+          <select id="combine-lift" value={level} onChange={(e) => setLevel(Number(e.target.value) as ShadowLevel)} disabled={busy}>
+            {SHADOW_LEVELS.filter((value) => value > 0).map((value) => (
+              <option key={value} value={value}>
+                {shadowLevelLabel(value)}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       {lift > 0 && <p className={styles.note}>Lightens only the darkest tones of every JPEG image in the combined file; midtones and bright areas are unchanged. Use PDFs made without a shadow lift; sheets already lifted would be lightened twice. Pages keep their size.</p>}
       <button type="button" className={styles.download} onClick={() => void combine()} disabled={busy || items.length === 0}>
         {busy ? "Working…" : `Combine into one PDF (${totalPages} page${totalPages === 1 ? "" : "s"})`}

@@ -543,69 +543,80 @@ export default function SheetEditor() {
               </li>
             ))}
           </ol>
-          <h2>Page</h2>
-          <div className={styles.field}>
-            <label htmlFor="sheet-bleed">Sheet bleed (Pokémon)</label>
-            <select id="sheet-bleed" value={sheetBleed} onChange={(e) => void changeSheetBleed(Number(e.target.value) as SheetBleed)} disabled={busy}>
-              {SHEET_BLEEDS.map((value) => (
-                <option key={value} value={value}>
-                  {value} mm per edge{value === DEFAULT_SHEET_BLEED ? " (fits 3 rows with a 4 mm printer margin)" : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-          <p className={styles.note}>Yu-Gi-Oh cards always keep 2 mm of bleed; they are small enough to fit in the cell either way.</p>
-          <div className={styles.field}>
-            <label htmlFor="sheet-paper">Paper size</label>
-            <select id="sheet-paper" value={paper} onChange={(e) => setPaper(e.target.value as PaperId)}>
-              {(Object.keys(PAPERS) as PaperId[]).map((id) => (
-                <option key={id} value={id}>
-                  {PAPERS[id].label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <label className={styles.check}>
-            <input type="checkbox" checked={guides} onChange={(e) => setGuides(e.target.checked)} />
-            1 px white cut guides on the grid lines (like a # sign)
-          </label>
-          <label className={styles.check}>
-            <input type="checkbox" checked={marksOn} disabled={!marksAvailable} onChange={(e) => setMarks(e.target.checked)} />
-            Crop marks{marksAvailable ? "" : " (needs more margin; available on A4)"}
-          </label>
-          <h2>Clear sticker stock</h2>
-          <div className={styles.field}>
-            <label htmlFor="sheet-lift">Shadow lift</label>
-            <select id="sheet-lift" value={lift} onChange={(e) => setLift(Number(e.target.value) as ShadowLevel)} disabled={busy}>
-              {SHADOW_LEVELS.map((value) => (
-                <option key={value} value={value}>
-                  {shadowLevelLabel(value)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <p className={styles.note}>Lightens and spreads apart only the dark tones in the downloaded PDF so fine detail does not clog on clear stickers; midtones and bright areas are not changed, so one level suits every card on the sheet. The preview stays unchanged. Use the test sheet to choose a level.</p>
-          <div className={styles.field}>
-            <label htmlFor="sheet-lift-card">Test sheet card</label>
-            <select id="sheet-lift-card" value={slots[calibrationCard] ? calibrationCard : Math.max(0, slots.findIndex(Boolean))} onChange={(e) => setCalibrationCard(Number(e.target.value))} disabled={!filled}>
-              {slots.map((slot, index) => (slot ? <option key={slot.id} value={index}>{`${index + 1}. ${slot.name}`}</option> : null))}
-            </select>
-          </div>
-          <div className={styles.actions}>
-            <button type="button" onClick={() => void calibrate("save")} disabled={busy || pending || !filled}>
-              Download test sheet
-            </button>
-            {canShare && (
-              <button type="button" onClick={() => void calibrate("share")} disabled={busy || pending || !filled}>
-                Share test sheet…
-              </button>
+          <details className={styles.options}>
+            <summary>
+              Page options<small>{paper === "letter" ? "Letter" : "A4"} · {sheetBleed} mm bleed</small>
+            </summary>
+            <div className={styles.field}>
+              <label htmlFor="sheet-bleed">Sheet bleed (Pokémon)</label>
+              <select id="sheet-bleed" value={sheetBleed} onChange={(e) => void changeSheetBleed(Number(e.target.value) as SheetBleed)} disabled={busy}>
+                {SHEET_BLEEDS.map((value) => (
+                  <option key={value} value={value}>
+                    {value} mm per edge{value === DEFAULT_SHEET_BLEED ? " (fits 3 rows with a 4 mm printer margin)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className={styles.note}>Yu-Gi-Oh cards always keep 2 mm of bleed; they are small enough to fit in the cell either way.</p>
+            <div className={styles.field}>
+              <label htmlFor="sheet-paper">Paper size</label>
+              <select id="sheet-paper" value={paper} onChange={(e) => setPaper(e.target.value as PaperId)}>
+                {(Object.keys(PAPERS) as PaperId[]).map((id) => (
+                  <option key={id} value={id}>
+                    {PAPERS[id].label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <label className={styles.check}>
+              <input type="checkbox" checked={guides} onChange={(e) => setGuides(e.target.checked)} />
+              1 px white cut guides on the grid lines (like a # sign)
+            </label>
+            <label className={styles.check}>
+              <input type="checkbox" checked={marksOn} disabled={!marksAvailable} onChange={(e) => setMarks(e.target.checked)} />
+              Crop marks{marksAvailable ? "" : " (needs more margin; available on A4)"}
+            </label>
+            {paper === "letter" && layout.marginYMm >= PRINTER_MARGIN_MM && (
+              <p className={styles.note}>
+                Letter leaves {layout.marginYMm.toFixed(2)} mm above and below the grid, enough for a {PRINTER_MARGIN_MM} mm printer margin. Print at 100% (Actual size) and turn off Fit to page.
+              </p>
             )}
-          </div>
-          {paper === "letter" && (
+          </details>
+          <details className={styles.options}>
+            <summary>
+              Clear sticker printing<small>Shadow lift: {shadowLevelLabel(lift)}</small>
+            </summary>
+            <div className={styles.field}>
+              <label htmlFor="sheet-lift">Shadow lift</label>
+              <select id="sheet-lift" value={lift} onChange={(e) => setLift(Number(e.target.value) as ShadowLevel)} disabled={busy}>
+                {SHADOW_LEVELS.map((value) => (
+                  <option key={value} value={value}>
+                    {shadowLevelLabel(value)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className={styles.note}>Lightens and spreads apart only the dark tones in the downloaded PDF so fine detail does not clog on clear stickers; midtones and bright areas are not changed, so one level suits every card on the sheet. The preview stays unchanged. Use the test sheet to choose a level.</p>
+            <div className={styles.field}>
+              <label htmlFor="sheet-lift-card">Test sheet card</label>
+              <select id="sheet-lift-card" value={slots[calibrationCard] ? calibrationCard : Math.max(0, slots.findIndex(Boolean))} onChange={(e) => setCalibrationCard(Number(e.target.value))} disabled={!filled}>
+                {slots.map((slot, index) => (slot ? <option key={slot.id} value={index}>{`${index + 1}. ${slot.name}`}</option> : null))}
+              </select>
+            </div>
+            <div className={styles.actions}>
+              <button type="button" onClick={() => void calibrate("save")} disabled={busy || pending || !filled}>
+                Download test sheet
+              </button>
+              {canShare && (
+                <button type="button" onClick={() => void calibrate("share")} disabled={busy || pending || !filled}>
+                  Share test sheet…
+                </button>
+              )}
+            </div>
+          </details>
+          {paper === "letter" && layout.marginYMm < PRINTER_MARGIN_MM && (
             <p className={styles.warning}>
-              {layout.marginYMm >= PRINTER_MARGIN_MM
-                ? `Letter leaves ${layout.marginYMm.toFixed(2)} mm above and below the grid, enough for a ${PRINTER_MARGIN_MM} mm printer margin. Print at 100% (Actual size) and turn off Fit to page.`
-                : `Letter leaves only ${layout.marginYMm.toFixed(2)} mm above and below the grid, less than a ${PRINTER_MARGIN_MM} mm printer margin, so the top and bottom rows would be clipped. Choose 1 mm sheet bleed, A4, or paper that is taller than Letter. Always print at 100% (Actual size), never Fit to page.`}
+              {`Letter leaves only ${layout.marginYMm.toFixed(2)} mm above and below the grid, less than a ${PRINTER_MARGIN_MM} mm printer margin, so the top and bottom rows would be clipped. Open Page options and choose 1 mm sheet bleed, or choose A4 or paper that is taller than Letter. Always print at 100% (Actual size), never Fit to page.`}
             </p>
           )}
         </section>
