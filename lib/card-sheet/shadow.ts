@@ -2,8 +2,8 @@ import { PAPERS, type PaperId, type Rect } from "./geometry";
 
 /**
  * "Clear sticker" shadow lift. A laser printer has no white toner, so on clear sticker stock dark tones fill in
- * (dot gain) and fine shadow detail turns into one blotch. The lift brightens only the dark end of the tonal range,
- * so the toner has room to keep dark tones apart: a smooth toe that raises black the most and fades to nothing at
+ * (dot gain) and fine shadow detail turns into one blotch. The lift pushes dark tones apart: black stays black, the
+ * curve is steepest just above it (so near-black tones stop merging with each other) and it eases back to nothing at
  * 55% brightness. Every tone from there up to white comes out exactly as it went in, so one level is safe for any
  * image: a bright photo is unchanged except for its darkest spots. Level 0 is off; level 5 is the strongest. Pure functions, no DOM, so they can be tested directly.
  */
@@ -13,8 +13,8 @@ export const DEFAULT_SHADOW_LEVEL: ShadowLevel = 0;
 const MAX_SHADOW_LEVEL = 5;
 /** Brightness (0 to 1) at and above which the curve is the identity. */
 export const SHADOW_REACH = 0.55;
-/** Black becomes this fraction of white at level 5. Kept at or below SHADOW_REACH / 2 so the curve never reverses tones. */
-const MAX_BLACK_LIFT = 0.25;
+/** Slope added at black at level 5 (the curve starts at slope 1 + this). Below 3 the curve never reverses tones. */
+const MAX_STEEPNESS = 2;
 
 export const isShadowLevel = (value: unknown): value is ShadowLevel => typeof value === "number" && (SHADOW_LEVELS as readonly number[]).includes(value);
 export const shadowLevelLabel = (level: ShadowLevel) => (level === 0 ? "Off" : `Level ${level}`);
@@ -22,11 +22,11 @@ export const shadowLevelLabel = (level: ShadowLevel) => (level === 0 ? "Off" : `
 /** 256-entry lookup applied to each of the red, green and blue values (0 to 255). */
 export function shadowLut(level: ShadowLevel): Uint8Array {
   if (!isShadowLevel(level)) throw new Error("Unsupported shadow lift level.");
-  const lift = MAX_BLACK_LIFT * (level / MAX_SHADOW_LEVEL);
+  const steepness = MAX_STEEPNESS * (level / MAX_SHADOW_LEVEL);
   const lut = new Uint8Array(256);
   for (let value = 0; value < 256; value++) {
     const x = value / 255,
-      toe = x < SHADOW_REACH ? lift * Math.pow(1 - x / SHADOW_REACH, 2) : 0;
+      toe = x < SHADOW_REACH ? steepness * x * Math.pow(1 - x / SHADOW_REACH, 2) : 0;
     lut[value] = value === 255 ? 255 : Math.min(255, Math.round(255 * (x + toe)));
   }
   return lut;

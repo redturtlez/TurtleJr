@@ -583,7 +583,7 @@ export default function SheetEditor() {
               ))}
             </select>
           </div>
-          <p className={styles.note}>Lightens only the darkest tones in the downloaded PDF so fine detail does not clog on clear stickers; midtones and bright areas are not changed, so one level suits every card on the sheet. The preview stays unchanged. Use the test sheet to choose a level.</p>
+          <p className={styles.note}>Lightens and spreads apart only the dark tones in the downloaded PDF so fine detail does not clog on clear stickers; midtones and bright areas are not changed, so one level suits every card on the sheet. The preview stays unchanged. Use the test sheet to choose a level.</p>
           <div className={styles.field}>
             <label htmlFor="sheet-lift-card">Test sheet card</label>
             <select id="sheet-lift-card" value={slots[calibrationCard] ? calibrationCard : Math.max(0, slots.findIndex(Boolean))} onChange={(e) => setCalibrationCard(Number(e.target.value))} disabled={!filled}>

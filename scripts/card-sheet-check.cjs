@@ -281,13 +281,15 @@ test("shadow lift: off is identity, everything from 55% brightness up is untouch
     for (let v = Math.ceil(shadow.SHADOW_REACH * 255); v < 256; v++) assert.equal(lut[v], v, "light tones and midtones are exactly unchanged");
     for (let v = 1; v < 256; v++) assert.ok(lut[v] >= lut[v - 1], "monotonic: no tones swap order");
     for (let v = 0; v < 256; v++) assert.ok(lut[v] >= v, "never darker than the input");
-    assert.ok(lut[0] >= previousBlack && lut[40] >= previousDark);
-    if (level > 0) assert.ok(lut[40] > previousDark && lut[0] > previousBlack, "each level lightens the darks");
+    assert.equal(lut[0], 0, "black stays black");
+    if (level > 0) assert.ok(lut[40] > previousDark, "each level lightens the darks");
+    if (level > 0) assert.ok(lut[20] - lut[10] > 10 && lut[40] - lut[30] > 10, "near-black tones are pushed apart, never squeezed together");
     previousBlack = lut[0];
     previousDark = lut[40];
   }
-  assert.equal(shadow.shadowLut(5)[0], 64, "level 5 black is 25% of white");
-  assert.equal(shadow.shadowLut(5)[128], 128, "midtones are not faded");
+  assert.equal(shadow.shadowLut(5)[0], 0);
+  assert.ok(shadow.shadowLut(5)[40] - shadow.shadowLut(5)[0] > 70, "level 5 spreads the darkest 40 values over more than 70");
+  assert.ok(shadow.shadowLut(5)[128] - 128 <= 3, "midtones are essentially unchanged (at most 3 of 255 at the strongest level)");
   assert.throws(() => shadow.shadowLut(6));
   assert.throws(() => shadow.shadowLut(1.5));
 });
@@ -300,7 +302,8 @@ test("shadow lift changes color channels only, never alpha, and level 0 changes 
   shadow.applyShadowLift(copy, 3);
   assert.equal(copy[3], 77);
   assert.equal(copy[7], 0);
-  assert.ok(Number(copy[0]) > 0 && Number(copy[1]) > 10 && Number(copy[2]) > 20);
+  assert.equal(copy[0], 0, "black stays black");
+  assert.ok(Number(copy[1]) > 10 && Number(copy[2]) > 20);
   assert.deepEqual([...copy.slice(4, 7)], [255, 255, 255]);
 });
 
