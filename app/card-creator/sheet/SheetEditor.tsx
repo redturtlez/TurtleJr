@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { decodeArtwork } from "../../../lib/card-creator/artwork";
 import { cloneCell, cellToJpeg, composeCell, loadYugiohBorder } from "../../../lib/card-sheet/bleed";
-import { CARD_KINDS, CELL_MM, GRID, INPUT_BLEEDS, PAPERS, cropMarkLength, cropMarks, gridGuides, sheetLayout, trimRect, type CardKind, type InputBleed, type PaperId, type PlacedCard, type SheetLayout } from "../../../lib/card-sheet/geometry";
+import { CARD_KINDS, DEFAULT_SHEET_BLEED, GRID, INPUT_BLEEDS, PAPERS, PRINTER_MARGIN_MM, SHEET_BLEEDS, cropMarkLength, cropMarks, gridGuides, sheetLayout, trimRect, type CardKind, type InputBleed, type PaperId, type PlacedCard, type SheetBleed, type SheetLayout } from "../../../lib/card-sheet/geometry";
 import { guessCard } from "../../../lib/card-sheet/detect";
 import { buildPdf, type PdfLines } from "../../../lib/card-sheet/pdf";
 import PdfCombiner from "./PdfCombiner";
@@ -47,8 +47,8 @@ function CellThumb({ cell }: { cell: HTMLCanvasElement }) {
   return <canvas ref={ref} className={styles.thumb} aria-hidden="true" />;
 }
 
-function drawPreview(canvas: HTMLCanvasElement, slots: Slot[], paper: PaperId, guides: boolean, marks: boolean, k: number = PREVIEW_PX_PER_MM) {
-  const layout = sheetLayout(paper);
+function drawPreview(canvas: HTMLCanvasElement, slots: Slot[], paper: PaperId, sheetBleed: SheetBleed, guides: boolean, marks: boolean, k: number = PREVIEW_PX_PER_MM) {
+  const layout = sheetLayout(paper, sheetBleed);
   canvas.width = Math.round(layout.pageWidthMm * k);
   canvas.height = Math.round(layout.pageHeightMm * k);
   const ctx = canvas.getContext("2d");
@@ -60,13 +60,13 @@ function drawPreview(canvas: HTMLCanvasElement, slots: Slot[], paper: PaperId, g
     const slot = slots[cell.index];
     const x = cell.xMm * k,
       y = cell.yMm * k,
-      w = CELL_MM.width * k,
-      h = CELL_MM.height * k;
+      w = layout.cellWidthMm * k,
+      h = layout.cellHeightMm * k;
     if (slot) ctx.drawImage(slot.cell, x, y, w, h);
     else {
       ctx.strokeStyle = "#b8b8b8";
       ctx.setLineDash([2.5 * k, 2 * k]);
-      const outline = trimRect({ cell, kind: "pokemon" });
+      const outline = trimRect(layout, { cell, kind: "pokemon" });
       ctx.strokeRect(outline.xMm * k, outline.yMm * k, outline.widthMm * k, outline.heightMm * k);
       ctx.setLineDash([]);
       ctx.fillStyle = "#9a9a9a";
@@ -101,12 +101,12 @@ function drawPreview(canvas: HTMLCanvasElement, slots: Slot[], paper: PaperId, g
 const MIN_WIDTH = 240,
   MAX_WIDTH = 9000;
 /** Modal full-size view of the sheet, drawn at 300 PPI so it matches the PDF; zoom with the buttons, slider, +/- keys or Ctrl+wheel, drag to pan. */
-function FullPreview({ slots, paper, guides, marks, onClose }: { slots: Slot[]; paper: PaperId; guides: boolean; marks: boolean; onClose: () => void }) {
+function FullPreview({ slots, paper, sheetBleed, guides, marks, onClose }: { slots: Slot[]; paper: PaperId; sheetBleed: SheetBleed; guides: boolean; marks: boolean; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const viewport = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const drag = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
-  const layout = sheetLayout(paper);
+  const layout = sheetLayout(paper, sheetBleed);
   const actualWidth = layout.pageWidthMm * CSS_PX_PER_MM;
   const [width, setWidth] = useState(0);
   const clamp = (value: number) => Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, value));
@@ -124,8 +124,8 @@ function FullPreview({ slots, paper, guides, marks, onClose }: { slots: Slot[]; 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
-    if (canvas.current) drawPreview(canvas.current, slots, paper, guides, marks, FULL_PX_PER_MM);
-  }, [slots, paper, guides, marks]);
+    if (canvas.current) drawPreview(canvas.current, slots, paper, sheetBleed, guides, marks, FULL_PX_PER_MM);
+  }, [slots, paper, sheetBleed, guides, marks]);
   useEffect(() => {
     const box = viewport.current;
     if (!box) return;
@@ -210,6 +210,7 @@ function FullPreview({ slots, paper, guides, marks, onClose }: { slots: Slot[]; 
 export default function SheetEditor() {
   const [slots, setSlots] = useState<Slot[]>(emptySlots);
   const [paper, setPaper] = useState<PaperId>("letter");
+  const [sheetBleed, setSheetBleed] = useState<SheetBleed>(DEFAULT_SHEET_BLEED);
   const [guides, setGuides] = useState(true);
   const [marks, setMarks] = useState(false);
   const [status, setStatus] = useState("Add up to 9 card images to begin.");
@@ -221,7 +222,7 @@ export default function SheetEditor() {
   const replaceTarget = useRef<number | null>(null);
   const addInput = useRef<HTMLInputElement>(null);
   const replaceInput = useRef<HTMLInputElement>(null);
-  const layout = sheetLayout(paper);
+  const layout = sheetLayout(paper, sheetBleed);
   const marksAvailable = cropMarkLength(layout) > 0;
   const marksOn = marks && marksAvailable;
   const filled = slots.filter(Boolean).length;
@@ -229,13 +230,13 @@ export default function SheetEditor() {
   const untyped = slots.filter((slot) => slot && !slot.kind).length;
 
   useEffect(() => {
-    if (preview.current) drawPreview(preview.current, slots, paper, guides, marksOn);
-  }, [slots, paper, guides, marksOn]);
+    if (preview.current) drawPreview(preview.current, slots, paper, sheetBleed, guides, marksOn);
+  }, [slots, paper, sheetBleed, guides, marksOn]);
 
-  async function buildCell(file: File, kind: CardKind, bleed: InputBleed): Promise<HTMLCanvasElement> {
+  async function buildCell(file: File, kind: CardKind, bleed: InputBleed, forSheetBleed: SheetBleed = sheetBleed): Promise<HTMLCanvasElement> {
     const bitmap = await decodeArtwork(file);
     try {
-      return composeCell(bitmap, kind, bleed, kind === "yugioh" ? await loadYugiohBorder().catch(() => undefined) : undefined);
+      return composeCell(bitmap, kind, bleed, forSheetBleed, kind === "yugioh" ? await loadYugiohBorder().catch(() => undefined) : undefined);
     } finally {
       bitmap.close();
     }
@@ -246,7 +247,7 @@ export default function SheetEditor() {
       const guess = guessCard(bitmap.width, bitmap.height);
       const kind = guess ? guess.kind : fallback.kind,
         bleed = guess ? guess.bleed : fallback.bleed;
-      return { id: nextId.current++, name: file.name.slice(0, 80), file, kind, bleed, guessed: Boolean(guess), rev: 0, pending: false, cell: composeCell(bitmap, kind ?? "pokemon", bleed, kind === "yugioh" ? await loadYugiohBorder().catch(() => undefined) : undefined) };
+      return { id: nextId.current++, name: file.name.slice(0, 80), file, kind, bleed, guessed: Boolean(guess), rev: 0, pending: false, cell: composeCell(bitmap, kind ?? "pokemon", bleed, sheetBleed, kind === "yugioh" ? await loadYugiohBorder().catch(() => undefined) : undefined) };
     } finally {
       bitmap.close();
     }
@@ -264,6 +265,26 @@ export default function SheetEditor() {
       setSlots((old) => old.map((value) => (value && value.id === slot.id && value.rev === rev ? { ...value, pending: false } : value)));
       setError(e instanceof Error ? e.message : "The card could not be rebuilt.");
     }
+  }
+  /** Rebuilds every card for a new sheet bleed; a newer change to a card supersedes this rebuild of it. */
+  async function changeSheetBleed(next: SheetBleed) {
+    if (next === sheetBleed) return;
+    setSheetBleed(next);
+    setError("");
+    const targets = slots.flatMap((slot) => (slot ? [slot] : []));
+    setSlots((old) => old.map((value) => (value ? { ...value, rev: value.rev + 1, pending: true } : value)));
+    await Promise.all(
+      targets.map(async (slot) => {
+        const rev = slot.rev + 1;
+        try {
+          const cell = await buildCell(slot.file, slot.kind ?? "pokemon", slot.bleed, next);
+          setSlots((old) => old.map((value) => (value && value.id === slot.id && value.rev === rev ? { ...value, cell, pending: false } : value)));
+        } catch (e) {
+          setSlots((old) => old.map((value) => (value && value.id === slot.id && value.rev === rev ? { ...value, pending: false } : value)));
+          setError(e instanceof Error ? e.message : "A card could not be rebuilt.");
+        }
+      }),
+    );
   }
   async function addFiles(files: FileList | null) {
     if (!files || !files.length) return;
@@ -362,8 +383,8 @@ export default function SheetEditor() {
           pixelHeight: canvas.height,
           xMm: cell.xMm,
           yMm: cell.yMm,
-          widthMm: CELL_MM.width,
-          heightMm: CELL_MM.height,
+          widthMm: layout.cellWidthMm,
+          heightMm: layout.cellHeightMm,
         })),
       );
       const lines: PdfLines[] = [];
@@ -395,7 +416,7 @@ export default function SheetEditor() {
           <p className={styles.eyebrow}>The Card Studio</p>
           <h1>Card Sheet Maker</h1>
           <p>
-            Upload up to 9 card images and download a print-ready 3 × 3 PDF. Cards print at their real size, Pokémon {CARD_KINDS.pokemon.widthMm} × {CARD_KINDS.pokemon.heightMm} mm or Yu-Gi-Oh {CARD_KINDS.yugioh.widthMm} × {CARD_KINDS.yugioh.heightMm} mm, centered in a {CELL_MM.width} × {CELL_MM.height} mm cell; missing bleed is extended. Images never leave your device.
+            Upload up to 9 card images and download a print-ready 3 × 3 PDF. Cards print at their real size, Pokémon {CARD_KINDS.pokemon.widthMm} × {CARD_KINDS.pokemon.heightMm} mm or Yu-Gi-Oh {CARD_KINDS.yugioh.widthMm} × {CARD_KINDS.yugioh.heightMm} mm, centered in a {layout.cellWidthMm} × {layout.cellHeightMm} mm cell; missing bleed is extended. Images never leave your device.
           </p>
         </div>
         <span>No sign-in needed</span>
@@ -434,7 +455,7 @@ export default function SheetEditor() {
               e.target.value = "";
             }}
           />
-          <p className={styles.note}>PNG, JPEG or WebP, up to 10 MB each. After adding images, the type and bleed are detected from the image's proportions where possible. Check them, and choose the type yourself for any card left unset, so each prints at its real size and is never stretched. Bleed is extended up to 2 mm per side where missing. Add the same image to several slots, or use Copy, for duplicates.</p>
+          <p className={styles.note}>PNG, JPEG or WebP, up to 10 MB each. After adding images, the type and bleed are detected from the image's proportions where possible. Check them, and choose the type yourself for any card left unset, so each prints at its real size and is never stretched. Bleed is extended up to the sheet bleed (Pokémon) or 2 mm (Yu-Gi-Oh) per side where missing; extra bleed on a Pokémon image is trimmed to the sheet bleed. Add the same image to several slots, or use Copy, for duplicates.</p>
           <ol className={styles.slots}>
             {slots.map((slot, index) => (
               <li key={slot ? slot.id : `empty-${index}`} className={slot ? styles.slot : `${styles.slot} ${styles.empty}`}>
@@ -504,6 +525,17 @@ export default function SheetEditor() {
           </ol>
           <h2>Page</h2>
           <div className={styles.field}>
+            <label htmlFor="sheet-bleed">Sheet bleed (Pokémon)</label>
+            <select id="sheet-bleed" value={sheetBleed} onChange={(e) => void changeSheetBleed(Number(e.target.value) as SheetBleed)} disabled={busy}>
+              {SHEET_BLEEDS.map((value) => (
+                <option key={value} value={value}>
+                  {value} mm per edge{value === DEFAULT_SHEET_BLEED ? " (fits 3 rows with a 4 mm printer margin)" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+          <p className={styles.note}>Yu-Gi-Oh cards always keep 2 mm of bleed; they are small enough to fit in the cell either way.</p>
+          <div className={styles.field}>
             <label htmlFor="sheet-paper">Paper size</label>
             <select id="sheet-paper" value={paper} onChange={(e) => setPaper(e.target.value as PaperId)}>
               {(Object.keys(PAPERS) as PaperId[]).map((id) => (
@@ -523,7 +555,9 @@ export default function SheetEditor() {
           </label>
           {paper === "letter" && (
             <p className={styles.warning}>
-              Letter leaves only {layout.marginYMm.toFixed(2)} mm above and below the grid. Most printers cannot print that close to the edge, so print at 100% (Actual size) with borderless printing if available, or choose A4. Expect the outer bleed to be clipped, never scaled.
+              {layout.marginYMm >= PRINTER_MARGIN_MM
+                ? `Letter leaves ${layout.marginYMm.toFixed(2)} mm above and below the grid, enough for a ${PRINTER_MARGIN_MM} mm printer margin. Print at 100% (Actual size) and turn off Fit to page.`
+                : `Letter leaves only ${layout.marginYMm.toFixed(2)} mm above and below the grid, less than a ${PRINTER_MARGIN_MM} mm printer margin, so the top and bottom rows would be clipped. Choose 1 mm sheet bleed, A4, or paper that is taller than Letter. Always print at 100% (Actual size), never Fit to page.`}
             </p>
           )}
         </section>
@@ -531,7 +565,7 @@ export default function SheetEditor() {
           <div className={styles.previewHeader}>
             <h2>Preview</h2>
             <span>
-              {PAPERS[paper].label} · cells {CELL_MM.width} × {CELL_MM.height} mm
+              {PAPERS[paper].label} · cells {layout.cellWidthMm} × {layout.cellHeightMm} mm
             </span>
           </div>
           <div className={styles.stage}>
@@ -559,7 +593,7 @@ export default function SheetEditor() {
         </section>
       </div>
       <PdfCombiner />
-      {fullOpen && <FullPreview slots={slots} paper={paper} guides={guides} marks={marksOn} onClose={() => setFullOpen(false)} />}
+      {fullOpen && <FullPreview slots={slots} paper={paper} sheetBleed={sheetBleed} guides={guides} marks={marksOn} onClose={() => setFullOpen(false)} />}
     </div>
   );
 }

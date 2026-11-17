@@ -1,12 +1,19 @@
 /**
- * Print geometry for the 3 x 3 card sheet. Every grid cell is the size of a Pokémon card (63.5 x 88.9 mm) plus a
- * 2 mm bleed on each side, 67.5 x 92.9 mm. Cards always print at their real size, centered in their cell: a smaller
+ * Print geometry for the 3 x 3 card sheet. Every grid cell is the size of a Pokémon card (63 x 88 mm) plus a
+ * 2 mm bleed on each side, 67 x 92 mm. Cards always print at their real size, centered in their cell: a smaller
  * card (Yu-Gi-Oh, 59 x 86 mm) is never enlarged, the rest of the cell is bleed extended from the card's own edge.
  * Pure functions, no DOM, so they can be tested directly.
  */
 export const PPI = 300;
 export const MM_PER_INCH = 25.4;
+/** Bleed on every side of a Yu-Gi-Oh card; always kept, since a Yu-Gi-Oh card is small enough to leave room in any cell. */
 export const BLEED_MM = 2;
+/** Bleed on every side of a Pokémon card, chosen per sheet. 1 mm lets three rows fit inside a printer's 4 mm margins on Letter. */
+export type SheetBleed = 1 | 2;
+export const SHEET_BLEEDS: readonly SheetBleed[] = [1, 2];
+export const DEFAULT_SHEET_BLEED: SheetBleed = 1;
+/** Margin many print shops force on every side of a Letter page. */
+export const PRINTER_MARGIN_MM = 4;
 export const GRID = { columns: 3, rows: 3, max: 9 } as const;
 
 const round3 = (value: number) => Math.round(value * 1000) / 1000;
@@ -15,20 +22,26 @@ export const mmToPt = (mm: number) => (mm * 72) / MM_PER_INCH;
 
 export type CardKind = "pokemon" | "yugioh";
 export const CARD_KINDS: Record<CardKind, { label: string; widthMm: number; heightMm: number }> = {
-  pokemon: { label: "Pokémon (63.5 × 88.9 mm)", widthMm: 63.5, heightMm: 88.9 },
+  pokemon: { label: "Pokémon (63 × 88 mm)", widthMm: 63, heightMm: 88 },
   yugioh: { label: "Yu-Gi-Oh (59 × 86 mm)", widthMm: 59, heightMm: 86 },
 };
 /** Bleed (in millimetres) already present in an uploaded image, on each side of the card. */
 export type InputBleed = 0 | 1 | 2;
 export const INPUT_BLEEDS: readonly InputBleed[] = [0, 1, 2];
 
-export const CELL_MM = {
-  width: round3(CARD_KINDS.pokemon.widthMm + 2 * BLEED_MM),
-  height: round3(CARD_KINDS.pokemon.heightMm + 2 * BLEED_MM),
-} as const;
+/** A grid cell: a Pokémon card plus the sheet's bleed on each side. */
+export function cellMm(sheetBleed: SheetBleed) {
+  if (!SHEET_BLEEDS.includes(sheetBleed)) throw new Error("Unsupported sheet bleed.");
+  return {
+    width: round3(CARD_KINDS.pokemon.widthMm + 2 * sheetBleed),
+    height: round3(CARD_KINDS.pokemon.heightMm + 2 * sheetBleed),
+  };
+}
+/** Bleed a finished card ends up with: the sheet's bleed for Pokémon, always 2 mm for Yu-Gi-Oh. */
+export const finalBleedMm = (kind: CardKind, sheetBleed: SheetBleed): number => (kind === "yugioh" ? BLEED_MM : sheetBleed);
 
 /** Physical size of the uploaded artwork (the card plus whatever bleed it already has) and of the guided area. */
-export function cardFrame(kind: CardKind, inputBleed: InputBleed) {
+export function cardFrame(kind: CardKind, inputBleed: InputBleed, sheetBleed: SheetBleed = DEFAULT_SHEET_BLEED) {
   const card = CARD_KINDS[kind];
   if (!card || !INPUT_BLEEDS.includes(inputBleed)) throw new Error("Unsupported card type or bleed.");
   return {
@@ -36,15 +49,16 @@ export function cardFrame(kind: CardKind, inputBleed: InputBleed) {
     trimHeightMm: card.heightMm,
     sourceWidthMm: round3(card.widthMm + 2 * inputBleed),
     sourceHeightMm: round3(card.heightMm + 2 * inputBleed),
-    /** The 2 mm bleed boundary around the card; the white cut guides run along it. */
-    guideWidthMm: round3(card.widthMm + 2 * BLEED_MM),
-    guideHeightMm: round3(card.heightMm + 2 * BLEED_MM),
+    /** The bleed boundary around the card (the sheet's bleed, or 2 mm for Yu-Gi-Oh); the white cut guides run along it. */
+    guideWidthMm: round3(card.widthMm + 2 * finalBleedMm(kind, sheetBleed)),
+    guideHeightMm: round3(card.heightMm + 2 * finalBleedMm(kind, sheetBleed)),
   };
 }
 
 /** Pixel size of one cell at 300 PPI. */
-export function cellPixels() {
-  return { width: mmToPx(CELL_MM.width), height: mmToPx(CELL_MM.height) };
+export function cellPixels(sheetBleed: SheetBleed) {
+  const cell = cellMm(sheetBleed);
+  return { width: mmToPx(cell.width), height: mmToPx(cell.height) };
 }
 
 export interface SheetCell {
@@ -57,6 +71,9 @@ export interface SheetCell {
 }
 export interface SheetLayout {
   paper: PaperId;
+  sheetBleed: SheetBleed;
+  cellWidthMm: number;
+  cellHeightMm: number;
   pageWidthMm: number;
   pageHeightMm: number;
   gridWidthMm: number;
@@ -73,9 +90,10 @@ export const PAPERS: Record<PaperId, { label: string; widthMm: number; heightMm:
 };
 
 /** Centers the 3 x 3 grid on the page. Cells touch; their bleeds meet between the cards. */
-export function sheetLayout(paper: PaperId): SheetLayout {
+export function sheetLayout(paper: PaperId, sheetBleed: SheetBleed = DEFAULT_SHEET_BLEED): SheetLayout {
   const page = PAPERS[paper];
   if (!page) throw new Error("Unsupported paper size.");
+  const CELL_MM = cellMm(sheetBleed);
   const gridWidthMm = round3(GRID.columns * CELL_MM.width),
     gridHeightMm = round3(GRID.rows * CELL_MM.height),
     marginXMm = round3((page.widthMm - gridWidthMm) / 2),
@@ -87,7 +105,7 @@ export function sheetLayout(paper: PaperId): SheetLayout {
       column = index % GRID.columns;
     cells.push({ index, row, column, xMm: round3(marginXMm + column * CELL_MM.width), yMm: round3(marginYMm + row * CELL_MM.height) });
   }
-  return { paper, pageWidthMm: page.widthMm, pageHeightMm: page.heightMm, gridWidthMm, gridHeightMm, marginXMm, marginYMm, cells };
+  return { paper, sheetBleed, cellWidthMm: CELL_MM.width, cellHeightMm: CELL_MM.height, pageWidthMm: page.widthMm, pageHeightMm: page.heightMm, gridWidthMm, gridHeightMm, marginXMm, marginYMm, cells };
 }
 
 export interface PlacedCard {
@@ -101,11 +119,11 @@ export interface Rect {
   heightMm: number;
 }
 /** A card's cut rectangle: its real size, centered in the cell. */
-export function trimRect(card: PlacedCard): Rect {
+export function trimRect(layout: SheetLayout, card: PlacedCard): Rect {
   const { trimWidthMm, trimHeightMm } = cardFrame(card.kind, 0);
   return {
-    xMm: round3(card.cell.xMm + (CELL_MM.width - trimWidthMm) / 2),
-    yMm: round3(card.cell.yMm + (CELL_MM.height - trimHeightMm) / 2),
+    xMm: round3(card.cell.xMm + (layout.cellWidthMm - trimWidthMm) / 2),
+    yMm: round3(card.cell.yMm + (layout.cellHeightMm - trimHeightMm) / 2),
     widthMm: trimWidthMm,
     heightMm: trimHeightMm,
   };
@@ -127,19 +145,19 @@ export function gridGuides(layout: SheetLayout, cards: PlacedCard[]): Segment[] 
   const filled = (row: number, column: number) => cards.some((card) => card.cell.row === row && card.cell.column === column);
   const segments: Segment[] = [];
   for (let column = 1; column < GRID.columns; column++) {
-    const x = round3(layout.marginXMm + column * CELL_MM.width);
+    const x = round3(layout.marginXMm + column * layout.cellWidthMm);
     for (let row = 0; row < GRID.rows; row++) {
       if (!filled(row, column - 1) && !filled(row, column)) continue;
-      const y1 = round3(layout.marginYMm + row * CELL_MM.height);
-      segments.push({ x1: x, y1, x2: x, y2: round3(y1 + CELL_MM.height) });
+      const y1 = round3(layout.marginYMm + row * layout.cellHeightMm);
+      segments.push({ x1: x, y1, x2: x, y2: round3(y1 + layout.cellHeightMm) });
     }
   }
   for (let row = 1; row < GRID.rows; row++) {
-    const y = round3(layout.marginYMm + row * CELL_MM.height);
+    const y = round3(layout.marginYMm + row * layout.cellHeightMm);
     for (let column = 0; column < GRID.columns; column++) {
       if (!filled(row - 1, column) && !filled(row, column)) continue;
-      const x1 = round3(layout.marginXMm + column * CELL_MM.width);
-      segments.push({ x1, y1: y, x2: round3(x1 + CELL_MM.width), y2: y });
+      const x1 = round3(layout.marginXMm + column * layout.cellWidthMm);
+      segments.push({ x1, y1: y, x2: round3(x1 + layout.cellWidthMm), y2: y });
     }
   }
   return segments;
@@ -176,7 +194,7 @@ export function cropMarks(layout: SheetLayout, cards: PlacedCard[]): Segment[] {
     }
   };
   for (const card of cards) {
-    const trim = trimRect(card),
+    const trim = trimRect(layout, card),
       x1 = trim.xMm,
       x2 = round3(trim.xMm + trim.widthMm),
       y1 = trim.yMm,

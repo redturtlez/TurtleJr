@@ -1,21 +1,37 @@
 import { assets, template } from "../card-creator/model";
-import { cardFrame, cellPixels, mmToPx, type CardKind, type InputBleed } from "./geometry";
+import { cardFrame, cellPixels, finalBleedMm, mmToPx, type CardKind, type InputBleed, type SheetBleed } from "./geometry";
 
 /**
- * Builds one print cell (the full cell: a Pokémon card plus 2 mm bleed, 300 PPI) from an uploaded card image.
+ * Builds one print cell (the full cell: a Pokémon card plus the sheet bleed, 300 PPI) from an uploaded card image.
  * The image is the card plus `inputBleed` mm of bleed on every side, so it is scaled to its real physical size
  * (never stretched) and centered; if its proportions differ slightly from the card it is fitted evenly. Every card
- * ends up with exactly 2 mm of bleed: any missing bleed (0 or 1 mm declared) is extended outward from the card's own
+ * ends up with exactly the sheet bleed (2 mm for Yu-Gi-Oh): any missing bleed (0 or 1 mm declared) is extended outward from the card's own
  * edge pixels and nothing is added to a card that already has 2 mm. A card smaller than the cell (Yu-Gi-Oh) is
  * centered, and the space beyond its 2 mm bleed is left blank. Runs entirely in the browser; nothing is uploaded.
  */
-export function composeCell(source: CanvasImageSource & { width: number; height: number }, kind: CardKind, inputBleed: InputBleed, yugiohBorder?: HTMLCanvasElement): HTMLCanvasElement {
-  const g = cellPixels();
+export function composeCell(source: CanvasImageSource & { width: number; height: number }, kind: CardKind, inputBleed: InputBleed, sheetBleed: SheetBleed, yugiohBorder?: HTMLCanvasElement): HTMLCanvasElement {
+  const g = cellPixels(sheetBleed);
   const sourceWidth = source.width,
     sourceHeight = source.height;
   if (!(sourceWidth > 0 && sourceHeight > 0)) throw new Error("The image has no size.");
 
-  const frame = cardFrame(kind, inputBleed);
+  // An image with more bleed than the cell gives it (a 2 mm Pokémon image on a 1 mm sheet) is cropped evenly to the final bleed first.
+  const excess = inputBleed - finalBleedMm(kind, sheetBleed);
+  if (excess > 0) {
+    const full = cardFrame(kind, inputBleed, sheetBleed),
+      cropX = Math.round((excess / full.sourceWidthMm) * sourceWidth),
+      cropY = Math.round((excess / full.sourceHeightMm) * sourceHeight);
+    if (sourceWidth - 2 * cropX < 2 || sourceHeight - 2 * cropY < 2) throw new Error("The image is too small to crop.");
+    const cropped = document.createElement("canvas");
+    cropped.width = sourceWidth - 2 * cropX;
+    cropped.height = sourceHeight - 2 * cropY;
+    const croppedCtx = cropped.getContext("2d");
+    if (!croppedCtx) throw new Error("Canvas is unavailable in this browser.");
+    croppedCtx.drawImage(source, cropX, cropY, cropped.width, cropped.height, 0, 0, cropped.width, cropped.height);
+    return composeCell(cropped, kind, finalBleedMm(kind, sheetBleed) as InputBleed, sheetBleed, yugiohBorder);
+  }
+
+  const frame = cardFrame(kind, inputBleed, sheetBleed);
   const boxWidth = mmToPx(frame.sourceWidthMm),
     boxHeight = mmToPx(frame.sourceHeightMm);
   const scale = Math.min(boxWidth / sourceWidth, boxHeight / sourceHeight);

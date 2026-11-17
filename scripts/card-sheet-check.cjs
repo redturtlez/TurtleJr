@@ -34,18 +34,38 @@ const merge = load("lib/card-sheet/merge");
 const pk = (cell) => ({ cell, kind: "pokemon" }), yg = (cell) => ({ cell, kind: "yugioh" });
 const near = (a, b, eps = 1e-6) => Math.abs(a - b) < eps;
 
-test("cells are a Pokémon card plus 2 mm bleed on every side", () => {
-  assert.equal(geometry.CELL_MM.width, 67.5);
-  assert.equal(geometry.CELL_MM.height, 92.9);
-  const g = geometry.cellPixels();
-  assert.equal(g.width, 797);
-  assert.equal(g.height, 1097);
+test("cells are a Pokémon card (63 x 88 mm) plus the sheet bleed on every side", () => {
+  assert.equal(geometry.DEFAULT_SHEET_BLEED, 1);
+  assert.deepEqual(geometry.cellMm(1), { width: 65, height: 90 });
+  assert.deepEqual(geometry.cellMm(2), { width: 67, height: 92 });
+  assert.deepEqual(geometry.cellPixels(1), { width: 768, height: 1063 });
+  assert.deepEqual(geometry.cellPixels(2), { width: 791, height: 1087 });
+  assert.throws(() => geometry.cellMm(3));
+});
+
+test("three rows fit Letter inside a 4 mm printer margin at 1 mm sheet bleed, not at 2 mm", () => {
+  const one = geometry.sheetLayout("letter", 1), two = geometry.sheetLayout("letter", 2);
+  assert.equal(one.gridHeightMm, 270);
+  assert.ok(one.marginYMm >= geometry.PRINTER_MARGIN_MM && one.marginXMm >= geometry.PRINTER_MARGIN_MM);
+  assert.equal(two.gridHeightMm, 276);
+  assert.ok(two.marginYMm < geometry.PRINTER_MARGIN_MM);
+  assert.equal(geometry.sheetLayout("letter").sheetBleed, 1, "default");
+});
+
+test("Yu-Gi-Oh keeps 2 mm of bleed on either sheet; Pokémon gets the sheet bleed", () => {
+  for (const bleed of [1, 2]) {
+    const y = geometry.cardFrame("yugioh", 0, bleed), cell = geometry.cellMm(bleed);
+    assert.ok(near(y.guideWidthMm, 63) && near(y.guideHeightMm, 90));
+    assert.ok(y.guideWidthMm <= cell.width && y.guideHeightMm <= cell.height, "fits in the cell");
+    const p = geometry.cardFrame("pokemon", 0, bleed);
+    assert.ok(near(p.guideWidthMm, 63 + 2 * bleed) && near(p.guideHeightMm, 88 + 2 * bleed));
+  }
 });
 
 test("physical size of the artwork depends on card type and the bleed it already has", () => {
   const p0 = geometry.cardFrame("pokemon", 0), p2 = geometry.cardFrame("pokemon", 2);
-  assert.ok(near(p0.sourceWidthMm, 63.5) && near(p0.sourceHeightMm, 88.9));
-  assert.ok(near(p2.sourceWidthMm, 67.5) && near(p2.sourceHeightMm, 92.9), "2 mm Pokémon bleed fills the whole cell");
+  assert.ok(near(p0.sourceWidthMm, 63) && near(p0.sourceHeightMm, 88));
+  assert.ok(near(p2.sourceWidthMm, 67) && near(p2.sourceHeightMm, 92));
   const y0 = geometry.cardFrame("yugioh", 0), y1 = geometry.cardFrame("yugioh", 1);
   assert.ok(near(y0.sourceWidthMm, 59) && near(y0.sourceHeightMm, 86), "Yu-Gi-Oh keeps its real size");
   assert.ok(near(y1.sourceWidthMm, 61) && near(y1.sourceHeightMm, 88));
@@ -56,16 +76,16 @@ test("physical size of the artwork depends on card type and the bleed it already
 
 test("3 x 3 grid is centered, ordered row by row and non-overlapping", () => {
   for (const paper of ["letter", "a4"]) {
-    const layout = geometry.sheetLayout(paper);
+    const layout = geometry.sheetLayout(paper, 2);
     assert.equal(layout.cells.length, 9);
-    assert.equal(layout.gridWidthMm, 202.5);
-    assert.equal(layout.gridHeightMm, 278.7);
+    assert.equal(layout.gridWidthMm, 201);
+    assert.equal(layout.gridHeightMm, 276);
     const first = layout.cells[0], last = layout.cells[8];
     assert.equal(first.xMm, layout.marginXMm);
     assert.equal(first.yMm, layout.marginYMm);
     assert.ok(near(layout.marginXMm * 2 + layout.gridWidthMm, layout.pageWidthMm));
     assert.ok(near(layout.marginYMm * 2 + layout.gridHeightMm, layout.pageHeightMm));
-    assert.ok(near(last.xMm + 67.5, layout.pageWidthMm - layout.marginXMm));
+    assert.ok(near(last.xMm + 67, layout.pageWidthMm - layout.marginXMm));
     layout.cells.forEach((cell, index) => {
       assert.equal(cell.index, index);
       assert.equal(cell.row, Math.floor(index / 3));
@@ -75,33 +95,33 @@ test("3 x 3 grid is centered, ordered row by row and non-overlapping", () => {
 });
 
 test("each card is cut at its real size, centered in its cell", () => {
-  const cell = geometry.sheetLayout("letter").cells[4];
-  const p = geometry.trimRect(pk(cell)), y = geometry.trimRect(yg(cell));
-  assert.ok(near(p.widthMm, 63.5) && near(p.heightMm, 88.9));
+  const layout = geometry.sheetLayout("letter", 2), cell = layout.cells[4];
+  const p = geometry.trimRect(layout, pk(cell)), y = geometry.trimRect(layout, yg(cell));
+  assert.ok(near(p.widthMm, 63) && near(p.heightMm, 88));
   assert.ok(near(p.xMm, cell.xMm + 2) && near(p.yMm, cell.yMm + 2));
   assert.ok(near(y.widthMm, 59) && near(y.heightMm, 86));
   // Centered: equal space on opposite sides.
-  assert.ok(near(y.xMm - cell.xMm, cell.xMm + 67.5 - (y.xMm + y.widthMm)));
-  assert.ok(near(y.yMm - cell.yMm, cell.yMm + 92.9 - (y.yMm + y.heightMm)));
+  assert.ok(near(y.xMm - cell.xMm, cell.xMm + 67 - (y.xMm + y.widthMm)));
+  assert.ok(near(y.yMm - cell.yMm, cell.yMm + 92 - (y.yMm + y.heightMm)));
 });
 
 test("white guides are the # grid lines between cells, never inside a card or on the grid's outer edge", () => {
-  const layout = geometry.sheetLayout("letter");
+  const layout = geometry.sheetLayout("letter", 2);
   const all = geometry.gridGuides(layout, layout.cells.map(pk));
   // 2 vertical lines x 3 rows + 2 horizontal lines x 3 columns.
   assert.equal(all.length, 12);
   const xs = new Set(all.filter((s) => s.x1 === s.x2).map((s) => s.x1)), ys = new Set(all.filter((s) => s.y1 === s.y2).map((s) => s.y1));
-  assert.deepEqual([...xs].sort((a, b) => a - b), [layout.marginXMm + 67.5, layout.marginXMm + 135].map((v) => Math.round(v * 1000) / 1000));
-  assert.deepEqual([...ys].sort((a, b) => a - b), [layout.marginYMm + 92.9, layout.marginYMm + 185.8].map((v) => Math.round(v * 1000) / 1000));
+  assert.deepEqual([...xs].sort((a, b) => a - b), [layout.marginXMm + 67, layout.marginXMm + 134].map((v) => Math.round(v * 1000) / 1000));
+  assert.deepEqual([...ys].sort((a, b) => a - b), [layout.marginYMm + 92, layout.marginYMm + 184].map((v) => Math.round(v * 1000) / 1000));
   for (const s of all) {
-    assert.ok(s.x1 > layout.marginXMm && s.x1 < layout.marginXMm + 202.5 || s.x1 !== s.x2);
-    assert.ok(near(Math.hypot(s.x2 - s.x1, s.y2 - s.y1), s.x1 === s.x2 ? 92.9 : 67.5), "one cell long");
+    assert.ok(s.x1 > layout.marginXMm && s.x1 < layout.marginXMm + 201 || s.x1 !== s.x2);
+    assert.ok(near(Math.hypot(s.x2 - s.x1, s.y2 - s.y1), s.x1 === s.x2 ? 92 : 67), "one cell long");
   }
   // Same lines for a Yu-Gi-Oh card: they stay on the cell boundary, outside the smaller card's trim.
   const yugi = [yg(layout.cells[4])];
   const around = geometry.gridGuides(layout, yugi);
   assert.equal(around.length, 4, "only boundaries next to the filled slot");
-  const trim = geometry.trimRect(yugi[0]);
+  const trim = geometry.trimRect(layout, yugi[0]);
   for (const s of around) {
     if (s.x1 === s.x2) assert.ok(s.x1 < trim.xMm - 2 || s.x1 > trim.xMm + trim.widthMm + 2, "outside 2 mm bleed");
     else assert.ok(s.y1 < trim.yMm - 2 || s.y1 > trim.yMm + trim.heightMm + 2, "outside 2 mm bleed");
@@ -110,11 +130,11 @@ test("white guides are the # grid lines between cells, never inside a card or on
   assert.equal(geometry.gridGuides(layout, [pk(layout.cells[0])]).length, 2, "corner card: one vertical and one horizontal boundary");
 });
 
-test("Letter has no room for crop marks; on A4 they follow each card's own trim lines", () => {
-  const letter = geometry.sheetLayout("letter");
-  assert.equal(geometry.cropMarkLength(letter), 0);
-  assert.equal(geometry.cropMarks(letter, letter.cells.map(pk)).length, 0);
-  const a4 = geometry.sheetLayout("a4");
+test("crop marks are sized to the margin; on A4 they follow each card's own trim lines", () => {
+  const letter = geometry.sheetLayout("letter", 2);
+  assert.ok(near(geometry.cropMarkLength(letter), 1.2));
+  for (const m of geometry.cropMarks(letter, letter.cells.map(pk))) for (const v of [m.y1, m.y2]) assert.ok(v >= 0 && v <= letter.pageHeightMm);
+  const a4 = geometry.sheetLayout("a4", 2);
   const full = geometry.cropMarks(a4, a4.cells.map(pk));
   // 6 vertical + 6 horizontal cut lines, a mark at each end.
   assert.equal(full.length, 24);
@@ -130,7 +150,7 @@ test("Letter has no room for crop marks; on A4 they follow each card's own trim 
   const center = a4.cells[4];
   const lone = geometry.cropMarks(a4, [yg(center)]);
   assert.equal(lone.length, 8);
-  const trim = geometry.trimRect(yg(center));
+  const trim = geometry.trimRect(a4, yg(center));
   assert.ok(lone.some((m) => near(m.x1, trim.xMm) && m.y1 < a4.marginYMm));
   assert.ok(lone.some((m) => near(m.y1, trim.yMm + trim.heightMm) && m.x1 > a4.marginXMm + a4.gridWidthMm));
   // A card with a neighbour between it and an edge gets no mark on that side.
@@ -144,7 +164,7 @@ test("PDF is structurally valid, deterministic and sized to the page", () => {
   const spec = {
     widthMm: layout.pageWidthMm,
     heightMm: layout.pageHeightMm,
-    images: layout.cells.slice(0, 2).map((cell) => ({ jpeg, pixelWidth: 797, pixelHeight: 1097, xMm: cell.xMm, yMm: cell.yMm, widthMm: 67.5, heightMm: 92.9 })),
+    images: layout.cells.slice(0, 2).map((cell) => ({ jpeg, pixelWidth: 791, pixelHeight: 1087, xMm: cell.xMm, yMm: cell.yMm, widthMm: 67, heightMm: 92 })),
     lines: [{ segments: geometry.gridGuides(layout, [pk(layout.cells[0]), pk(layout.cells[1])]), gray: 1, widthPt: 0.24 }],
   };
   const a = buildPdf(spec), b = buildPdf(spec);
@@ -182,7 +202,7 @@ test("type and bleed are guessed from proportions, never from a poor match", () 
   }
   // Common real-world pixel sizes.
   assert.deepEqual(guessCard(421, 614), { kind: "yugioh", bleed: 0 });
-  assert.deepEqual(guessCard(797, 1097), { kind: "pokemon", bleed: 2 });
+  assert.deepEqual(guessCard(791, 1087), { kind: "pokemon", bleed: 2 });
   assert.deepEqual(guessCard(750, 1050), { kind: "pokemon", bleed: 0 });
   // Unrelated shapes are left for the user to choose.
   assert.equal(guessCard(1000, 1000), null);
@@ -198,7 +218,7 @@ function sheetPdf(paper, cards) {
   return buildPdf({
     widthMm: layout.pageWidthMm,
     heightMm: layout.pageHeightMm,
-    images: layout.cells.slice(0, cards).map((cell) => ({ jpeg, pixelWidth: 797, pixelHeight: 1097, xMm: cell.xMm, yMm: cell.yMm, widthMm: 67.5, heightMm: 92.9 })),
+    images: layout.cells.slice(0, cards).map((cell) => ({ jpeg, pixelWidth: 791, pixelHeight: 1087, xMm: cell.xMm, yMm: cell.yMm, widthMm: 67, heightMm: 92 })),
     lines: [],
   });
 }

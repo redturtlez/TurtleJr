@@ -226,7 +226,7 @@ Basic, Stage 1, and Stage 2 Pokémon templates for all eleven selectable types.
 Scarlet & Violet uses its native 745 × 1040 frame sources and dedicated layout
 coordinates. Its attack, weakness, resistance, and retreat symbols use the local
 Scarlet & Violet icon set. Export still scales the composed trim card to the shared
-63.5 × 88.9 mm, 300 PPI output before optional bleed is added.
+63 × 88 mm, 300 PPI output before optional bleed is added.
 
 Only the 33 frames and 11 type icons required by these templates are deployed.
 The complete authorized source mirror remains a local inventory and must not be
@@ -324,24 +324,25 @@ rebuilt rather than copied from pokecardmaker.net because its downloads carry a 
 
 Client-only: up to 9 PNG/JPEG card images (validated by `lib/card-creator/artwork.ts`: 10 MB, 8192 px, 16 MP) are
 placed in a 3 x 3 grid and exported as a single-page PDF (US Letter or A4). Nothing is uploaded. Every image is
-treated as a finished card with no bleed: it is scaled evenly to a Pokémon trim box (63.5 x 88.9 mm), then the bleed
+treated as a finished card with no bleed: it is scaled evenly to a Pokémon trim box (63 x 88 mm), then the bleed
 and any leftover area (e.g. Yu-Gi-Oh's narrower 59 x 86 mm) are filled by extending the card's own edge pixels, giving
-67.5 x 92.9 mm cells at 300 PPI (`lib/card-sheet/bleed.ts`). Cells touch; the grid is centered
+65 x 90 mm cells (1 mm sheet bleed, the default) or 67 x 92 mm cells (2 mm) at 300 PPI (`lib/card-sheet/bleed.ts`). Cells touch; the grid is centered
 (`lib/card-sheet/geometry.ts`). The PDF is written by hand with no dependency (`lib/card-sheet/pdf.ts`): JPEG cells
 (quality 0.95) plus vector 1 px white cut guides on the outer edge of each cell (the edge of the bleed, never the card) and optional crop marks (A4 only; Letter has
-only 0.35 mm above and below the grid). The same image may be used in several slots (Copy or re-upload). Checks:
+4.7 mm above and below the grid at 1 mm sheet bleed and only 1.7 mm at 2 mm). The same image may be used in several slots (Copy or re-upload). Checks:
 `scripts/card-sheet-check.cjs`.
-Limits: images that already contain bleed receive extra bleed; Letter's vertical margin is below most printers'
-printable area, so print at 100% (borderless if available) or use A4.
+Sheet bleed (1 or 2 mm, default 1) applies to Pokémon cards; Yu-Gi-Oh cards always keep 2 mm (they fit in either cell). At 1 mm three rows are 270 mm tall,
+inside Letter's 271.4 mm printable height with a 4 mm printer margin; at 2 mm they are 276 mm and the top and bottom rows are clipped. A Pokémon image with
+more bleed than the sheet bleed is cropped evenly to it. Always print at 100% / Actual size, never Fit to page.
 The "Open full-size preview" dialog draws the sheet at the PDF's 300 PPI; zoom with the buttons, slider, +/-/0 keys or
 Ctrl+wheel, and drag to pan.
 
 ### Card Sheet Maker: card types and input bleed
 
-Each slot has a type (Pokémon 63.5 x 88.9 mm or Yu-Gi-Oh 59 x 86 mm) and the bleed already in the image (0, 1 or 2 mm
+Each slot has a type (Pokémon 63 x 88 mm or Yu-Gi-Oh 59 x 86 mm) and the bleed already in the image (0, 1 or 2 mm
 per side), chosen after upload. Both are guessed from the image's proportions (`lib/card-sheet/detect.ts`: within 0.4% of one of the six shapes, otherwise left unset) and can always be changed; a card with no type blocks the PDF button until you pick one. The image is scaled to its real physical size (card
-plus its own bleed), never stretched, and centered in the 67.5 x 92.9 mm cell. Every card ends with exactly 2 mm of bleed: missing bleed (0 or 1 mm declared) is extended from the
-card's edge pixels, a card already at 2 mm gets nothing added, and a smaller card (Yu-Gi-Oh) is centered with the rest
+plus its own bleed), never stretched, and centered in the cell. Every card ends with exactly the sheet bleed (2 mm for Yu-Gi-Oh): missing bleed is extended from the
+card's edge pixels, a card already at that bleed gets nothing added, extra bleed is cropped, and a smaller card (Yu-Gi-Oh) is centered with the rest
 of the cell left blank. White guides are only the grid lines between cells (a # sign: two vertical, two horizontal), never inside a card or on the grid's outer edge; A4 crop marks follow each card's own trim lines on the grid's outer sides. Originals are
 kept in memory only so a card can be rebuilt when its settings change. Measured at 300 PPI in the browser, card
 frames printed within one pixel of their expected size and were centered within 0.08 mm.

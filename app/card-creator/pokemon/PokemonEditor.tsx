@@ -588,13 +588,13 @@ export default function PokemonEditor() {
             <div className={styles.field}>
               <label htmlFor="pk-bleed">Print bleed</label>
               <select id="pk-bleed" value={bleed} onChange={(e) => setBleed(Number(e.target.value) as PokemonBleed)}>
-                <option value={0}>None — 63.5 × 88.9 mm</option>
+                <option value={0}>None — 63 × 88 mm</option>
                 <option value={1}>1 mm per edge — 65.5 × 90.9 mm</option>
-                <option value={2}>2 mm per edge — 67.5 × 92.9 mm</option>
+                <option value={2}>2 mm per edge — 67 × 92 mm</option>
               </select>
             </div>
             <p className={styles.note}>
-              {geometry.width} × {geometry.height} pixels · 300 PPI. Trim size: 63.5 × 88.9 mm.
+              {geometry.width} × {geometry.height} pixels · 300 PPI. Trim size: 63 × 88 mm.
             </p>
             {bleed > 0 && <p className={styles.note}>Bleed extends only sampled outer-border pixels beneath the unchanged trim card, including its rounded transparent corners.</p>}
           </details>
