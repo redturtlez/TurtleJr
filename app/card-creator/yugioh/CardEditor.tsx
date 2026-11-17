@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { attributes, cardTemplate, defaults, editions, fields, labels, templates, titleColors, type Card, type FieldId, type Issues } from '../../../lib/card-creator/model';
 import { decodeArtwork } from '../../../lib/card-creator/artwork';
 import { loadGraphics, requiredGraphicUrls, type Images } from '../../../lib/card-creator/render';
+import { DEFAULT_SHADOW_LEVEL, SHADOW_LEVELS, shadowLevelLabel, type ShadowLevel } from '../../../lib/card-sheet/shadow';
 import { DIGITAL_CORNER_RADIUS_MM, exportPng, printGeometry, renderPrint, type Bleed, type CornerStyle } from '../../../lib/card-creator/print';
 import { loadBundledCardFonts, type CardFonts } from '../../../lib/card-creator/fonts';
 import styles from '../shared/editor-shared.module.css';
@@ -24,6 +25,7 @@ export default function CardEditor() {
   const [retry, setRetry] = useState(0);
   const [bleed,setBleed]=useState<Bleed>(0);
   const [cornerStyle,setCornerStyle]=useState<CornerStyle>('rounded');
+  const [lift,setLift]=useState<ShadowLevel>(DEFAULT_SHADOW_LEVEL);
   const [advanced,setAdvanced]=useState(false);
   const [fonts,setFonts]=useState<CardFonts>({});
   const [fontStatus,setFontStatus]=useState('Loading bundled card fonts…');
@@ -74,10 +76,10 @@ export default function CardEditor() {
     if(!ready)return;
     setExportBusy(true);setExportStatus('Preparing PNG…');
     try{
-      const blob=await exportPng(card,images,artwork,bleed,fonts,cornerStyle);
+      const blob=await exportPng(card,images,artwork,bleed,fonts,cornerStyle,lift);
       const url=URL.createObjectURL(blob);downloadUrls.current.push(url);
       const link=document.createElement('a');link.href=url;link.download=cornerStyle==='rounded'
-        ? `${card.templateId}-card-300ppi-rounded.png` : `${card.templateId}-card-300ppi-${bleed}mm-bleed.png`;
+        ? `${card.templateId}-card-300ppi-rounded${lift?`-sticker-lift-${lift}`:''}.png` : `${card.templateId}-card-300ppi-${bleed}mm-bleed${lift?`-sticker-lift-${lift}`:''}.png`;
       document.body.appendChild(link);link.click();link.remove();
       window.setTimeout(()=>{URL.revokeObjectURL(url);downloadUrls.current=downloadUrls.current.filter(item=>item!==url);},30000);
       setExportStatus('PNG prepared. Check your browser downloads.');
@@ -240,24 +242,32 @@ export default function CardEditor() {
         </div>
         {failure && <div role="alert" className={styles.error}><p>{failure}</p><button type="button" onClick={()=>setRetry(value=>value+1)}>Retry preview</button></div>}
         <p role="status" className={styles.previewStatus}>{Object.keys(issues).length ? 'Some text does not fit or needs correction. Check the highlighted fields.' : ready ? 'Preview is up to date.' : ''}</p>
-        <div className={styles.field}><label htmlFor="card-export-mode">Download as</label>
-          <select id="card-export-mode" value={cornerStyle==='rounded' ? 'image' : 'print'} onChange={event=>{
-            if(event.target.value==='print'){setCornerStyle('square');setBleed(previous=>previous===0?2:previous);}
-            else{setCornerStyle('rounded');setBleed(0);}
-          }}>
-            <option value="image">Image — rounded corners</option>
-            <option value="print">Print-ready — square corners with bleed</option>
-          </select></div>
-        {cornerStyle==='square'&&<div className={styles.field}><label htmlFor="card-bleed">Print bleed</label>
-          <select id="card-bleed" value={bleed} onChange={event=>setBleed(Number(event.target.value) as Bleed)}>
-            <option value={0}>None — 59 × 86 mm</option><option value={1}>1 mm per edge — 61 × 88 mm</option><option value={2}>2 mm per edge — 63 × 90 mm</option>
-          </select></div>}
-        <button type="button" className={styles.primary} disabled={!ready||!!failure||uploading||fontBusy||exportBusy||Object.keys(issues).length>0} onClick={()=>void download()}>{exportBusy?'Preparing image…':cornerStyle==='rounded'?'Save as image':'Download print-ready PNG'}</button>
+        <button type="button" className={styles.primary} disabled={!ready||!!failure||uploading||fontBusy||exportBusy||Object.keys(issues).length>0} onClick={()=>void download()}>{exportBusy?'Preparing image…':'Download 300 PPI PNG'}</button>
         <p className={styles.note} role="status">{exportStatus}</p>
-        <p className={styles.note}>{geometry.width} × {geometry.height} pixels · 300 PPI. Trim size: 59 × 86 mm.</p>
-        {cornerStyle==='rounded'&&<p className={styles.note}>Transparent {DIGITAL_CORNER_RADIUS_MM} mm corners are intended for screen use. Choose Print-ready for printing.</p>}
-        {bleed>0&&cornerStyle==='square'&&<p className={styles.note}>Bleed repeats the outer border’s edge pixels; it is not original extended artwork and may show streaks. Card contents stay the same size.</p>}
-        {cornerStyle==='square'&&<p className={styles.note}>Print at the stated size without “fit to page.” PNG includes a 300 PPI density hint, but printer software may ignore it.</p>}
+        <details className={styles.optional}>
+          <summary>Export options</summary>
+          <div className={styles.field}><label htmlFor="card-export-mode">Download as</label>
+            <select id="card-export-mode" value={cornerStyle==='rounded' ? 'image' : 'print'} onChange={event=>{
+              if(event.target.value==='print'){setCornerStyle('square');setBleed(previous=>previous===0?2:previous);}
+              else{setCornerStyle('rounded');setBleed(0);}
+            }}>
+              <option value="image">Image — rounded corners</option>
+              <option value="print">Print-ready — square corners with bleed</option>
+            </select></div>
+          <div className={styles.field}><label htmlFor="card-bleed">Print bleed</label>
+            <select id="card-bleed" value={bleed} onChange={event=>{const next=Number(event.target.value) as Bleed;setBleed(next);if(next>0)setCornerStyle('square');}}>
+              <option value={0}>None — 59 × 86 mm</option><option value={1}>1 mm per edge — 61 × 88 mm</option><option value={2}>2 mm per edge — 63 × 90 mm</option>
+            </select></div>
+          <div className={styles.field}><label htmlFor="card-shadow-lift">Clear sticker shadow lift</label>
+            <select id="card-shadow-lift" value={lift} onChange={event=>setLift(Number(event.target.value) as ShadowLevel)}>
+              {SHADOW_LEVELS.map(value=><option key={value} value={value}>{shadowLevelLabel(value)}</option>)}
+            </select></div>
+          {lift>0&&<p className={styles.note}>Lightens and spreads apart only the dark tones in the downloaded PNG so fine detail does not clog when printed on clear sticker paper; midtones and bright areas are not changed. The preview stays unchanged. Use the Card Sheet Maker test sheet to choose a level, and do not apply a lift again in the sheet maker or PDF combiner.</p>}
+          <p className={styles.note}>{geometry.width} × {geometry.height} pixels · 300 PPI. Trim size: 59 × 86 mm.</p>
+          {cornerStyle==='rounded'&&<p className={styles.note}>Transparent {DIGITAL_CORNER_RADIUS_MM} mm corners are intended for screen use. Choose Print-ready for printing.</p>}
+          {bleed>0&&cornerStyle==='square'&&<p className={styles.note}>Bleed repeats the outer border’s edge pixels; it is not original extended artwork and may show streaks. Card contents stay the same size.</p>}
+          {cornerStyle==='square'&&<p className={styles.note}>Print at the stated size without “fit to page.” PNG includes a 300 PPI density hint, but printer software may ignore it.</p>}
+        </details>
         {advanced&&<label className={styles.checkbox}><input type="checkbox" checked={overlay} onChange={event=>setOverlay(event.target.checked)} />Show layout guides (not included in downloads)</label>}
         {advanced&&<details className={styles.optional}><summary>Card fonts</summary>
           <p className={styles.note} role="status">{fontBusy?'Loading fonts…':fontStatus}</p>

@@ -348,6 +348,8 @@ gray squares (dark ones to judge the lift, then light ones that stay unchanged),
 dark detail, then set that level for the sheet download. On browsers with the Web Share API for files (most phones) "Share test sheet…" and "Share PDF…" open the
 share sheet (email, print). The PDF combiner has the same setting: it re-encodes every RGB JPEG in the combined file (JPEG quality 0.95, same pixel size);
 other image types are left unchanged and counted in the status line. Do not lift sheets that were already downloaded with a lift (it would apply twice).
+The Pokémon editor (Export options) and the Yu-Gi-Oh editor (Print-ready mode) have the same "Clear sticker shadow lift" setting, applied to the exported PNG just before encoding
+(`lib/card-sheet/shadow-canvas.ts`); the filename gets a `-sticker-lift-N` suffix and the preview is unchanged. Apply the lift once only: not again in the sheet maker or combiner.
 Tests: `scripts/card-sheet-check.cjs` (tone curve, calibration layout, combiner).
 
 ### Card Sheet Maker: card types and input bleed

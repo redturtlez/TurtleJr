@@ -1,7 +1,8 @@
 import { cellToJpeg } from "./bleed";
 import { PAPERS, PPI, MM_PER_INCH, type PaperId } from "./geometry";
 import { buildPdf } from "./pdf";
-import { CALIBRATION_STEPS, applyShadowLift, calibrationLayout, shadowLevelLabel, shadowLut, type ShadowLevel } from "./shadow";
+import { liftCanvas } from "./shadow-canvas";
+import { CALIBRATION_STEPS, calibrationLayout, shadowLevelLabel, shadowLut, type ShadowLevel } from "./shadow";
 
 /** Browser-only helpers for the clear sticker shadow lift. Everything runs on the device; nothing is uploaded. */
 const pxPerMm = PPI / MM_PER_INCH;
@@ -11,21 +12,6 @@ function context(canvas: HTMLCanvasElement) {
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) throw new Error("Canvas is unavailable in this browser.");
   return ctx;
-}
-
-/** A copy of the canvas with the lift applied; the original is untouched. */
-export function liftCanvas(source: HTMLCanvasElement, level: ShadowLevel): HTMLCanvasElement {
-  const copy = document.createElement("canvas");
-  copy.width = source.width;
-  copy.height = source.height;
-  const ctx = context(copy);
-  ctx.drawImage(source, 0, 0);
-  if (level !== 0) {
-    const pixels = ctx.getImageData(0, 0, copy.width, copy.height);
-    applyShadowLift(pixels.data, level);
-    ctx.putImageData(pixels, 0, 0);
-  }
-  return copy;
 }
 
 /** Re-encodes one JPEG with the lift applied, keeping its pixel size. Used for images inside existing PDFs. */

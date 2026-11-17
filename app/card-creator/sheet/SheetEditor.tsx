@@ -5,7 +5,8 @@ import { cloneCell, cellToJpeg, composeCell, loadYugiohBorder } from "../../../l
 import { CARD_KINDS, DEFAULT_SHEET_BLEED, GRID, INPUT_BLEEDS, PAPERS, PRINTER_MARGIN_MM, SHEET_BLEEDS, cropMarkLength, cropMarks, gridGuides, sheetLayout, trimRect, type CardKind, type InputBleed, type PaperId, type PlacedCard, type SheetBleed, type SheetLayout } from "../../../lib/card-sheet/geometry";
 import { guessCard } from "../../../lib/card-sheet/detect";
 import { DEFAULT_SHADOW_LEVEL, SHADOW_LEVELS, shadowLevelLabel, type ShadowLevel } from "../../../lib/card-sheet/shadow";
-import { buildCalibrationPdf, canSharePdf, liftCanvas, savePdf, sharePdf } from "../../../lib/card-sheet/shadow-image";
+import { buildCalibrationPdf, canSharePdf, savePdf, sharePdf } from "../../../lib/card-sheet/shadow-image";
+import { liftCanvas } from "../../../lib/card-sheet/shadow-canvas";
 import { buildPdf, type PdfLines } from "../../../lib/card-sheet/pdf";
 import PdfCombiner from "./PdfCombiner";
 import styles from "./sheet.module.css";

@@ -19,6 +19,8 @@ import {
   type PokemonCard,
 } from "./model";
 import { pngWithPrintDensity } from "../card-creator/print";
+import type { ShadowLevel } from "../card-sheet/shadow";
+import { liftCanvas } from "../card-sheet/shadow-canvas";
 import { pokemonPrintGeometry, type PokemonBleed } from "./geometry";
 export { pokemonPrintGeometry, type PokemonBleed } from "./geometry";
 
@@ -1836,7 +1838,7 @@ function normalizeBleedEdgeColors(trim: HTMLCanvasElement) {
   ctx.putImageData(imageData, 0, 0);
 }
 
-export async function exportPokemon(card: PokemonCard, art: ImageBitmap | null, bleed: PokemonBleed, evolutionArt: ImageBitmap | null = null) {
+export async function exportPokemon(card: PokemonCard, art: ImageBitmap | null, bleed: PokemonBleed, evolutionArt: ImageBitmap | null = null, shadowLevel: ShadowLevel = 0) {
   const source = document.createElement("canvas");
   await renderPokemon(source, card, art, evolutionArt);
   const g = pokemonPrintGeometry(bleed),
@@ -1866,7 +1868,7 @@ export async function exportPokemon(card: PokemonCard, art: ImageBitmap | null, 
     drawBorderBleed(ctx, cleanTrim, g);
   }
   ctx.drawImage(trim, g.left, g.top);
-  const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((value) => (value ? resolve(value) : reject(new Error("PNG encoding failed."))), "image/png"));
+  const blob = await new Promise<Blob>((resolve, reject) => (shadowLevel ? liftCanvas(canvas, shadowLevel) : canvas).toBlob((value) => (value ? resolve(value) : reject(new Error("PNG encoding failed."))), "image/png"));
   const png = pngWithPrintDensity(new Uint8Array(await blob.arrayBuffer()));
   const bytes = new ArrayBuffer(png.byteLength);
   new Uint8Array(bytes).set(png);

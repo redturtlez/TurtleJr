@@ -28,6 +28,7 @@ import {
   trainerTypeLabels,
   type PokemonCard,
 } from "../../../lib/pokemon-card-creator/model";
+import { DEFAULT_SHADOW_LEVEL, SHADOW_LEVELS, shadowLevelLabel, type ShadowLevel } from "../../../lib/card-sheet/shadow";
 import { exportPokemon, pokemonPrintGeometry, renderPokemon, type PokemonBleed } from "../../../lib/pokemon-card-creator/render";
 import styles from "./pokemon.module.css";
 import shared from "../shared/editor-shared.module.css";
@@ -64,6 +65,7 @@ export default function PokemonEditor() {
   const [art, setArt] = useState<ImageBitmap | null>(null);
   const [evolutionArt, setEvolutionArt] = useState<ImageBitmap | null>(null);
   const [bleed, setBleed] = useState<PokemonBleed>(0);
+  const [lift, setLift] = useState<ShadowLevel>(DEFAULT_SHADOW_LEVEL);
   const [status, setStatus] = useState("Loading card graphics…");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -141,12 +143,12 @@ export default function PokemonEditor() {
   async function download() {
     setBusy(true);
     try {
-      const blob = await exportPokemon(card, art, bleed, evolutionArt);
+      const blob = await exportPokemon(card, art, bleed, evolutionArt, lift);
       if (url.current) URL.revokeObjectURL(url.current);
       url.current = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url.current;
-      a.download = pokemonDownloadFilename(card, bleed);
+      a.download = lift ? pokemonDownloadFilename(card, bleed).replace(/.png$/, `-sticker-lift-${lift}.png`) : pokemonDownloadFilename(card, bleed);
       a.click();
       setStatus("PNG prepared. Check your browser downloads.");
     } catch (e) {
@@ -589,10 +591,21 @@ export default function PokemonEditor() {
               <label htmlFor="pk-bleed">Print bleed</label>
               <select id="pk-bleed" value={bleed} onChange={(e) => setBleed(Number(e.target.value) as PokemonBleed)}>
                 <option value={0}>None — 63 × 88 mm</option>
-                <option value={1}>1 mm per edge — 65.5 × 90.9 mm</option>
+                <option value={1}>1 mm per edge — 65 × 90 mm</option>
                 <option value={2}>2 mm per edge — 67 × 92 mm</option>
               </select>
             </div>
+            <div className={styles.field}>
+              <label htmlFor="pk-lift">Clear sticker shadow lift</label>
+              <select id="pk-lift" value={lift} onChange={(e) => setLift(Number(e.target.value) as ShadowLevel)}>
+                {SHADOW_LEVELS.map((value) => (
+                  <option key={value} value={value}>
+                    {shadowLevelLabel(value)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {lift > 0 && <p className={styles.note}>Lightens and spreads apart only the dark tones in the downloaded PNG so fine detail does not clog when printed on clear sticker paper; midtones and bright areas are not changed. The preview stays unchanged. Use the Card Sheet Maker test sheet to choose a level, and do not apply a lift again in the sheet maker or PDF combiner.</p>}
             <p className={styles.note}>
               {geometry.width} × {geometry.height} pixels · 300 PPI. Trim size: 63 × 88 mm.
             </p>
