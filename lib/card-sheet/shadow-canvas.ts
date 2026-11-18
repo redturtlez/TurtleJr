@@ -15,3 +15,18 @@ export function liftCanvas(source: HTMLCanvasElement, level: ShadowLevel): HTMLC
   }
   return copy;
 }
+
+/** Lifted copy of an artwork bitmap, for exports that lighten only the artwork. Returns the original at level 0. The caller closes the copy. */
+export async function liftBitmap(source: ImageBitmap, level: ShadowLevel): Promise<ImageBitmap> {
+  if (level === 0) return source;
+  const canvas = document.createElement("canvas");
+  canvas.width = source.width;
+  canvas.height = source.height;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) throw new Error("Canvas is unavailable in this browser.");
+  ctx.drawImage(source, 0, 0);
+  const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  applyShadowLift(pixels.data, level);
+  ctx.putImageData(pixels, 0, 0);
+  return createImageBitmap(canvas);
+}

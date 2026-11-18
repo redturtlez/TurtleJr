@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { attributes, cardTemplate, defaults, editions, fields, labels, templates, titleColors, type Card, type FieldId, type Issues } from '../../../lib/card-creator/model';
 import { decodeArtwork } from '../../../lib/card-creator/artwork';
 import { loadGraphics, requiredGraphicUrls, type Images } from '../../../lib/card-creator/render';
-import { DEFAULT_SHADOW_LEVEL, SHADOW_LEVELS, shadowLevelLabel, type ShadowLevel } from '../../../lib/card-sheet/shadow';
+import { DEFAULT_SHADOW_LEVEL, DEFAULT_SHADOW_SCOPE, SHADOW_LEVELS, isShadowScope, shadowLevelLabel, type ShadowLevel, type ShadowScope } from '../../../lib/card-sheet/shadow';
 import { DIGITAL_CORNER_RADIUS_MM, exportPng, printGeometry, renderPrint, type Bleed, type CornerStyle } from '../../../lib/card-creator/print';
 import { loadBundledCardFonts, type CardFonts } from '../../../lib/card-creator/fonts';
 import styles from '../shared/editor-shared.module.css';
@@ -26,6 +26,7 @@ export default function CardEditor() {
   const [bleed,setBleed]=useState<Bleed>(0);
   const [cornerStyle,setCornerStyle]=useState<CornerStyle>('rounded');
   const [lift,setLift]=useState<ShadowLevel>(DEFAULT_SHADOW_LEVEL);
+  const [liftScope,setLiftScope]=useState<ShadowScope>(DEFAULT_SHADOW_SCOPE);
   const [advanced,setAdvanced]=useState(false);
   const [fonts,setFonts]=useState<CardFonts>({});
   const [fontStatus,setFontStatus]=useState('Loading bundled card fonts…');
@@ -76,10 +77,10 @@ export default function CardEditor() {
     if(!ready)return;
     setExportBusy(true);setExportStatus('Preparing PNG…');
     try{
-      const blob=await exportPng(card,images,artwork,bleed,fonts,cornerStyle,lift);
+      const blob=await exportPng(card,images,artwork,bleed,fonts,cornerStyle,lift,liftScope);
       const url=URL.createObjectURL(blob);downloadUrls.current.push(url);
       const link=document.createElement('a');link.href=url;link.download=cornerStyle==='rounded'
-        ? `${card.templateId}-card-300ppi-rounded${lift?`-sticker-lift-${lift}`:''}.png` : `${card.templateId}-card-300ppi-${bleed}mm-bleed${lift?`-sticker-lift-${lift}`:''}.png`;
+        ? `${card.templateId}-card-300ppi-rounded${lift?`-sticker-lift-${lift}${liftScope==='art'?'-art':''}`:''}.png` : `${card.templateId}-card-300ppi-${bleed}mm-bleed${lift?`-sticker-lift-${lift}${liftScope==='art'?'-art':''}`:''}.png`;
       document.body.appendChild(link);link.click();link.remove();
       window.setTimeout(()=>{URL.revokeObjectURL(url);downloadUrls.current=downloadUrls.current.filter(item=>item!==url);},30000);
       setExportStatus('PNG prepared. Check your browser downloads.');
@@ -262,6 +263,10 @@ export default function CardEditor() {
             <select id="card-shadow-lift" value={lift} onChange={event=>setLift(Number(event.target.value) as ShadowLevel)}>
               {SHADOW_LEVELS.map(value=><option key={value} value={value}>{shadowLevelLabel(value)}</option>)}
             </select></div>
+          {lift>0&&<div className={styles.field}><label htmlFor="card-shadow-scope">Apply lift to</label>
+            <select id="card-shadow-scope" value={liftScope} onChange={event=>setLiftScope(isShadowScope(event.target.value)?event.target.value:DEFAULT_SHADOW_SCOPE)}>
+              <option value="art">Artwork only (text and frame unchanged)</option><option value="card">Entire card</option>
+            </select></div>}
           {lift>0&&<p className={styles.note}>Lightens and spreads apart only the dark tones in the downloaded PNG so fine detail does not clog when printed on clear sticker paper; midtones and bright areas are not changed. The preview stays unchanged. Use the Card Sheet Maker test sheet to choose a level, and do not apply a lift again in the sheet maker or PDF combiner.</p>}
           <p className={styles.note}>{geometry.width} × {geometry.height} pixels · 300 PPI. Trim size: 59 × 86 mm.</p>
           {cornerStyle==='rounded'&&<p className={styles.note}>Transparent {DIGITAL_CORNER_RADIUS_MM} mm corners are intended for screen use. Choose Print-ready for printing.</p>}

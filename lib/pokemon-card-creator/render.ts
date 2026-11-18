@@ -19,8 +19,8 @@ import {
   type PokemonCard,
 } from "./model";
 import { pngWithPrintDensity } from "../card-creator/print";
-import type { ShadowLevel } from "../card-sheet/shadow";
-import { liftCanvas } from "../card-sheet/shadow-canvas";
+import type { ShadowLevel, ShadowScope } from "../card-sheet/shadow";
+import { liftBitmap, liftCanvas } from "../card-sheet/shadow-canvas";
 import { pokemonPrintGeometry, type PokemonBleed } from "./geometry";
 export { pokemonPrintGeometry, type PokemonBleed } from "./geometry";
 
@@ -1838,7 +1838,19 @@ function normalizeBleedEdgeColors(trim: HTMLCanvasElement) {
   ctx.putImageData(imageData, 0, 0);
 }
 
-export async function exportPokemon(card: PokemonCard, art: ImageBitmap | null, bleed: PokemonBleed, evolutionArt: ImageBitmap | null = null, shadowLevel: ShadowLevel = 0) {
+export async function exportPokemon(card: PokemonCard, originalArt: ImageBitmap | null, bleed: PokemonBleed, originalEvolutionArt: ImageBitmap | null = null, shadowLevel: ShadowLevel = 0, shadowScope: ShadowScope = "card") {
+  // Art-only lift: lighten the artwork bitmaps before they are drawn, so the frame and text keep their exact colors.
+  const artOnly = shadowLevel > 0 && shadowScope === "art";
+  const art = originalArt && artOnly ? await liftBitmap(originalArt, shadowLevel) : originalArt;
+  const evolutionArt = originalEvolutionArt && artOnly ? await liftBitmap(originalEvolutionArt, shadowLevel) : originalEvolutionArt;
+  try {
+    return await exportLifted(card, art, bleed, evolutionArt, artOnly ? 0 : shadowLevel);
+  } finally {
+    if (art && art !== originalArt) art.close();
+    if (evolutionArt && evolutionArt !== originalEvolutionArt) evolutionArt.close();
+  }
+}
+async function exportLifted(card: PokemonCard, art: ImageBitmap | null, bleed: PokemonBleed, evolutionArt: ImageBitmap | null, shadowLevel: ShadowLevel) {
   const source = document.createElement("canvas");
   await renderPokemon(source, card, art, evolutionArt);
   const g = pokemonPrintGeometry(bleed),

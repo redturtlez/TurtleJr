@@ -597,6 +597,11 @@ export default function SheetEditor() {
               </select>
             </div>
             <p className={styles.note}>Lightens and spreads apart only the dark tones in the downloaded PDF so fine detail does not clog on clear stickers; midtones and bright areas are not changed, so one level suits every card on the sheet. The preview stays unchanged. Use the test sheet to choose a level.</p>
+            {lift > 0 && (
+              <p className={styles.warning} role="note">
+                This lift applies to the entire card, including black text and the frame, which can make text look softer. To lighten only the artwork, export each card from its card creator with Export options → Clear sticker shadow lift → Artwork only, add those cards here, and leave this set to Off.
+              </p>
+            )}
             <div className={styles.field}>
               <label htmlFor="sheet-lift-card">Test sheet card</label>
               <select id="sheet-lift-card" value={slots[calibrationCard] ? calibrationCard : Math.max(0, slots.findIndex(Boolean))} onChange={(e) => setCalibrationCard(Number(e.target.value))} disabled={!filled}>

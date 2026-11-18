@@ -1,8 +1,8 @@
 import { assets, template, type Card, type Issues } from './model';
 import { renderCard, type Images } from './render';
 import type { CardFonts } from './fonts';
-import { liftCanvas } from '../card-sheet/shadow-canvas';
-import type { ShadowLevel } from '../card-sheet/shadow';
+import { liftBitmap, liftCanvas } from '../card-sheet/shadow-canvas';
+import type { ShadowLevel, ShadowScope } from '../card-sheet/shadow';
 export type Bleed = 0 | 1 | 2;
 export type CornerStyle = 'square' | 'rounded';
 export const DIGITAL_CORNER_RADIUS_MM = 1;
@@ -86,12 +86,17 @@ export function pngWithPrintDensity(bytes: Uint8Array): Uint8Array {
   const output=new Uint8Array(parts.reduce((sum,p)=>sum+p.length,0));let position=0;
   for(const p of parts){output.set(p,position);position+=p.length;}return output;
 }
-export async function exportPng(card: Card, images: Images, artwork: ImageBitmap|null, bleed: Bleed, fonts: CardFonts, cornerStyle: CornerStyle='square', shadowLevel: ShadowLevel=0): Promise<Blob> {
+export async function exportPng(card: Card, images: Images, artwork: ImageBitmap|null, bleed: Bleed, fonts: CardFonts, cornerStyle: CornerStyle='square', shadowLevel: ShadowLevel=0, shadowScope: ShadowScope='card'): Promise<Blob> {
   await document.fonts.ready;
   const canvas=document.createElement('canvas');
-  const issues=renderPrint(canvas,card,images,artwork,bleed,false,fonts,cornerStyle);
+  // Art-only lift: lighten the artwork before it is drawn, so the frame and text keep their exact colors.
+  const artOnly=shadowLevel>0&&shadowScope==='art';
+  const art=artwork&&artOnly?await liftBitmap(artwork,shadowLevel):artwork;
+  let issues:Issues;
+  try {issues=renderPrint(canvas,card,images,art,bleed,false,fonts,cornerStyle);}
+  finally {if(art&&art!==artwork)art.close();}
   if(Object.keys(issues).length)throw new Error('Correct the highlighted fields before downloading.');
-  const blob=await new Promise<Blob>((resolve,reject)=>(shadowLevel?liftCanvas(canvas,shadowLevel):canvas).toBlob(value=>value?resolve(value):reject(new Error('PNG encoding failed.')),'image/png'));
+  const blob=await new Promise<Blob>((resolve,reject)=>(shadowLevel&&!artOnly?liftCanvas(canvas,shadowLevel):canvas).toBlob(value=>value?resolve(value):reject(new Error('PNG encoding failed.')),'image/png'));
   const png=pngWithPrintDensity(new Uint8Array(await blob.arrayBuffer()));
   const bytes=new ArrayBuffer(png.byteLength);new Uint8Array(bytes).set(png);
   return new Blob([bytes],{type:'image/png'});

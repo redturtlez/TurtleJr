@@ -354,3 +354,11 @@ test("combining with a shadow lift re-encodes only RGB JPEGs, once each, and lea
   await assert.rejects(merge.mergePdfs([{ name: "a.pdf", bytes: sheet }], { shadowLevel: 3 }), /unavailable/);
   await assert.rejects(merge.mergePdfs([{ name: "a.pdf", bytes: sheet }], { shadowLevel: 9, liftJpeg }), /Unsupported/);
 });
+
+test("shadow scope accepts only entire card or artwork, defaulting to artwork", () => {
+  assert.equal(shadow.DEFAULT_SHADOW_SCOPE, "art");
+  assert.equal(shadow.isShadowScope("art"), true);
+  assert.equal(shadow.isShadowScope("card"), true);
+  assert.equal(shadow.isShadowScope("frame"), false);
+  assert.equal(shadow.isShadowScope(undefined), false);
+});

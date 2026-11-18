@@ -174,7 +174,7 @@ export default function PdfCombiner() {
           </select>
         </div>
       )}
-      {lift > 0 && <p className={styles.note}>Lightens only the darkest tones of every JPEG image in the combined file; midtones and bright areas are unchanged. Use PDFs made without a shadow lift; sheets already lifted would be lightened twice. Pages keep their size.</p>}
+      {lift > 0 && <p className={styles.note}>Lightens only the darkest tones of every JPEG image in the combined file; midtones and bright areas are unchanged. This applies to the entire page, including black text and frames, not just artwork. Use PDFs made without a shadow lift; sheets already lifted would be lightened twice. Pages keep their size.</p>}
       <button type="button" className={styles.download} onClick={() => void combine()} disabled={busy || items.length === 0}>
         {busy ? "Working…" : `Combine into one PDF (${totalPages} page${totalPages === 1 ? "" : "s"})`}
       </button>

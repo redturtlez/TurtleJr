@@ -348,8 +348,12 @@ gray squares (dark ones to judge the lift, then light ones that stay unchanged),
 dark detail, then set that level for the sheet download. On browsers with the Web Share API for files (most phones) "Share test sheet…" and "Share PDF…" open the
 share sheet (email, print). The PDF combiner has the same setting: it re-encodes every RGB JPEG in the combined file (JPEG quality 0.95, same pixel size);
 other image types are left unchanged and counted in the status line. Do not lift sheets that were already downloaded with a lift (it would apply twice).
-The Pokémon editor (Export options) and the Yu-Gi-Oh editor (Print-ready mode) have the same "Clear sticker shadow lift" setting, applied to the exported PNG just before encoding
-(`lib/card-sheet/shadow-canvas.ts`); the filename gets a `-sticker-lift-N` suffix and the preview is unchanged. Apply the lift once only: not again in the sheet maker or combiner.
+The Pokémon and Yu-Gi-Oh editors (Export options) have the same "Clear sticker shadow lift" setting plus an "Apply lift to" choice (default **Artwork only**; or **Entire card**).
+Artwork only lifts the uploaded art bitmap (and Pokémon's evolution-box art) with `liftBitmap` before the card is drawn, so the frame, text and icons keep their exact colors; the whole-card
+choice lifts the finished PNG just before encoding (`lib/card-sheet/shadow-canvas.ts`). Filenames get `-sticker-lift-N` (plus `-art` for artwork only); the preview is unchanged.
+The sheet maker and PDF combiner only receive flattened images, so their lift always applies to the entire card/page and shows a warning saying so; for an artwork-only result, re-export the
+cards from their creators with Artwork only and leave the sheet lift Off. Apply the lift once only: not again in the sheet maker or combiner. The calibration sheet lifts the whole card image,
+so its text looks grayer than an artwork-only print; the levels mean the same for artwork tones.
 Tests: `scripts/card-sheet-check.cjs` (tone curve, calibration layout, combiner).
 
 ### Card Sheet Maker: card types and input bleed

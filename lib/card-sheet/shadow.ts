@@ -16,7 +16,12 @@ export const SHADOW_REACH = 0.55;
 /** Slope added at black at level 5 (the curve starts at slope 1 + this). Below 3 the curve never reverses tones. */
 const MAX_STEEPNESS = 2;
 
-export const isShadowLevel = (value: unknown): value is ShadowLevel => typeof value === "number" && (SHADOW_LEVELS as readonly number[]).includes(value);
+/** What a card export applies the lift to: the whole finished card, or only the artwork (frame and text stay as drawn). */
+export type ShadowScope = "card" | "art";
+export const DEFAULT_SHADOW_SCOPE: ShadowScope = "art";
+export const isShadowScope = (value: unknown): value is ShadowScope => value === "card" || value === "art";
+
+export const isShadowLevel =(value: unknown): value is ShadowLevel => typeof value === "number" && (SHADOW_LEVELS as readonly number[]).includes(value);
 export const shadowLevelLabel = (level: ShadowLevel) => (level === 0 ? "Off" : `Level ${level}`);
 
 /** 256-entry lookup applied to each of the red, green and blue values (0 to 255). */

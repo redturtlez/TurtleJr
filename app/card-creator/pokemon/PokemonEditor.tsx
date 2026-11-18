@@ -28,7 +28,7 @@ import {
   trainerTypeLabels,
   type PokemonCard,
 } from "../../../lib/pokemon-card-creator/model";
-import { DEFAULT_SHADOW_LEVEL, SHADOW_LEVELS, shadowLevelLabel, type ShadowLevel } from "../../../lib/card-sheet/shadow";
+import { DEFAULT_SHADOW_LEVEL, DEFAULT_SHADOW_SCOPE, SHADOW_LEVELS, isShadowScope, shadowLevelLabel, type ShadowLevel, type ShadowScope } from "../../../lib/card-sheet/shadow";
 import { exportPokemon, pokemonPrintGeometry, renderPokemon, type PokemonBleed } from "../../../lib/pokemon-card-creator/render";
 import styles from "./pokemon.module.css";
 import shared from "../shared/editor-shared.module.css";
@@ -66,6 +66,7 @@ export default function PokemonEditor() {
   const [evolutionArt, setEvolutionArt] = useState<ImageBitmap | null>(null);
   const [bleed, setBleed] = useState<PokemonBleed>(0);
   const [lift, setLift] = useState<ShadowLevel>(DEFAULT_SHADOW_LEVEL);
+  const [liftScope, setLiftScope] = useState<ShadowScope>(DEFAULT_SHADOW_SCOPE);
   const [status, setStatus] = useState("Loading card graphics…");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -143,12 +144,12 @@ export default function PokemonEditor() {
   async function download() {
     setBusy(true);
     try {
-      const blob = await exportPokemon(card, art, bleed, evolutionArt, lift);
+      const blob = await exportPokemon(card, art, bleed, evolutionArt, lift, liftScope);
       if (url.current) URL.revokeObjectURL(url.current);
       url.current = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url.current;
-      a.download = lift ? pokemonDownloadFilename(card, bleed).replace(/.png$/, `-sticker-lift-${lift}.png`) : pokemonDownloadFilename(card, bleed);
+      a.download = lift ? pokemonDownloadFilename(card, bleed).replace(/.png$/, `-sticker-lift-${lift}${liftScope === "art" ? "-art" : ""}.png`) : pokemonDownloadFilename(card, bleed);
       a.click();
       setStatus("PNG prepared. Check your browser downloads.");
     } catch (e) {
@@ -605,6 +606,15 @@ export default function PokemonEditor() {
                 ))}
               </select>
             </div>
+            {lift > 0 && (
+              <div className={styles.field}>
+                <label htmlFor="pk-lift-scope">Apply lift to</label>
+                <select id="pk-lift-scope" value={liftScope} onChange={(e) => setLiftScope(isShadowScope(e.target.value) ? e.target.value : DEFAULT_SHADOW_SCOPE)}>
+                  <option value="art">Artwork only (text and frame unchanged)</option>
+                  <option value="card">Entire card</option>
+                </select>
+              </div>
+            )}
             {lift > 0 && <p className={styles.note}>Lightens and spreads apart only the dark tones in the downloaded PNG so fine detail does not clog when printed on clear sticker paper; midtones and bright areas are not changed. The preview stays unchanged. Use the Card Sheet Maker test sheet to choose a level, and do not apply a lift again in the sheet maker or PDF combiner.</p>}
             <p className={styles.note}>
               {geometry.width} × {geometry.height} pixels · 300 PPI. Trim size: 63 × 88 mm.
