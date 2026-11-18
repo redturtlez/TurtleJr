@@ -28,6 +28,8 @@ import {
   trainerTypeLabels,
   type PokemonCard,
 } from "../../../lib/pokemon-card-creator/model";
+import { liftCanvasInPlace } from "../../../lib/card-sheet/shadow-canvas";
+import { useLiftedBitmap } from "../useLiftedBitmap";
 import { DEFAULT_SHADOW_LEVEL, DEFAULT_SHADOW_SCOPE, SHADOW_LEVELS, isShadowScope, shadowLevelLabel, type ShadowLevel, type ShadowScope } from "../../../lib/card-sheet/shadow";
 import { exportPokemon, pokemonPrintGeometry, renderPokemon, type PokemonBleed } from "../../../lib/pokemon-card-creator/render";
 import styles from "./pokemon.module.css";
@@ -67,6 +69,11 @@ export default function PokemonEditor() {
   const [bleed, setBleed] = useState<PokemonBleed>(0);
   const [lift, setLift] = useState<ShadowLevel>(DEFAULT_SHADOW_LEVEL);
   const [liftScope, setLiftScope] = useState<ShadowScope>(DEFAULT_SHADOW_SCOPE);
+  const [liftPreview, setLiftPreview] = useState(true);
+  const previewLift: ShadowLevel = liftPreview ? lift : DEFAULT_SHADOW_LEVEL;
+  // Artwork-only preview: the lifted artwork is drawn under the untouched frame. Whole-card preview lifts the finished canvas.
+  const previewArt = useLiftedBitmap(art, previewLift, liftScope === "art");
+  const previewEvolutionArt = useLiftedBitmap(evolutionArt, previewLift, liftScope === "art");
   const [status, setStatus] = useState("Loading card graphics…");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -89,9 +96,11 @@ export default function PokemonEditor() {
     if (!canvas.current) return;
     let cancelled = false;
     setStatus("Loading card graphics and fonts…");
-    renderPokemon(canvas.current, card, art, evolutionArt)
+    const target = canvas.current;
+    renderPokemon(target, card, previewArt, previewEvolutionArt)
       .then(() => {
         if (!cancelled) {
+          if (previewLift > 0 && liftScope === "card") liftCanvasInPlace(target, previewLift);
           setStatus("Preview is up to date.");
           setError("");
         }
@@ -102,7 +111,7 @@ export default function PokemonEditor() {
     return () => {
       cancelled = true;
     };
-  }, [card, art, evolutionArt]);
+  }, [card, previewArt, previewEvolutionArt, previewLift, liftScope]);
   const set = <K extends keyof PokemonCard>(key: K, value: PokemonCard[K]) => setCard((old) => ({ ...old, [key]: value }));
   async function choose(file?: File) {
     if (!file) return;
@@ -614,6 +623,19 @@ export default function PokemonEditor() {
                   <option value="card">Entire card</option>
                 </select>
               </div>
+            )}
+            {lift > 0 && (
+              <fieldset>
+                <legend>Show the lift in the preview?</legend>
+                <label className={styles.checks}>
+                  <input type="radio" name="pk-lift-preview" checked={!liftPreview} onChange={() => setLiftPreview(false)} />
+                  No (preview shows the normal card)
+                </label>
+                <label className={styles.checks}>
+                  <input type="radio" name="pk-lift-preview" checked={liftPreview} onChange={() => setLiftPreview(true)} />
+                  Yes (preview only; it can look lighter on screen)
+                </label>
+              </fieldset>
             )}
             {lift > 0 && <p className={styles.note}>Lightens and spreads apart only the dark tones in the downloaded PNG so fine detail does not clog when printed on clear sticker paper; midtones and bright areas are not changed. The preview stays unchanged. Use the Card Sheet Maker test sheet to choose a level, and do not apply a lift again in the sheet maker or PDF combiner.</p>}
             <p className={styles.note}>

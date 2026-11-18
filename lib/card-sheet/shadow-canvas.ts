@@ -30,3 +30,13 @@ export async function liftBitmap(source: ImageBitmap, level: ShadowLevel): Promi
   ctx.putImageData(pixels, 0, 0);
   return createImageBitmap(canvas);
 }
+
+/** Applies the lift to a canvas in place. Used by the live preview, which draws onto one long-lived canvas. */
+export function liftCanvasInPlace(canvas: HTMLCanvasElement, level: ShadowLevel): void {
+  if (level === 0) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas is unavailable in this browser.");
+  const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  applyShadowLift(pixels.data, level);
+  ctx.putImageData(pixels, 0, 0);
+}

@@ -8,6 +8,8 @@ import { DEFAULT_SHADOW_LEVEL, DEFAULT_SHADOW_SCOPE, SHADOW_LEVELS, isShadowScop
 import { DIGITAL_CORNER_RADIUS_MM, exportPng, printGeometry, renderPrint, type Bleed, type CornerStyle } from '../../../lib/card-creator/print';
 import { loadBundledCardFonts, type CardFonts } from '../../../lib/card-creator/fonts';
 import styles from '../shared/editor-shared.module.css';
+import { liftCanvasInPlace } from '../../../lib/card-sheet/shadow-canvas';
+import { useLiftedBitmap } from '../useLiftedBitmap';
 import EditorSection from '../shared/EditorSection';
 import PreviewDock from '../shared/PreviewDock';
 import AdvancedToggle, { AdvancedHint } from '../shared/AdvancedToggle';
@@ -27,6 +29,10 @@ export default function CardEditor() {
   const [cornerStyle,setCornerStyle]=useState<CornerStyle>('rounded');
   const [lift,setLift]=useState<ShadowLevel>(DEFAULT_SHADOW_LEVEL);
   const [liftScope,setLiftScope]=useState<ShadowScope>(DEFAULT_SHADOW_SCOPE);
+  const [liftPreview,setLiftPreview]=useState(true);
+  const previewLift:ShadowLevel=liftPreview?lift:DEFAULT_SHADOW_LEVEL;
+  // Artwork-only preview lifts the artwork under the untouched frame; whole-card preview lifts the finished canvas.
+  const previewArtwork=useLiftedBitmap(artwork,previewLift,liftScope==='art');
   const [advanced,setAdvanced]=useState(false);
   const [fonts,setFonts]=useState<CardFonts>({});
   const [fontStatus,setFontStatus]=useState('Loading bundled card fonts…');
@@ -69,9 +75,9 @@ export default function CardEditor() {
   },[]);
   useEffect(() => {
     if (!ready || !canvas.current) return;
-    try { setIssues(renderPrint(canvas.current,card,images,artwork,bleed,overlay,fonts,cornerStyle)); }
+    try { setIssues(renderPrint(canvas.current,card,images,previewArtwork,bleed,overlay,fonts,cornerStyle)); if(previewLift>0&&liftScope==='card')liftCanvasInPlace(canvas.current,previewLift); }
     catch (error: unknown) { setFailure(error instanceof Error ? error.message : 'Preview failed.'); }
-  }, [ready,images,card,artwork,overlay,bleed,fonts,cornerStyle]);
+  }, [ready,images,card,previewArtwork,overlay,bleed,fonts,cornerStyle,previewLift,liftScope]);
 
   async function download() {
     if(!ready)return;
@@ -267,6 +273,9 @@ export default function CardEditor() {
             <select id="card-shadow-scope" value={liftScope} onChange={event=>setLiftScope(isShadowScope(event.target.value)?event.target.value:DEFAULT_SHADOW_SCOPE)}>
               <option value="art">Artwork only (text and frame unchanged)</option><option value="card">Entire card</option>
             </select></div>}
+          {lift>0&&<fieldset><legend>Show the lift in the preview?</legend>
+            <label className={styles.checkbox}><input type="radio" name="card-lift-preview" checked={!liftPreview} onChange={()=>setLiftPreview(false)} />No (preview shows the normal card)</label>
+            <label className={styles.checkbox}><input type="radio" name="card-lift-preview" checked={liftPreview} onChange={()=>setLiftPreview(true)} />Yes (preview only; it can look lighter on screen)</label></fieldset>}
           {lift>0&&<p className={styles.note}>Lightens and spreads apart only the dark tones in the downloaded PNG so fine detail does not clog when printed on clear sticker paper; midtones and bright areas are not changed. The preview stays unchanged. Use the Card Sheet Maker test sheet to choose a level, and do not apply a lift again in the sheet maker or PDF combiner.</p>}
           <p className={styles.note}>{geometry.width} × {geometry.height} pixels · 300 PPI. Trim size: 59 × 86 mm.</p>
           {cornerStyle==='rounded'&&<p className={styles.note}>Transparent {DIGITAL_CORNER_RADIUS_MM} mm corners are intended for screen use. Choose Print-ready for printing.</p>}
