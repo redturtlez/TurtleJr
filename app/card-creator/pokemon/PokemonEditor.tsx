@@ -31,7 +31,7 @@ import {
 import { liftCanvasInPlace } from "../../../lib/card-sheet/shadow-canvas";
 import { useLiftedBitmap } from "../useLiftedBitmap";
 import { DEFAULT_SHADOW_LEVEL, DEFAULT_SHADOW_SCOPE, SHADOW_LEVELS, isShadowScope, shadowLevelLabel, type ShadowLevel, type ShadowScope } from "../../../lib/card-sheet/shadow";
-import { exportPokemon, pokemonPrintGeometry, renderPokemon, type PokemonBleed } from "../../../lib/pokemon-card-creator/render";
+import { exportPokemon, POKEMON_SIZES, pokemonPrintGeometry, renderPokemon, type PokemonBleed, type PokemonSize } from "../../../lib/pokemon-card-creator/render";
 import styles from "./pokemon.module.css";
 import shared from "../shared/editor-shared.module.css";
 import EditorSection from "../shared/EditorSection";
@@ -67,6 +67,7 @@ export default function PokemonEditor() {
   const [art, setArt] = useState<ImageBitmap | null>(null);
   const [evolutionArt, setEvolutionArt] = useState<ImageBitmap | null>(null);
   const [bleed, setBleed] = useState<PokemonBleed>(0);
+  const [size, setSize] = useState<PokemonSize>("standard");
   const [lift, setLift] = useState<ShadowLevel>(DEFAULT_SHADOW_LEVEL);
   const [liftScope, setLiftScope] = useState<ShadowScope>(DEFAULT_SHADOW_SCOPE);
   const [liftPreview, setLiftPreview] = useState(true);
@@ -83,7 +84,8 @@ export default function PokemonEditor() {
   const current = useRef<ImageBitmap | null>(null);
   const evolutionCurrent = useRef<ImageBitmap | null>(null);
   const url = useRef<string | null>(null);
-  const geometry = pokemonPrintGeometry(bleed);
+  const geometry = pokemonPrintGeometry(bleed, size);
+  const sizeMm = POKEMON_SIZES[size];
   useEffect(
     () => () => {
       current.current?.close();
@@ -153,12 +155,12 @@ export default function PokemonEditor() {
   async function download() {
     setBusy(true);
     try {
-      const blob = await exportPokemon(card, art, bleed, evolutionArt, lift, liftScope);
+      const blob = await exportPokemon(card, art, bleed, evolutionArt, lift, liftScope, size);
       if (url.current) URL.revokeObjectURL(url.current);
       url.current = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url.current;
-      a.download = lift ? pokemonDownloadFilename(card, bleed).replace(/.png$/, `-sticker-lift-${lift}${liftScope === "art" ? "-art" : ""}.png`) : pokemonDownloadFilename(card, bleed);
+      a.download = lift ? pokemonDownloadFilename(card, bleed, size).replace(/.png$/, `-sticker-lift-${lift}${liftScope === "art" ? "-art" : ""}.png`) : pokemonDownloadFilename(card, bleed, size);
       a.click();
       setStatus("PNG prepared. Check your browser downloads.");
     } catch (e) {
@@ -593,16 +595,28 @@ export default function PokemonEditor() {
           </div>
           <p role="status" className={styles.previewStatus}>{error || status}</p>
           <button type="button" className={styles.primary} disabled={busy || !!error} onClick={() => void download()}>
-            {busy ? "Working…" : "Download 300 PPI PNG"}
+            {busy ? "Working…" : size === "jumbo" ? "Download 300 PPI jumbo PNG" : "Download 300 PPI PNG"}
           </button>
           <details className={styles.optional}>
             <summary>Export options</summary>
             <div className={styles.field}>
+              <label htmlFor="pk-size">Card size</label>
+              <select id="pk-size" value={size} onChange={(e) => setSize(e.target.value as PokemonSize)}>
+                <option value="standard">Standard — {POKEMON_SIZES.standard.widthMm} × {POKEMON_SIZES.standard.heightMm} mm</option>
+                <option value="jumbo">Jumbo — {POKEMON_SIZES.jumbo.widthMm} × {POKEMON_SIZES.jumbo.heightMm} mm</option>
+              </select>
+            </div>
+            <div className={styles.field}>
               <label htmlFor="pk-bleed">Print bleed</label>
               <select id="pk-bleed" value={bleed} onChange={(e) => setBleed(Number(e.target.value) as PokemonBleed)}>
-                <option value={0}>None — 63 × 88 mm</option>
-                <option value={1}>1 mm per edge — 65 × 90 mm</option>
-                <option value={2}>2 mm per edge — 67 × 92 mm</option>
+                {([0, 1, 2] as const).map((value) => {
+                  const g = pokemonPrintGeometry(value, size);
+                  return (
+                    <option key={value} value={value}>
+                      {value === 0 ? "None" : `${value} mm per edge`} — {g.widthMm} × {g.heightMm} mm
+                    </option>
+                  );
+                })}
               </select>
             </div>
             <div className={styles.field}>
@@ -639,8 +653,13 @@ export default function PokemonEditor() {
             )}
             {lift > 0 && <p className={styles.note}>Lightens and spreads apart only the dark tones in the downloaded PNG so fine detail does not clog when printed on clear sticker paper; midtones and bright areas are not changed. The preview stays unchanged. Use the Card Sheet Maker test sheet to choose a level, and do not apply a lift again in the sheet maker or PDF combiner.</p>}
             <p className={styles.note}>
-              {geometry.width} × {geometry.height} pixels · 300 PPI. Trim size: 63 × 88 mm.
+              {geometry.width} × {geometry.height} pixels · 300 PPI. Trim size: {sizeMm.widthMm} × {sizeMm.heightMm} mm.
             </p>
+            {size === "jumbo" && (
+              <p className={styles.note}>
+                Jumbo draws the text, outlines and your artwork directly at the larger size, so they stay sharp. The card frame and icons are fixed-size graphics and are enlarged about 2.1×, so frame textures and small icons are softer than on a standard card.
+              </p>
+            )}
             {bleed > 0 && <p className={styles.note}>Bleed extends only sampled outer-border pixels beneath the unchanged trim card, including its rounded transparent corners.</p>}
           </details>
           <p className={styles.note}>Includes Pokémon, Trainer, and Energy card families.</p>

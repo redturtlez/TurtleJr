@@ -370,7 +370,7 @@ export const frameSourceSize = (card: PokemonCard) =>
 export const rarityPath = (rarity: PokemonCard["rarity"]) => `/pokemon-card-creator/icons/rarities/${rarity}.png`;
 export const setMarkPath = (card: PokemonCard) =>
   `/pokemon-card-creator/icons/sets/${card.supertype === "pokemon" && card.era === "scarletAndViolet" ? "scarlet-and-violet" : card.supertype === "pokemon" && card.era === "sunAndMoon" ? "sun-and-moon" : card.supertype === "pokemon" && card.era === "xAndYBlackAndWhite" ? "x-and-y-black-white" : card.supertype === "pokemon" && card.era === "ex" ? "ex" : card.supertype === "pokemon" && card.era === "exECard" ? "ex-ecard" : "sword-and-shield"}.png`;
-export function pokemonDownloadFilename(card: PokemonCard, bleed: 0 | 1 | 2) {
+export function pokemonDownloadFilename(card: PokemonCard, bleed: 0 | 1 | 2, size: "standard" | "jumbo" = "standard") {
   const safe = (value: string) =>
     value
       .normalize("NFKD")
@@ -380,5 +380,5 @@ export function pokemonDownloadFilename(card: PokemonCard, bleed: 0 | 1 | 2) {
       .toLowerCase() || "custom";
   const family = card.supertype === "pokemon" ? "pokemon" : card.supertype === "trainer" ? `pokemon-trainer-${card.trainerType}` : `pokemon-energy-${card.energyCardType}`;
   const subject = card.supertype === "energy" && card.energyCardType === "base" ? card.energySymbol : card.name;
-  return `${family}-${safe(subject)}-300ppi-${bleed}mm-bleed.png`;
+  return `${family}-${safe(subject)}${size === "jumbo" ? "-jumbo" : ""}-300ppi-${bleed}mm-bleed.png`;
 }

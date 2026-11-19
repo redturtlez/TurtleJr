@@ -362,3 +362,75 @@ test("shadow scope accepts only entire card or artwork, defaulting to artwork", 
   assert.equal(shadow.isShadowScope("frame"), false);
   assert.equal(shadow.isShadowScope(undefined), false);
 });
+
+test("jumbo cards (133.4 x 187 mm) sit side by side on a landscape page, centered, with touching cells", () => {
+  assert.deepEqual(geometry.cellMm(1, "jumbo"), { width: 135.4, height: 189 });
+  assert.deepEqual(geometry.cellMm(2, "jumbo"), { width: 137.4, height: 191 });
+  assert.deepEqual(geometry.cellPixels(1, "jumbo"), { width: 1599, height: 2232 });
+  assert.deepEqual(geometry.cellMm(1), { width: 65, height: 90 }, "standard cells are unchanged");
+  assert.equal(geometry.modeOfKind("pokemonJumbo"), "jumbo");
+  assert.equal(geometry.modeOfKind("pokemon"), "standard");
+  assert.deepEqual(geometry.gridFor("jumbo"), { columns: 2, rows: 1, max: 2 });
+  for (const paper of ["letter", "a4"]) {
+    const layout = geometry.sheetLayout(paper, 1, "jumbo");
+    assert.equal(layout.mode, "jumbo");
+    assert.ok(layout.pageWidthMm > layout.pageHeightMm, "landscape");
+    assert.equal(layout.pageWidthMm, Math.max(geometry.PAPERS[paper].widthMm, geometry.PAPERS[paper].heightMm));
+    assert.equal(layout.cells.length, 2);
+    assert.equal(layout.cells[0].xMm, layout.marginXMm);
+    assert.ok(near(layout.cells[1].xMm, layout.marginXMm + 135.4));
+    assert.ok(near(layout.cells[0].yMm, layout.marginYMm) && near(layout.cells[1].yMm, layout.marginYMm));
+    assert.ok(near(layout.marginXMm * 2 + layout.gridWidthMm, layout.pageWidthMm), "centered");
+  }
+  const standard = geometry.sheetLayout("letter", 1);
+  assert.equal(standard.mode, "standard");
+  assert.equal(standard.columns * standard.rows, 9);
+  assert.equal(standard.pageWidthMm, 215.9, "standard stays portrait");
+});
+
+test("jumbo bleed is the most that keeps the 4 mm printer margin: 1 mm on Letter, 2 mm on A4", () => {
+  assert.equal(geometry.jumboBleedFor("letter"), 1);
+  assert.equal(geometry.jumboBleedFor("a4"), 2);
+  const letterOne = geometry.sheetLayout("letter", 1, "jumbo"), letterTwo = geometry.sheetLayout("letter", 2, "jumbo");
+  assert.ok(near(letterOne.marginXMm, 4.3) && letterOne.marginXMm >= geometry.PRINTER_MARGIN_MM && letterOne.marginYMm >= geometry.PRINTER_MARGIN_MM);
+  assert.ok(near(letterTwo.marginXMm, 2.3) && letterTwo.marginXMm < geometry.PRINTER_MARGIN_MM, "2 mm would clip on Letter");
+  const a4 = geometry.sheetLayout("a4", 2, "jumbo");
+  assert.ok(near(a4.marginXMm, 11.1) && a4.marginYMm >= geometry.PRINTER_MARGIN_MM);
+});
+
+test("jumbo sheets get one cut guide between the cards and crop marks only where there is room", () => {
+  const a4 = geometry.sheetLayout("a4", 2, "jumbo");
+  const both = [{ cell: a4.cells[0], kind: "pokemonJumbo" }, { cell: a4.cells[1], kind: "pokemonJumbo" }];
+  const guides = geometry.gridGuides(a4, both);
+  assert.equal(guides.length, 1);
+  assert.ok(near(guides[0].x1, a4.marginXMm + 137.4) && near(guides[0].x1, guides[0].x2));
+  assert.ok(geometry.cropMarks(a4, both).length > 0, "A4 has 11 mm of margin");
+  const letterMarks = geometry.cropMarkLength(geometry.sheetLayout("letter", 1, "jumbo"));
+  assert.ok(letterMarks > 0 && letterMarks <= 4.3 - 0.3 - 0.2 + 1e-9, "Letter's 4.3 mm side margin fits a short mark and no more");
+  assert.equal(geometry.gridGuides(a4, [both[0]]).length, 1, "a guide is drawn next to a lone card, never on it");
+  const trim = geometry.trimRect(a4, both[0]);
+  assert.deepEqual([trim.widthMm, trim.heightMm], [133.4, 187]);
+});
+
+test("effective resolution warns when an image has too few pixels for the card's real size", () => {
+  const ppi = (kind, bleed, w, h) => geometry.effectivePpi(kind, bleed, w, h);
+  assert.ok(near(ppi("pokemon", 0, 744, 1039), 299.9, 0.2), "a standard export is ~300 PPI");
+  assert.ok(near(ppi("pokemonJumbo", 0, 1576, 2209), 300, 0.2), "a jumbo export is ~300 PPI");
+  assert.ok(near(ppi("pokemonJumbo", 1, 1599, 2232), 300, 0.2), "bleed is counted: a 1 mm jumbo export is ~300 PPI");
+  const standardAsJumbo = ppi("pokemonJumbo", 0, 744, 1039);
+  assert.ok(standardAsJumbo > 140 && standardAsJumbo < 143, "a standard card enlarged to jumbo is about 141 PPI: " + standardAsJumbo);
+  assert.ok(standardAsJumbo < geometry.LOW_PPI_THRESHOLD);
+  assert.ok(ppi("pokemon", 0, 744, 1039) >= geometry.LOW_PPI_THRESHOLD, "regular exports are not flagged");
+  assert.ok(ppi("yugioh", 0, 697, 1016) >= geometry.LOW_PPI_THRESHOLD);
+  assert.ok(ppi("yugioh", 0, 421, 614) < geometry.LOW_PPI_THRESHOLD, "a small image is flagged");
+  assert.equal(ppi("pokemon", 0, 0, 100), 0);
+  assert.equal(geometry.RECOMMENDED_PPI, 300);
+});
+
+test("jumbo cards are never guessed from proportions unless asked for, because they look like regular cards", () => {
+  assert.notEqual(guessCard(1576, 2209)?.kind, "pokemonJumbo");
+  assert.deepEqual(guessCard(1576, 2209, ["pokemonJumbo"]), { kind: "pokemonJumbo", bleed: 0 });
+  assert.deepEqual(guessCard(1599, 2232, ["pokemonJumbo"]), { kind: "pokemonJumbo", bleed: 1 });
+  assert.equal(guessCard(1000, 1000, ["pokemonJumbo"]), null);
+  assert.deepEqual(guessCard(744, 1039), { kind: "pokemon", bleed: 0 }, "regular cards behave as before");
+});

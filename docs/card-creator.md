@@ -225,8 +225,11 @@ Basic, Stage 1, and Stage 2 Pokémon templates for all eleven selectable types.
 
 Scarlet & Violet uses its native 745 × 1040 frame sources and dedicated layout
 coordinates. Its attack, weakness, resistance, and retreat symbols use the local
-Scarlet & Violet icon set. Export still scales the composed trim card to the shared
-63 × 88 mm, 300 PPI output before optional bleed is added.
+Scarlet & Violet icon set. Export fits the composed card to the shared trim of
+744 × 1039 px (62.99 × 87.97 mm at 300 PPI, matching a measured real card) before optional bleed is added.
+It does this by copying whole pixels, never resampling (`trimFit` in `lib/pokemon-card-creator/geometry.ts`): a 745 × 1040 render loses its
+last column and row, and a 747 × 1038 render (the other eras) is cropped evenly in width with its one missing row repeating the bottom edge.
+Cards exported before this change were resampled by about 0.1 to 0.4% and are unchanged.
 
 Only the 33 frames and 11 type icons required by these templates are deployed.
 The complete authorized source mirror remains a local inventory and must not be
@@ -334,6 +337,28 @@ and any leftover area (e.g. Yu-Gi-Oh's narrower 59 x 86 mm) are filled by extend
 Sheet bleed (1 or 2 mm, default 1) applies to Pokémon cards; Yu-Gi-Oh cards always keep 2 mm (they fit in either cell). At 1 mm three rows are 270 mm tall,
 inside Letter's 271.4 mm printable height with a 4 mm printer margin; at 2 mm they are 276 mm and the top and bottom rows are clipped. A Pokémon image with
 more bleed than the sheet bleed is cropped evenly to it. Always print at 100% / Actual size, never Fit to page.
+
+### Card Sheet Maker: jumbo layout
+
+A "Sheet layout" radio (inside Page options, so the standard sheet stays the focus) switches from the 3 x 3 standard sheet to a 1 x 2 jumbo sheet: two jumbo Pokémon cards of 133.4 x 187 mm (physical size measured on a real card)
+side by side on one landscape page (`SheetMode`, `gridFor`, `CARD_KINDS.pokemonJumbo` in `lib/card-sheet/geometry.ts`). Jumbo cards cannot stack (2 x 187 mm is taller than Letter or A4),
+so the page is landscape and the cards stay portrait. The bleed is automatic (`jumboBleedFor`): the most of 2 or 1 mm that keeps the 4 mm printer margin on every side.
+On US Letter that is 1 mm (135.4 x 189 mm cells, 4.3 mm side margins; 2 mm would leave 2.3 mm and clip); on A4 it is 2 mm (137.4 x 191 mm cells, 11.1 mm side margins).
+Each layout keeps its own cards when you switch (rebuilt for the current bleed); jumbo cards are always the jumbo kind, and their type and bleed are never guessed from
+proportions alone because they look almost identical to regular cards (only the bleed is guessed). Files are named `card-sheet-jumbo-<paper>.pdf`. 133.4 mm is 1576 px and 187 mm is 2209 px at 300 PPI.
+
+Resolution warning: every card shows its effective PPI at its real size (`effectivePpi` in `lib/card-sheet/geometry.ts`: image pixels over the card plus its own bleed, lower of the two directions).
+Below 270 PPI (`LOW_PPI_THRESHOLD`) the card gets a "Low resolution" note and the sheet a summary line; downloading is still allowed. A standard 744 x 1039 card placed as a jumbo card is about 140 PPI.
+Regular exports are about 300 PPI and are not flagged.
+
+### Pokémon creator: jumbo export
+
+Export options → Card size → Jumbo exports the card at 133.4 x 187 mm (1576 x 2209 px at 300 PPI; 1599 x 2232 with 1 mm and 1623 x 2256 with 2 mm bleed, matching the jumbo sheet cells exactly;
+`POKEMON_SIZES` and `pokemonPrintGeometry(bleed, size)` in `lib/pokemon-card-creator/geometry.ts`). Files are named `...-jumbo-300ppi-<n>mm-bleed.png`.
+Unlike the standard export (which crops the 745 x 1040 render to 744 x 1039), the jumbo export draws the card directly at the larger size: `renderPokemon(..., output)` scales the drawing evenly
+to cover the output (the under-1% overflow is cropped evenly), so text, outlines, shapes and uploaded artwork are drawn sharply at 300 PPI. The frame and icon bitmaps are fixed 745 x 1040 / 747 x 1038 assets and are enlarged
+about 2.1x, so frame textures and small icons are softer than on a standard card; higher-resolution frame assets would be needed to fix that. The copyright-band repairs read and write device pixels, so they convert their rectangles with the
+drawing transform (`deviceRect`; with no transform they behave exactly as before). The preview and the standard export are unchanged.
 The "Open full-size preview" dialog draws the sheet at the PDF's 300 PPI; zoom with the buttons, slider, +/-/0 keys or
 Ctrl+wheel, and drag to pan.
 

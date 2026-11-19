@@ -15,28 +15,44 @@ export const DEFAULT_SHEET_BLEED: SheetBleed = 1;
 /** Margin many print shops force on every side of a Letter page. */
 export const PRINTER_MARGIN_MM = 4;
 export const GRID = { columns: 3, rows: 3, max: 9 } as const;
+/** "standard" is the 3 x 3 sheet of regular cards; "jumbo" is two oversized Pokémon cards side by side on a landscape page. */
+export type SheetMode = "standard" | "jumbo";
+export const SHEET_MODES: readonly SheetMode[] = ["standard", "jumbo"];
+export interface GridSize {
+  columns: number;
+  rows: number;
+  max: number;
+}
+const JUMBO_GRID: GridSize = { columns: 2, rows: 1, max: 2 };
+export const gridFor = (mode: SheetMode): GridSize => (mode === "jumbo" ? JUMBO_GRID : GRID);
 
 const round3 = (value: number) => Math.round(value * 1000) / 1000;
 export const mmToPx = (mm: number) => Math.round((mm * PPI) / MM_PER_INCH);
 export const mmToPt = (mm: number) => (mm * 72) / MM_PER_INCH;
 
-export type CardKind = "pokemon" | "yugioh";
+export type CardKind = "pokemon" | "yugioh" | "pokemonJumbo";
 export const CARD_KINDS: Record<CardKind, { label: string; widthMm: number; heightMm: number }> = {
   pokemon: { label: "Pokémon (63 × 88 mm)", widthMm: 63, heightMm: 88 },
   yugioh: { label: "Yu-Gi-Oh (59 × 86 mm)", widthMm: 59, heightMm: 86 },
+  pokemonJumbo: { label: "Jumbo Pokémon (133.4 × 187 mm)", widthMm: 133.4, heightMm: 187 },
 };
+/** The card kinds that can be chosen for each sheet mode. */
+export const KINDS_BY_MODE: Record<SheetMode, readonly CardKind[]> = { standard: ["pokemon", "yugioh"], jumbo: ["pokemonJumbo"] };
 /** Bleed (in millimetres) already present in an uploaded image, on each side of the card. */
 export type InputBleed = 0 | 1 | 2;
 export const INPUT_BLEEDS: readonly InputBleed[] = [0, 1, 2];
 
 /** A grid cell: a Pokémon card plus the sheet's bleed on each side. */
-export function cellMm(sheetBleed: SheetBleed) {
+export function cellMm(sheetBleed: SheetBleed, mode: SheetMode = "standard") {
   if (!SHEET_BLEEDS.includes(sheetBleed)) throw new Error("Unsupported sheet bleed.");
+  const card = mode === "jumbo" ? CARD_KINDS.pokemonJumbo : CARD_KINDS.pokemon;
   return {
-    width: round3(CARD_KINDS.pokemon.widthMm + 2 * sheetBleed),
-    height: round3(CARD_KINDS.pokemon.heightMm + 2 * sheetBleed),
+    width: round3(card.widthMm + 2 * sheetBleed),
+    height: round3(card.heightMm + 2 * sheetBleed),
   };
 }
+/** The sheet mode a card kind belongs to, which decides the size of its cell. */
+export const modeOfKind = (kind: CardKind): SheetMode => (kind === "pokemonJumbo" ? "jumbo" : "standard");
 /** Bleed a finished card ends up with: the sheet's bleed for Pokémon, always 2 mm for Yu-Gi-Oh. */
 export const finalBleedMm = (kind: CardKind, sheetBleed: SheetBleed): number => (kind === "yugioh" ? BLEED_MM : sheetBleed);
 
@@ -55,9 +71,22 @@ export function cardFrame(kind: CardKind, inputBleed: InputBleed, sheetBleed: Sh
   };
 }
 
+/** Sharpness the sheet is built for, and the effective resolution below which an image is flagged as likely to look soft. */
+export const RECOMMENDED_PPI = PPI;
+export const LOW_PPI_THRESHOLD = 270;
+/**
+ * Pixels per inch an uploaded image has when printed at its real size, counting the bleed it already contains; the lower
+ * of its two directions. A card exported at its own size is about 300; a regular card image placed as a jumbo card is about 140.
+ */
+export function effectivePpi(kind: CardKind, inputBleed: InputBleed, pixelWidth: number, pixelHeight: number): number {
+  if (!(pixelWidth > 0 && pixelHeight > 0)) return 0;
+  const frame = cardFrame(kind, inputBleed);
+  return Math.min(pixelWidth / (frame.sourceWidthMm / MM_PER_INCH), pixelHeight / (frame.sourceHeightMm / MM_PER_INCH));
+}
+
 /** Pixel size of one cell at 300 PPI. */
-export function cellPixels(sheetBleed: SheetBleed) {
-  const cell = cellMm(sheetBleed);
+export function cellPixels(sheetBleed: SheetBleed, mode: SheetMode = "standard") {
+  const cell = cellMm(sheetBleed, mode);
   return { width: mmToPx(cell.width), height: mmToPx(cell.height) };
 }
 
@@ -71,6 +100,9 @@ export interface SheetCell {
 }
 export interface SheetLayout {
   paper: PaperId;
+  mode: SheetMode;
+  columns: number;
+  rows: number;
   sheetBleed: SheetBleed;
   cellWidthMm: number;
   cellHeightMm: number;
@@ -89,23 +121,45 @@ export const PAPERS: Record<PaperId, { label: string; widthMm: number; heightMm:
   a4: { label: "A4 (210 × 297 mm)", widthMm: 210, heightMm: 297 },
 };
 
-/** Centers the 3 x 3 grid on the page. Cells touch; their bleeds meet between the cards. */
-export function sheetLayout(paper: PaperId, sheetBleed: SheetBleed = DEFAULT_SHEET_BLEED): SheetLayout {
+/**
+ * Centers the grid on the page: 3 x 3 on the portrait page for standard cards, or 2 x 1 on the landscape page for
+ * jumbo cards (the jumbo cards are too tall to stack on either paper). Cells touch; their bleeds meet between the cards.
+ */
+export function sheetLayout(paper: PaperId, sheetBleed: SheetBleed = DEFAULT_SHEET_BLEED, mode: SheetMode = "standard"): SheetLayout {
   const page = PAPERS[paper];
   if (!page) throw new Error("Unsupported paper size.");
-  const CELL_MM = cellMm(sheetBleed);
-  const gridWidthMm = round3(GRID.columns * CELL_MM.width),
-    gridHeightMm = round3(GRID.rows * CELL_MM.height),
-    marginXMm = round3((page.widthMm - gridWidthMm) / 2),
-    marginYMm = round3((page.heightMm - gridHeightMm) / 2);
+  const grid = gridFor(mode),
+    pageWidthMm = mode === "jumbo" ? Math.max(page.widthMm, page.heightMm) : page.widthMm,
+    pageHeightMm = mode === "jumbo" ? Math.min(page.widthMm, page.heightMm) : page.heightMm;
+  const CELL_MM = cellMm(sheetBleed, mode);
+  const gridWidthMm = round3(grid.columns * CELL_MM.width),
+    gridHeightMm = round3(grid.rows * CELL_MM.height),
+    marginXMm = round3((pageWidthMm - gridWidthMm) / 2),
+    marginYMm = round3((pageHeightMm - gridHeightMm) / 2);
   if (marginXMm < 0 || marginYMm < 0) throw new Error("The card grid does not fit on this paper size.");
   const cells: SheetCell[] = [];
-  for (let index = 0; index < GRID.max; index++) {
-    const row = Math.floor(index / GRID.columns),
-      column = index % GRID.columns;
+  for (let index = 0; index < grid.max; index++) {
+    const row = Math.floor(index / grid.columns),
+      column = index % grid.columns;
     cells.push({ index, row, column, xMm: round3(marginXMm + column * CELL_MM.width), yMm: round3(marginYMm + row * CELL_MM.height) });
   }
-  return { paper, sheetBleed, cellWidthMm: CELL_MM.width, cellHeightMm: CELL_MM.height, pageWidthMm: page.widthMm, pageHeightMm: page.heightMm, gridWidthMm, gridHeightMm, marginXMm, marginYMm, cells };
+  return { paper, mode, columns: grid.columns, rows: grid.rows, sheetBleed, cellWidthMm: CELL_MM.width, cellHeightMm: CELL_MM.height, pageWidthMm, pageHeightMm, gridWidthMm, gridHeightMm, marginXMm, marginYMm, cells };
+}
+
+/**
+ * The most bleed (2 mm, else 1 mm) that lets both jumbo cards fit on the paper with the printer's 4 mm margin on every
+ * side, or null when even 1 mm does not fit. US Letter allows 1 mm (2 mm would leave 2.3 mm at the sides); A4 allows 2 mm.
+ */
+export function jumboBleedFor(paper: PaperId): SheetBleed | null {
+  for (const bleed of [...SHEET_BLEEDS].sort((a, b) => b - a)) {
+    try {
+      const layout = sheetLayout(paper, bleed, "jumbo");
+      if (layout.marginXMm >= PRINTER_MARGIN_MM && layout.marginYMm >= PRINTER_MARGIN_MM) return bleed;
+    } catch {
+      // does not fit at all at this bleed; try the next smaller one
+    }
+  }
+  return null;
 }
 
 export interface PlacedCard {
@@ -144,17 +198,17 @@ export interface Segment {
 export function gridGuides(layout: SheetLayout, cards: PlacedCard[]): Segment[] {
   const filled = (row: number, column: number) => cards.some((card) => card.cell.row === row && card.cell.column === column);
   const segments: Segment[] = [];
-  for (let column = 1; column < GRID.columns; column++) {
+  for (let column = 1; column < layout.columns; column++) {
     const x = round3(layout.marginXMm + column * layout.cellWidthMm);
-    for (let row = 0; row < GRID.rows; row++) {
+    for (let row = 0; row < layout.rows; row++) {
       if (!filled(row, column - 1) && !filled(row, column)) continue;
       const y1 = round3(layout.marginYMm + row * layout.cellHeightMm);
       segments.push({ x1: x, y1, x2: x, y2: round3(y1 + layout.cellHeightMm) });
     }
   }
-  for (let row = 1; row < GRID.rows; row++) {
+  for (let row = 1; row < layout.rows; row++) {
     const y = round3(layout.marginYMm + row * layout.cellHeightMm);
-    for (let column = 0; column < GRID.columns; column++) {
+    for (let column = 0; column < layout.columns; column++) {
       if (!filled(row - 1, column) && !filled(row, column)) continue;
       const x1 = round3(layout.marginXMm + column * layout.cellWidthMm);
       segments.push({ x1, y1: y, x2: round3(x1 + layout.cellWidthMm), y2: y });
@@ -205,9 +259,9 @@ export function cropMarks(layout: SheetLayout, cards: PlacedCard[]): Segment[] {
       blockedLeft = false,
       blockedRight = false;
     for (let r = 0; r < row; r++) blockedAbove ||= at(r, column);
-    for (let r = row + 1; r < GRID.rows; r++) blockedBelow ||= at(r, column);
+    for (let r = row + 1; r < layout.rows; r++) blockedBelow ||= at(r, column);
     for (let c = 0; c < column; c++) blockedLeft ||= at(row, c);
-    for (let c = column + 1; c < GRID.columns; c++) blockedRight ||= at(row, c);
+    for (let c = column + 1; c < layout.columns; c++) blockedRight ||= at(row, c);
     if (!blockedAbove)
       for (const x of [x1, x2]) add({ x1: x, y1: gridTop - MARK_GAP_MM, x2: x, y2: gridTop - MARK_GAP_MM - length });
     if (!blockedBelow)

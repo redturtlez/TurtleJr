@@ -21,8 +21,8 @@ import {
 import { pngWithPrintDensity } from "../card-creator/print";
 import type { ShadowLevel, ShadowScope } from "../card-sheet/shadow";
 import { liftBitmap, liftCanvas } from "../card-sheet/shadow-canvas";
-import { pokemonPrintGeometry, type PokemonBleed } from "./geometry";
-export { pokemonPrintGeometry, type PokemonBleed } from "./geometry";
+import { pokemonPrintGeometry, trimFit, type PokemonBleed, type PokemonSize } from "./geometry";
+export { pokemonPrintGeometry, POKEMON_SIZES, type PokemonBleed, type PokemonSize } from "./geometry";
 
 const cache = new Map<string, Promise<HTMLImageElement>>();
 const fontSpecs = [
@@ -203,12 +203,23 @@ function copyrightRecipe(card: PokemonCard): CopyrightRecipe {
       ? { x: 180, y: 1012, width: 390, height: 21, baseline: 1028, fontSize: 13, textX: 372.5, textAlign: "center", maxWidth: 610 }
       : { x: 180, y: 1012, width: 388, height: 15, baseline: 1024, fontSize: 12, textX: 373.5, textAlign: "center", maxWidth: 610 };
 }
+/**
+ * Pixel-level repairs read and write device pixels and ignore the drawing transform. When the card is rendered
+ * larger than its 745 x 1040 design size (the jumbo export), a rectangle given in design coordinates is converted to
+ * the matching device pixels here. With no transform (the preview and standard export) this returns the numbers it was given.
+ */
+function deviceRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number) {
+  const t = ctx.getTransform(),
+    dx = Math.round(t.a * x + t.e),
+    dy = Math.round(t.d * y + t.f);
+  return { x: dx, y: dy, width: Math.max(1, Math.round(t.a * (x + width) + t.e) - dx), height: Math.max(1, Math.round(t.d * (y + height) + t.f) - dy), scale: t.a };
+}
 function repairCopyrightBand(ctx: CanvasRenderingContext2D, recipe: CopyrightRecipe) {
-  const { x, y, width, height } = recipe;
+  const { x, y, width, height, scale } = deviceRect(ctx, recipe.x, recipe.y, recipe.width, recipe.height);
   const original = ctx.getImageData(x, y, width, height);
   const top = ctx.getImageData(x, y - 1, width, 1).data;
   const bottom = ctx.getImageData(x, y + height, width, 1).data;
-  const edgeFade = 10;
+  const edgeFade = 10 * scale;
   for (let row = 0; row < height; row++) {
     const vertical = (row + 1) / (height + 1);
     for (let column = 0; column < width; column++) {
@@ -223,10 +234,11 @@ function repairCopyrightBand(ctx: CanvasRenderingContext2D, recipe: CopyrightRec
   ctx.putImageData(original, x, y);
 }
 function repairCopyrightFromSide(ctx: CanvasRenderingContext2D, recipe: CopyrightRecipe, sourceX: number) {
-  const { x, y, width, height } = recipe;
+  const { x, y, width, height, scale } = deviceRect(ctx, recipe.x, recipe.y, recipe.width, recipe.height);
+  const deviceSourceX = deviceRect(ctx, sourceX, recipe.y, 1, 1).x;
   const original = ctx.getImageData(x, y, width, height);
-  const source = ctx.getImageData(sourceX, y, width, height).data;
-  const edgeFade = 14;
+  const source = ctx.getImageData(deviceSourceX, y, width, height).data;
+  const edgeFade = 14 * scale;
   for (let row = 0; row < height; row++) {
     for (let column = 0; column < width; column++) {
       const pixel = (row * width + column) * 4;
@@ -238,7 +250,7 @@ function repairCopyrightFromSide(ctx: CanvasRenderingContext2D, recipe: Copyrigh
   ctx.putImageData(original, x, y);
 }
 function repairCopyrightHorizontally(ctx: CanvasRenderingContext2D, recipe: CopyrightRecipe) {
-  const { x, y, width, height } = recipe,
+  const { x, y, width, height } = deviceRect(ctx, recipe.x, recipe.y, recipe.width, recipe.height),
     repaired = ctx.getImageData(x, y, width, height),
     left = ctx.getImageData(x - 1, y, 1, height).data,
     right = ctx.getImageData(x + width, y, 1, height).data;
@@ -1240,16 +1252,30 @@ async function renderSwordShieldVstar(ctx: CanvasRenderingContext2D, card: Pokem
   for (let index = 0; index < Math.min(5, card.retreat); index++) drawIcon(ctx, await image(typeIconPath(card.retreatType, card.era)), 540 + index * 28, 895, 25);
   await drawSwordShieldCollector(ctx, card, "#111", fullArt, 962);
 }
-export async function renderPokemon(canvas: HTMLCanvasElement, card: PokemonCard, art: ImageBitmap | null, evolutionArt: ImageBitmap | null = null) {
+/**
+ * Draws the card. Everything is laid out in the frame's own design size (745 x 1040 or 747 x 1038). With `output`, the
+ * canvas is that many pixels instead and the whole drawing is scaled up evenly to cover it (the overflow of well under
+ * 1% is cropped evenly from the sides), so text, outlines and uploaded artwork are drawn sharply at the larger size
+ * instead of enlarging a finished small image. The frame and icon bitmaps are fixed-size assets and are enlarged.
+ */
+export async function renderPokemon(canvas: HTMLCanvasElement, card: PokemonCard, art: ImageBitmap | null, evolutionArt: ImageBitmap | null = null, output?: { width: number; height: number }) {
   await Promise.all([preloadFonts(), preload(card)]);
   const size = frameSourceSize(card),
     width = size.width,
     height = size.height;
-  canvas.width = width;
-  canvas.height = height;
+  if (output && !(Number.isInteger(output.width) && Number.isInteger(output.height) && output.width > 0 && output.height > 0 && output.width * output.height <= 40_000_000)) throw new Error("Unsupported output size.");
+  canvas.width = output ? output.width : width;
+  canvas.height = output ? output.height : height;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas is unavailable.");
-  ctx.clearRect(0, 0, width, height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (output) {
+    const scale = Math.max(output.width / width, output.height / height);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.translate((output.width - width * scale) / 2, (output.height - height * scale) / 2);
+    ctx.scale(scale, scale);
+  }
   const fullArt =
     (card.supertype === "pokemon" && (card.stage === "v" || card.stage === "vmax" || (card.stage === "vstar" && card.vstarStyle === "fullArt") || isExStage(card.stage) || (supportsFullArt(card) && card.illustrationStyle === "fullArt") || (isGxStage(card.stage) && card.gxStyle === "fullArt"))) ||
     isFullArtNonPokemon(card);
@@ -1838,30 +1864,45 @@ function normalizeBleedEdgeColors(trim: HTMLCanvasElement) {
   ctx.putImageData(imageData, 0, 0);
 }
 
-export async function exportPokemon(card: PokemonCard, originalArt: ImageBitmap | null, bleed: PokemonBleed, originalEvolutionArt: ImageBitmap | null = null, shadowLevel: ShadowLevel = 0, shadowScope: ShadowScope = "card") {
+export async function exportPokemon(card: PokemonCard, originalArt: ImageBitmap | null, bleed: PokemonBleed, originalEvolutionArt: ImageBitmap | null = null, shadowLevel: ShadowLevel = 0, shadowScope: ShadowScope = "card", size: PokemonSize = "standard") {
   // Art-only lift: lighten the artwork bitmaps before they are drawn, so the frame and text keep their exact colors.
   const artOnly = shadowLevel > 0 && shadowScope === "art";
   const art = originalArt && artOnly ? await liftBitmap(originalArt, shadowLevel) : originalArt;
   const evolutionArt = originalEvolutionArt && artOnly ? await liftBitmap(originalEvolutionArt, shadowLevel) : originalEvolutionArt;
   try {
-    return await exportLifted(card, art, bleed, evolutionArt, artOnly ? 0 : shadowLevel);
+    return await exportLifted(card, art, bleed, evolutionArt, artOnly ? 0 : shadowLevel, size);
   } finally {
     if (art && art !== originalArt) art.close();
     if (evolutionArt && evolutionArt !== originalEvolutionArt) evolutionArt.close();
   }
 }
-async function exportLifted(card: PokemonCard, art: ImageBitmap | null, bleed: PokemonBleed, evolutionArt: ImageBitmap | null, shadowLevel: ShadowLevel) {
-  const source = document.createElement("canvas");
-  await renderPokemon(source, card, art, evolutionArt);
-  const g = pokemonPrintGeometry(bleed),
+/** Copies a rendered card onto the exact trim canvas pixel for pixel (see `trimFit`), never resampling it. */
+function copyToTrim(source: HTMLCanvasElement, trim: HTMLCanvasElement) {
+  const ctx = trim.getContext("2d");
+  if (!ctx) throw new Error("Canvas unavailable.");
+  const fit = trimFit(source.width, source.height, trim.width, trim.height);
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, trim.width, trim.height);
+  ctx.drawImage(source, fit.sx, fit.sy, fit.width, fit.height, fit.dx, fit.dy, fit.width, fit.height);
+  const right = trim.width - fit.dx - fit.width,
+    bottom = trim.height - fit.dy - fit.height;
+  // A missing column or row (a frame one pixel short of the trim) repeats its neighbouring edge pixels.
+  if (fit.dx > 0) ctx.drawImage(trim, fit.dx, 0, 1, trim.height, 0, 0, fit.dx, trim.height);
+  if (right > 0) ctx.drawImage(trim, fit.dx + fit.width - 1, 0, 1, trim.height, fit.dx + fit.width, 0, right, trim.height);
+  if (fit.dy > 0) ctx.drawImage(trim, 0, fit.dy, trim.width, 1, 0, 0, trim.width, fit.dy);
+  if (bottom > 0) ctx.drawImage(trim, 0, fit.dy + fit.height - 1, trim.width, 1, 0, fit.dy + fit.height, trim.width, bottom);
+}
+async function exportLifted(card: PokemonCard, art: ImageBitmap | null, bleed: PokemonBleed, evolutionArt: ImageBitmap | null, shadowLevel: ShadowLevel, size: PokemonSize) {
+  const g = pokemonPrintGeometry(bleed, size),
+    // Jumbo is drawn directly at its own pixel size (so text and artwork are sharp); standard keeps the design size and is cropped to the trim.
+    output = size === "jumbo" ? { width: g.trimWidth, height: g.trimHeight } : undefined,
+    source = document.createElement("canvas"),
     trim = document.createElement("canvas"),
     canvas = document.createElement("canvas");
+  await renderPokemon(source, card, art, evolutionArt, output);
   trim.width = g.trimWidth;
   trim.height = g.trimHeight;
-  const trimCtx = trim.getContext("2d");
-  if (!trimCtx) throw new Error("Canvas unavailable.");
-  trimCtx.imageSmoothingQuality = "high";
-  trimCtx.drawImage(source, 0, 0, g.trimWidth, g.trimHeight);
+  copyToTrim(source, trim);
   canvas.width = g.width;
   canvas.height = g.height;
   const ctx = canvas.getContext("2d");
@@ -1870,13 +1911,10 @@ async function exportLifted(card: PokemonCard, art: ImageBitmap | null, bleed: P
     normalizeBleedEdgeColors(trim);
     const bleedSource = document.createElement("canvas"),
       cleanTrim = document.createElement("canvas");
-    await renderPokemon(bleedSource, { ...card, copyrightText: "" }, art, evolutionArt);
+    await renderPokemon(bleedSource, { ...card, copyrightText: "" }, art, evolutionArt, output);
     cleanTrim.width = g.trimWidth;
     cleanTrim.height = g.trimHeight;
-    const cleanCtx = cleanTrim.getContext("2d");
-    if (!cleanCtx) throw new Error("Canvas unavailable.");
-    cleanCtx.imageSmoothingQuality = "high";
-    cleanCtx.drawImage(bleedSource, 0, 0, g.trimWidth, g.trimHeight);
+    copyToTrim(bleedSource, cleanTrim);
     drawBorderBleed(ctx, cleanTrim, g);
   }
   ctx.drawImage(trim, g.left, g.top);

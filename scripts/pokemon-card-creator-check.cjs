@@ -28,7 +28,7 @@ function load(name) {
   return loadedModule.exports;
 }
 const model = load("lib/pokemon-card-creator/model");
-const { pokemonPrintGeometry } = load("lib/pokemon-card-creator/geometry");
+const { pokemonPrintGeometry, trimFit } = load("lib/pokemon-card-creator/geometry");
 function publicFile(url) {
   return path.join(root, "public", ...url.split("/").filter(Boolean));
 }
@@ -52,19 +52,56 @@ function imageSize(file) {
 }
 test("Pokémon print geometry preserves trim size at every bleed setting", () => {
   for (const [bleed, width, height] of [
-    [0, 750, 1050],
-    [1, 774, 1074],
-    [2, 797, 1097],
+    [0, 744, 1039],
+    [1, 768, 1063],
+    [2, 791, 1087],
   ]) {
     const g = pokemonPrintGeometry(bleed);
     assert.equal(g.width, width);
     assert.equal(g.height, height);
-    assert.equal(g.trimWidth, 750);
-    assert.equal(g.trimHeight, 1050);
+    assert.equal(g.trimWidth, 744, "62.99 mm at 300 PPI, as measured on a real card");
+    assert.equal(g.trimHeight, 1039, "87.97 mm at 300 PPI, as measured on a real card");
     assert.ok(Math.abs(g.width - g.trimWidth - g.left * 2) <= 1);
     assert.ok(Math.abs(g.height - g.trimHeight - g.top * 2) <= 1);
   }
   assert.throws(() => pokemonPrintGeometry(3));
+});
+test("jumbo export geometry is 133.4 x 187 mm at 300 PPI, matching the jumbo sheet cells", () => {
+  const { pokemonPrintGeometry, POKEMON_SIZES } = load("lib/pokemon-card-creator/geometry");
+  assert.deepEqual([POKEMON_SIZES.jumbo.widthMm, POKEMON_SIZES.jumbo.heightMm], [133.4, 187]);
+  for (const [bleed, width, height, widthMm, heightMm] of [
+    [0, 1576, 2209, 133.4, 187],
+    [1, 1599, 2232, 135.4, 189],
+    [2, 1623, 2256, 137.4, 191],
+  ]) {
+    const g = pokemonPrintGeometry(bleed, "jumbo");
+    assert.deepEqual([g.width, g.height, g.widthMm, g.heightMm], [width, height, widthMm, heightMm]);
+    assert.equal(g.trimWidth, 1576);
+    assert.equal(g.trimHeight, 2209);
+    assert.ok(Math.abs(g.width - g.trimWidth - g.left * 2) <= 1 && Math.abs(g.height - g.trimHeight - g.top * 2) <= 1);
+  }
+  assert.deepEqual([pokemonPrintGeometry(1).width, pokemonPrintGeometry(1).height], [768, 1063], "standard is unchanged by the size option");
+  assert.throws(() => pokemonPrintGeometry(1, "giant"), /Unsupported card size/);
+  assert.equal(model.pokemonDownloadFilename({ supertype: "pokemon", name: "Leafling" }, 1, "jumbo"), "pokemon-leafling-jumbo-300ppi-1mm-bleed.png");
+  assert.equal(model.pokemonDownloadFilename({ supertype: "pokemon", name: "Leafling" }, 0), "pokemon-leafling-300ppi-0mm-bleed.png");
+});
+test("every frame source size maps onto the 744 x 1039 trim by whole-pixel copying, never resampling", () => {
+  const { trimWidth, trimHeight } = pokemonPrintGeometry(0);
+  const sizes = new Set();
+  for (const stage of ["basic", "stage1", "stage2"])
+    for (const era of ["scarletAndViolet", "swordAndShield", "sunAndMoon", "xAndYBlackAndWhite", "ex", "exECard"]) {
+      const size = model.frameSourceSize({ supertype: "pokemon", era, stage });
+      sizes.add(size.width + "x" + size.height);
+    }
+  assert.ok([...sizes].every((value) => ["745x1040", "747x1038"].includes(value)), "known source sizes: " + [...sizes].join(", "));
+  // 745 x 1040: crop one pixel off the right and bottom; nothing is stretched or padded.
+  assert.deepEqual(trimFit(745, 1040, trimWidth, trimHeight), { sx: 0, sy: 0, dx: 0, dy: 0, width: 744, height: 1039 });
+  // 747 x 1038: crop the width evenly (1 px left, 2 px right); the height is one row short, so it is copied as is and the last row repeats.
+  assert.deepEqual(trimFit(747, 1038, trimWidth, trimHeight), { sx: 1, sy: 0, dx: 0, dy: 0, width: 744, height: 1038 });
+  assert.deepEqual(trimFit(744, 1039, trimWidth, trimHeight), { sx: 0, sy: 0, dx: 0, dy: 0, width: 744, height: 1039 }, "an exact size is copied as is");
+  assert.deepEqual(trimFit(740, 1039, 744, 1039), { sx: 0, sy: 0, dx: 2, dy: 0, width: 740, height: 1039 });
+  assert.throws(() => trimFit(0, 10, 10, 10));
+  assert.throws(() => trimFit(10.5, 10, 10, 10));
 });
 test("every supported frame mapping exists at its era source size", () => {
   const cards = [];

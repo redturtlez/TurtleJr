@@ -1,5 +1,5 @@
 import { assets, template } from "../card-creator/model";
-import { cardFrame, cellPixels, finalBleedMm, mmToPx, type CardKind, type InputBleed, type SheetBleed } from "./geometry";
+import { cardFrame, cellPixels, finalBleedMm, mmToPx, modeOfKind, type CardKind, type InputBleed, type SheetBleed } from "./geometry";
 
 /**
  * Builds one print cell (the full cell: a Pokémon card plus the sheet bleed, 300 PPI) from an uploaded card image.
@@ -10,7 +10,7 @@ import { cardFrame, cellPixels, finalBleedMm, mmToPx, type CardKind, type InputB
  * centered, and the space beyond its 2 mm bleed is left blank. Runs entirely in the browser; nothing is uploaded.
  */
 export function composeCell(source: CanvasImageSource & { width: number; height: number }, kind: CardKind, inputBleed: InputBleed, sheetBleed: SheetBleed, yugiohBorder?: HTMLCanvasElement): HTMLCanvasElement {
-  const g = cellPixels(sheetBleed);
+  const g = cellPixels(sheetBleed, modeOfKind(kind));
   const sourceWidth = source.width,
     sourceHeight = source.height;
   if (!(sourceWidth > 0 && sourceHeight > 0)) throw new Error("The image has no size.");
