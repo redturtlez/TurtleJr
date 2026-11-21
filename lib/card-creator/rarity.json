@@ -1,0 +1,63 @@
+{
+  "note": "Foil overlays are drawn by lib/card-creator/render.ts, never as template layers. Source: duelingnexus.com Yu-Gi-Oh card maker foil images, used at the project owner's direction (fair use claimed; credit to be decided).",
+  "options": [
+    {
+      "key": "none",
+      "label": "None"
+    },
+    {
+      "key": "secret",
+      "label": "Secret Rare",
+      "pictureFoilId": "rarity-secret-picture"
+    },
+    {
+      "key": "mosaic",
+      "label": "Mosaic Rare",
+      "pictureFoilId": "rarity-secret-picture",
+      "cardFoilId": "rarity-mosaic-card"
+    },
+    {
+      "key": "shatter",
+      "label": "Shatterfoil Rare",
+      "cardFoilId": "rarity-shatter-card"
+    }
+  ],
+  "assets": {
+    "rarity-secret-picture": {
+      "url": "/card-creator/rarity/secret-picture-foil.png",
+      "bounds": [
+        0,
+        0,
+        325,
+        324
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "08b98a2cbaae69c46b52ac3058f747301aecfd22e4b015997ba5ac7739be9b01"
+    },
+    "rarity-mosaic-card": {
+      "url": "/card-creator/rarity/mosaic-card-foil.png",
+      "bounds": [
+        0,
+        0,
+        421,
+        614
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "43cef8d5c23c4b537e5b15d315ad718b07b658a74d50a250c213224541ac3c62"
+    },
+    "rarity-shatter-card": {
+      "url": "/card-creator/rarity/shatterfoil-card-foil.png",
+      "bounds": [
+        0,
+        0,
+        421,
+        614
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "8a94fd4de6416c6b0725a318344b033059fd63fcbd152de8dc490ec64d7fe0d3"
+    }
+  }
+}

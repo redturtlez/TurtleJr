@@ -190,6 +190,16 @@ test("PDF rejects an invalid page size", () => {
   assert.throws(() => buildPdf({ widthMm: 0, heightMm: 10, images: [], lines: [] }));
 });
 
+test("Yu-Gi-Oh Anime is a standard-sheet card kind with the same size and always-2 mm bleed as Yu-Gi-Oh", () => {
+  assert.ok(geometry.KINDS_BY_MODE.standard.includes("yugiohAnime"));
+  assert.ok(!geometry.KINDS_BY_MODE.jumbo.includes("yugiohAnime"));
+  assert.equal(geometry.modeOfKind("yugiohAnime"), "standard");
+  assert.ok(geometry.isYugiohKind("yugioh") && geometry.isYugiohKind("yugiohAnime") && !geometry.isYugiohKind("pokemon"));
+  for (const sheetBleed of geometry.SHEET_BLEEDS) assert.equal(geometry.finalBleedMm("yugiohAnime", sheetBleed), geometry.finalBleedMm("yugioh", sheetBleed));
+  for (const bleed of [0, 1, 2]) assert.deepEqual(geometry.cardFrame("yugiohAnime", bleed, 1), geometry.cardFrame("yugioh", bleed, 1));
+  // Identical proportions can never be told apart, so the guess stays plain Yu-Gi-Oh and Anime is the user's choice.
+  assert.deepEqual(guessCard(421, 614), { kind: "yugioh", bleed: 0 });
+});
 test("type and bleed are guessed from proportions, never from a poor match", () => {
   // Exact shapes of every real combination, at several pixel scales.
   for (const kind of ["pokemon", "yugioh"]) {

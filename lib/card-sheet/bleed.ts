@@ -1,5 +1,5 @@
 import { assets, template } from "../card-creator/model";
-import { cardFrame, cellPixels, finalBleedMm, mmToPx, modeOfKind, type CardKind, type InputBleed, type SheetBleed } from "./geometry";
+import { cardFrame, cellPixels, finalBleedMm, isYugiohKind, mmToPx, modeOfKind, type CardKind, type InputBleed, type SheetBleed } from "./geometry";
 
 /**
  * Builds one print cell (the full cell: a Pokémon card plus the sheet bleed, 300 PPI) from an uploaded card image.
@@ -92,7 +92,8 @@ export function composeCell(source: CanvasImageSource & { width: number; height:
     ctx.drawImage(yugiohBorder, bw - 1, bh - 1, 1, 1, tx + bw, ty + bh, tr, tb);
     // The border itself fills the trim area beneath the card so a rounded card's corners show it.
     ctx.drawImage(yugiohBorder, tx, ty);
-  } else if (kind === "yugioh") {
+  } else if (isYugiohKind(kind)) {
+    // Anime cards always take this path: the anime frame is the whole card, so its own edge is what gets extended.
     // Same method as the Yu-Gi-Oh card creator: the outermost row/column of pixels is stretched outward with no
     // smoothing, and each corner is filled from the card's own corner pixel, so the bleed is one seamless border.
     ctx.imageSmoothingEnabled = false;

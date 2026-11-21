@@ -1,4 +1,4 @@
-import { assets, template, type Card, type Issues } from './model';
+import { assets, isAnime, template, type Card, type Issues } from './model';
 import { renderCard, type Images } from './render';
 import type { CardFonts } from './fonts';
 import { liftBitmap, liftCanvas } from '../card-sheet/shadow-canvas';
@@ -33,6 +33,15 @@ export function composePrint(target: HTMLCanvasElement, trim: HTMLCanvasElement,
   }
   ctx.drawImage(trim,g.left,g.top);
 }
+/** The card flattened onto its own corner colour, so a semi-transparent outer pixel can never leave a see-through strip in the bleed. */
+function opaqueEdgeSource(trim: HTMLCanvasElement): HTMLCanvasElement {
+  const edge=document.createElement('canvas');edge.width=trim.width;edge.height=trim.height;
+  const ctx=edge.getContext('2d'),corner=trim.getContext('2d')?.getImageData(0,0,1,1).data;
+  if(!ctx)throw new Error('Canvas unavailable.');
+  ctx.fillStyle=`rgb(${corner?.[0]??0},${corner?.[1]??0},${corner?.[2]??0})`;ctx.fillRect(0,0,edge.width,edge.height);
+  ctx.drawImage(trim,0,0);
+  return edge;
+}
 function applyRoundedCorners(canvas: HTMLCanvasElement): void {
   const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas unavailable.');
   const radius=digitalCornerRadiusPixels(),width=canvas.width,height=canvas.height;
@@ -52,12 +61,17 @@ export function renderPrint(target: HTMLCanvasElement, card: Card, images: Image
   if(!ctx||!bg) throw new Error('Canvas unavailable.');
   ctx.imageSmoothingQuality='high';bg.imageSmoothingQuality='high';
   ctx.drawImage(source,0,0,g.trimWidth,g.trimHeight);
-  const borderId=template.fixed.find(item=>item.role==='border')?.layer_id;
-  const asset=borderId ? assets[borderId] : undefined;
-  const image=asset ? images[asset.url] : undefined;
-  if(!image)throw new Error('Border graphic unavailable.');
-  bg.drawImage(image,0,0,g.trimWidth,g.trimHeight);
-  composePrint(target,trim,border,bleed);
+  if(isAnime(card)) {
+    // The anime frame is the whole card, so its own outer pixels (not the TCG black border graphic) are extended into the bleed.
+    composePrint(target,trim,opaqueEdgeSource(trim),bleed);
+  } else {
+    const borderId=template.fixed.find(item=>item.role==='border')?.layer_id;
+    const asset=borderId ? assets[borderId] : undefined;
+    const image=asset ? images[asset.url] : undefined;
+    if(!image)throw new Error('Border graphic unavailable.');
+    bg.drawImage(image,0,0,g.trimWidth,g.trimHeight);
+    composePrint(target,trim,border,bleed);
+  }
   if(cornerStyle==='rounded')applyRoundedCorners(target);
   return issues;
 }

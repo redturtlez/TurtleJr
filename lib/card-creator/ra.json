@@ -1,0 +1,30 @@
+{
+  "id": "ra",
+  "label": "Ra",
+  "frameId": "layer-8d8fae3db823490139aa645a",
+  "description": {
+    "sourcePath": [
+      0,
+      7,
+      5
+    ],
+    "name": "Effect 1-2-3-4 Lines",
+    "font": "MatrixBook",
+    "maxSize": 29,
+    "horizontalScale": 0.9955,
+    "lineHeight": 1.086,
+    "typeSuffix": "EFFECT"
+  },
+  "asset": {
+    "url": "/card-creator/normal/layer-8d8fae3db823490139aa645a.png",
+    "bounds": [
+      28,
+      28,
+      785,
+      1156
+    ],
+    "z": 12,
+    "opacity": 1,
+    "sha256": "769c232bd92025c352be0f5da89dfe99880e73fac90ca349f7dc2d692b54bc77"
+  }
+}

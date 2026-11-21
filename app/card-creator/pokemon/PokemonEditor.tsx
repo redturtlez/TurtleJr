@@ -663,7 +663,6 @@ export default function PokemonEditor() {
             {bleed > 0 && <p className={styles.note}>Bleed extends only sampled outer-border pixels beneath the unchanged trim card, including its rounded transparent corners.</p>}
           </details>
           <p className={styles.note}>Includes Pokémon, Trainer, and Energy card families.</p>
-          <p className={styles.attribution}>Adapted with permission from Pokécardmaker.net.</p>
         </section>
       </div>
       <PreviewDock source={canvas} stage={stage} classes={shared} />

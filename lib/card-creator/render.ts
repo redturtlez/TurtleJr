@@ -1,6 +1,7 @@
-import { assets, cardTemplate, typeText, formattedTypeText, fieldText, layoutFields, graphics, labels, rect, template, validateCard, type Asset, type Card, type Field, type Issues } from './model';
+import { assets, cardTemplate, typeText, formattedTypeText, fieldText, layoutFields, animeParts, graphics, isAnime, labels, rarityFoils, rect, template, validateCard, type Asset, type Card, type Field, type Issues } from './model';
 import { coverCrop, wrapText } from './layout';
 import { fontStyle, type CardFonts } from './fonts';
+import { drawAnime } from './anime';
 
 const CREDIT_HORIZONTAL_SCALE = 0.93;
 
@@ -31,10 +32,17 @@ function loadGraphic(asset: Asset): Promise<HTMLImageElement> {
 /** URLs of every layer needed to preview or export `card`: the drawn graphics plus the print border. */
 export function requiredGraphicUrls(card: Card): string[] {
   const errors = validateCard(card);
-  const urls = graphics({ ...card, level: errors.level ? 1 : card.level }).map(asset => asset.url);
+  const anime = animeParts(card);
+  const urls = anime
+    ? [anime.frame, anime.symbol, anime.star, ...anime.markers.map(marker => marker.asset)].flatMap(asset => asset ? [asset.url] : [])
+    : graphics({ ...card, level: errors.level ? 1 : card.level }).map(asset => asset.url);
+  // The anime frame is the whole card, so only TCG cards need the separate outer border graphic.
   const borderId = template.fixed.find(item => item.role === 'border')?.layer_id;
   const border = borderId ? assets[borderId] : undefined;
-  if (border) urls.push(border.url);
+  if (border && !anime) urls.push(border.url);
+  const foils = rarityFoils(card);
+  if (foils.picture) urls.push(foils.picture.url);
+  if (foils.card) urls.push(foils.card.url);
   return [...new Set(urls)];
 }
 
@@ -147,6 +155,14 @@ function drawText(ctx: CanvasRenderingContext2D, field: Field, raw: string, font
   return false;
 }
 
+/** Whole-card foil sheet; source-atop keeps it inside the card's own shape, so rounded corners stay clean. */
+function paintCardFoil(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, foil: HTMLImageElement | undefined): void {
+  if (!foil) return;
+  ctx.save(); ctx.globalCompositeOperation = 'source-atop';
+  ctx.drawImage(foil, 0, 0, canvas.width, canvas.height);
+  ctx.restore();
+}
+
 /** One source-coordinate draw path for preview and future export. No state or network. */
 export function renderCard(canvas: HTMLCanvasElement, card: Card, images: Images, artwork: ImageBitmap | null, overlay: boolean, fonts: CardFonts = {}): Issues {
   const ctx = canvas.getContext('2d');
@@ -156,6 +172,16 @@ export function renderCard(canvas: HTMLCanvasElement, card: Card, images: Images
   ctx.clearRect(0,0,canvas.width,canvas.height);
   const errors = validateCard(card);
   const selected = cardTemplate(card);
+  const foils = rarityFoils(card);
+  const pictureFoil = foils.picture ? images[foils.picture.url] : undefined;
+  const cardFoil = foils.card ? images[foils.card.url] : undefined;
+  if ((foils.picture && !pictureFoil) || (foils.card && !cardFoil)) throw new Error('A card graphic is missing.');
+  const anime = animeParts(card);
+  if (anime) {
+    drawAnime(ctx, card, anime, images, artwork, errors, fonts, overlay, { picture: pictureFoil });
+    paintCardFoil(ctx, canvas, cardFoil);
+    return errors;
+  }
   // Source order places artwork above the outer border and beneath the frame.
   const [left, top, right, bottom] = rect(template.artwork);
   for (const asset of graphics({ ...card, level: errors.level ? 1 : card.level })) {
@@ -171,6 +197,8 @@ export function renderCard(canvas: HTMLCanvasElement, card: Card, images: Images
         ctx.fillStyle = '#70675b'; ctx.font = '26px Georgia, serif'; ctx.textAlign='center';
         ctx.fillText('Your artwork', (left+right)/2, (top+bottom)/2);
       }
+      // Picture foil sits over the artwork only (clip still active) and under the frame.
+      if (pictureFoil) { ctx.globalCompositeOperation = 'color-dodge'; ctx.drawImage(pictureFoil,left,top,right-left,bottom-top); }
       ctx.restore();
     }
     const image = images[asset.url];
@@ -196,6 +224,7 @@ export function renderCard(canvas: HTMLCanvasElement, card: Card, images: Images
     ctx.fillStyle='#14100b';ctx.font='700 29px Arial, sans-serif';ctx.textAlign='right';ctx.textBaseline='alphabetic';
     ctx.fillText(String(card.linkArrows.length),746,1107);
   }
+  paintCardFoil(ctx, canvas, cardFoil);
   if (overlay) {
     ctx.strokeStyle='#cf2828'; ctx.lineWidth=2;
     const guides=[template.artwork,...fields.map(f=>f.bounds),...(selected.materialsRegion?[selected.materialsRegion]:[])];

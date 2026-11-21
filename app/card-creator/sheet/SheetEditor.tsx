@@ -494,7 +494,7 @@ export default function SheetEditor() {
               </>
             ) : (
               <>
-                Upload up to 9 card images and download a print-ready 3 × 3 PDF. Cards print at their real size, Pokémon {CARD_KINDS.pokemon.widthMm} × {CARD_KINDS.pokemon.heightMm} mm or Yu-Gi-Oh {CARD_KINDS.yugioh.widthMm} × {CARD_KINDS.yugioh.heightMm} mm, centered in a {layout.cellWidthMm} × {layout.cellHeightMm} mm cell; missing bleed is extended. Images never leave your device.
+                Upload up to 9 card images and download a print-ready 3 × 3 PDF. Cards print at their real size, Pokémon {CARD_KINDS.pokemon.widthMm} × {CARD_KINDS.pokemon.heightMm} mm or Yu-Gi-Oh (TCG or Anime) {CARD_KINDS.yugioh.widthMm} × {CARD_KINDS.yugioh.heightMm} mm, centered in a {layout.cellWidthMm} × {layout.cellHeightMm} mm cell; missing bleed is extended. Images never leave your device.
               </>
             )}
           </p>
@@ -561,6 +561,7 @@ export default function SheetEditor() {
                           <>
                             <option value="pokemon">Pokémon</option>
                             <option value="yugioh">Yu-Gi-Oh</option>
+                            <option value="yugiohAnime">Yu-Gi-Oh Anime</option>
                           </>
                         )}
                       </select>

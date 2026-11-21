@@ -7,8 +7,14 @@ import xyz from './xyz.json';
 import link from './link.json';
 import spell from './spell.json';
 import trap from './trap.json';
+import token from './token.json';
+import obelisk from './obelisk.json';
+import slifer from './slifer.json';
+import ra from './ra.json';
+import rarityData from './rarity.json';
+import animeData from './anime.json';
 
-export type TemplateId = 'normal' | 'effect' | 'fusion' | 'ritual' | 'synchro' | 'xyz' | 'link' | 'spell' | 'trap';
+export type TemplateId = 'normal' | 'effect' | 'fusion' | 'ritual' | 'synchro' | 'xyz' | 'link' | 'spell' | 'trap' | 'token' | 'obelisk' | 'slifer' | 'ra';
 export type LinkArrowKey = typeof link.arrows[number]['key'];
 export type SpellTrapType = 'normal' | 'continuous' | 'equip' | 'field' | 'quick-play' | 'ritual' | 'counter';
 export interface LinkArrow { key:LinkArrowKey; label:string; id:string }
@@ -24,8 +30,34 @@ export const templates: Record<TemplateId,TemplateSpec> = {
   link: { label:link.label, frameId:link.frameId, description:'effect', maxSize:link.description.maxSize, horizontalScale:link.description.horizontalScale, lineHeight:link.description.lineHeight, typeSuffix:link.description.typeSuffix, materialsRegion:rect(link.description.materialsRegion), effectRegion:rect(link.description.effectRegion), linkLabelId:link.linkLabelId, arrows:link.arrows as readonly LinkArrow[], hideLevels:true },
   spell: { label:spell.label, frameId:spell.frameId, description:'effect', maxSize:spell.description.maxSize, horizontalScale:spell.description.horizontalScale, lineHeight:spell.description.lineHeight, typeSuffix:'', effectRegion:rect(spell.description.effectRegion), category:'spell', cardTypeLabel:spell.cardType.label, cardTypes:spell.cardType.options as readonly CardTypeOption[], normalTypeRegion:rect(spell.cardType.normalRegion), iconTypeRegion:rect(spell.cardType.iconRegion), attributeId:spell.attributeId, typeMaxSize:40, hideLevels:true },
   trap: { label:trap.label, frameId:trap.frameId, description:'effect', maxSize:trap.description.maxSize, horizontalScale:trap.description.horizontalScale, lineHeight:trap.description.lineHeight, typeSuffix:'', effectRegion:rect(trap.description.effectRegion), category:'trap', cardTypeLabel:trap.cardType.label, cardTypes:trap.cardType.options as readonly CardTypeOption[], normalTypeRegion:rect(trap.cardType.normalRegion), iconTypeRegion:rect(trap.cardType.iconRegion), attributeId:trap.attributeId, typeMaxSize:40, hideLevels:true },
+  token: { label:token.label, frameId:token.frameId, description:'effect', maxSize:token.description.maxSize, horizontalScale:token.description.horizontalScale, lineHeight:token.description.lineHeight, typeSuffix:token.description.typeSuffix },
+  obelisk: { label:obelisk.label, frameId:obelisk.frameId, description:'effect', maxSize:obelisk.description.maxSize, horizontalScale:obelisk.description.horizontalScale, lineHeight:obelisk.description.lineHeight, typeSuffix:obelisk.description.typeSuffix },
+  slifer: { label:slifer.label, frameId:slifer.frameId, description:'effect', maxSize:slifer.description.maxSize, horizontalScale:slifer.description.horizontalScale, lineHeight:slifer.description.lineHeight, typeSuffix:slifer.description.typeSuffix },
+  ra: { label:ra.label, frameId:ra.frameId, description:'effect', maxSize:ra.description.maxSize, horizontalScale:ra.description.horizontalScale, lineHeight:ra.description.lineHeight, typeSuffix:ra.description.typeSuffix },
 } as const;
+export function isTemplateId(id: string): id is TemplateId { return Object.hasOwn(templates, id); }
 export function cardTemplate(card: Card) { return Object.hasOwn(templates,card.templateId) ? templates[card.templateId] : templates.normal; }
+const animeFrames: Readonly<Record<string, string>> = animeData.frames;
+const animeMarkers: Readonly<Record<string, string>> = animeData.markers;
+/** True when the template has an anime-style frame (the three god templates do not). */
+export function animeSupported(id: TemplateId): boolean { return Object.hasOwn(animeFrames, id); }
+/** The anime layout only applies when it is chosen and the template has one. */
+export function isAnime(card: Card): boolean { return card.style === 'anime' && animeSupported(card.templateId); }
+export interface AnimeParts { frame: Asset; symbol?: Asset; star?: Asset; markers: { key: LinkArrowKey; asset: Asset }[] }
+/** Every image an anime-style card draws, or null for a normal card. The anime frame is the whole card: no separate border and no corner sticker. */
+export function animeParts(card: Card): AnimeParts | null {
+  if (!isAnime(card)) return null;
+  const selected = cardTemplate(card);
+  const need = (id: string | undefined): Asset => { const asset = id ? assets[id] : undefined; if (!asset) throw new Error('Missing template asset'); return asset; };
+  const progression = selected.rankIds ?? template.levels;
+  const attribute = attributes[card.attribute];
+  return {
+    frame: need(animeFrames[card.templateId]),
+    symbol: selected.category ? need(selected.attributeId) : attribute ? need(attribute) : undefined,
+    star: selected.hideLevels ? undefined : need(progression[0]),
+    markers: (selected.arrows ?? []).filter(arrow => card.linkArrows.includes(arrow.key)).map(arrow => ({ key: arrow.key, asset: need(animeMarkers[arrow.key]) })),
+  };
+}
 export function typeText(card: Card): string {
   const selected=cardTemplate(card);
   if(selected.cardTypeLabel){
@@ -43,10 +75,13 @@ export function formattedTypeText(card: Card): string {
 
 export const fieldIds = ['name', 'monster_type', 'lore', 'attack', 'defense', 'set_id', 'serial', 'edition', 'credit'] as const;
 export type FieldId = typeof fieldIds[number];
+export type RarityId = 'none' | 'secret' | 'mosaic' | 'shatter';
+export interface RarityOption { key:RarityId; label:string; pictureFoilId?:string; cardFoilId?:string }
+export type CardStyle = 'tcg' | 'anime';
 export type EditionPosition = 'bottom' | 'set-line';
 export const titleColors = { Black: '#14100b', White: '#ffffff', Silver: '#c0c0c0', Gold: '#d4af37', Red: '#b51e23', Blue: '#2059b5', Green: '#237345', Purple: '#743b9d' } as const;
 export const editions = ['', '1st Edition', 'Limited Edition', 'Duel Terminal'] as const;
-export type Card = Record<FieldId, string> & { templateId: TemplateId; summon_materials:string; linkArrows:LinkArrowKey[]; spellTrapType:SpellTrapType; attribute: string; level: number; sticker: boolean; stickerColor: 'silver' | 'gold'; editionPosition: EditionPosition; titleColor: string; artX: number; artY: number; artZoom: number };
+export type Card = Record<FieldId, string> & { templateId: TemplateId; summon_materials:string; linkArrows:LinkArrowKey[]; spellTrapType:SpellTrapType; attribute: string; level: number; sticker: boolean; stickerColor: 'silver' | 'gold'; editionPosition: EditionPosition; titleColor: string; rarity: RarityId; style: CardStyle; artX: number; artY: number; artZoom: number };
 export type Rect = readonly [number, number, number, number];
 export interface Asset { url: string; bounds: number[]; z: number; opacity: number; sha256: string }
 export interface Field { id: FieldId; bounds: Rect; align: string; maxLength: number; default: string; pattern: string | null }
@@ -64,11 +99,20 @@ export const fields: Field[] = data.fields.map(f => {
   return { ...f, id, bounds: rect(f.bounds) };
 });
 export const template = data;
-export const assets: Record<string, Asset> = {...data.catalog,[effect.frameId]:effect.asset,[fusion.frameId]:fusion.asset,[ritual.frameId]:ritual.asset,[synchro.frameId]:synchro.asset,[xyz.frameId]:xyz.asset,...xyz.extraAssets,[link.frameId]:link.asset,...link.extraAssets,[spell.frameId]:spell.asset,...spell.extraAssets,[trap.frameId]:trap.asset,...trap.extraAssets};
+export const assets: Record<string, Asset> = {...data.catalog,[effect.frameId]:effect.asset,[fusion.frameId]:fusion.asset,[ritual.frameId]:ritual.asset,[synchro.frameId]:synchro.asset,[xyz.frameId]:xyz.asset,...xyz.extraAssets,[link.frameId]:link.asset,...link.extraAssets,[spell.frameId]:spell.asset,...spell.extraAssets,[trap.frameId]:trap.asset,...trap.extraAssets,[token.frameId]:token.asset,[obelisk.frameId]:obelisk.asset,[slifer.frameId]:slifer.asset,[ra.frameId]:ra.asset,...rarityData.assets,...animeData.assets};
+export const rarities: readonly RarityOption[] = rarityData.options as RarityOption[];
+/** Foil layers for the chosen rarity. They are drawn by the renderer, not by graphics(), because they use their own blend and fit. */
+export function rarityFoils(card: Card): { picture?: Asset; card?: Asset } {
+  const option = rarities.find(item => item.key === card.rarity);
+  return { picture: option?.pictureFoilId ? assets[option.pictureFoilId] : undefined, card: option?.cardFoilId ? assets[option.cardFoilId] : undefined };
+}
 export const attributes: Record<string, string> = data.attributes;
+/** Choosing this draws no attribute symbol (TCG and anime). It is offered last and is never the default. */
+export const NO_ATTRIBUTE = 'None';
+export const attributeNames: readonly string[] = [...Object.keys(attributes), NO_ATTRIBUTE];
 export const defaults: Card = { templateId:'normal', name: 'Custom Normal Monster', monster_type: 'WARRIOR', lore: '', summon_materials:'', linkArrows:['down-left','down-right'], spellTrapType:'normal', attack: '0', defense: '0',
-  set_id: 'ABC-123', serial: '00000001', edition: '1st Edition', credit: '1996 KAZUKI TAKAHASHI', attribute: 'Dark', level: 4, sticker: true, stickerColor: 'gold', editionPosition: 'set-line', titleColor: titleColors.Black, artX:0.5, artY:0.5, artZoom:1 };
-export type Issues = Partial<Record<FieldId | 'summon_materials' | 'linkArrows' | 'spellTrapType' | 'attribute' | 'level' | 'editionPosition' | 'titleColor' | 'artwork' | 'templateId', string>>;
+  set_id: 'ABC-123', serial: '00000001', edition: '1st Edition', credit: '1996 KAZUKI TAKAHASHI', attribute: 'Dark', level: 4, sticker: true, stickerColor: 'gold', editionPosition: 'set-line', titleColor: titleColors.Black, rarity:'none', style:'tcg', artX:0.5, artY:0.5, artZoom:1 };
+export type Issues = Partial<Record<FieldId | 'summon_materials' | 'linkArrows' | 'spellTrapType' | 'attribute' | 'level' | 'editionPosition' | 'titleColor' | 'rarity' | 'style' | 'artwork' | 'templateId', string>>;
 export function layoutFields(card: Card): Field[] {
   // Alternate placement is an editor layout choice, not recovered PSD geometry.
   const set = fields.find(field => field.id === 'set_id')!;
@@ -90,15 +134,19 @@ export function validateCard(card: Card): Issues {
   const errors: Issues = {};
   const selected=cardTemplate(card);
   if (!Object.hasOwn(templates,card.templateId)) errors.templateId='Choose a supported template.';
+  const anime = isAnime(card);
   for (const field of fields) {
+    // Anime cards show only artwork, attribute, level and ATK/DEF, so text that is not drawn is not validated.
+    if(anime && field.id!=='attack' && field.id!=='defense')continue;
     if((field.id==='defense' && selected.hideLevels)||(selected.category&&['attack','defense','monster_type'].includes(field.id)))continue;
     const text = card[field.id];
     if (text.length > field.maxLength) errors[field.id] = `Use at most ${field.maxLength} characters.`;
     else if (field.pattern && !new RegExp(`^(?:${field.pattern})$`).test(text)) errors[field.id] = field.id === 'serial'
       ? 'Use up to eight digits, or leave this blank.' : 'Use 0–9999 or ?.';
   }
-  if(card.summon_materials.length>200)errors.summon_materials='Use at most 200 characters.';
-  if (!selected.category&&!Object.hasOwn(attributes, card.attribute)) errors.attribute = 'Choose a supported attribute.';
+  if (card.style !== 'tcg' && card.style !== 'anime') errors.style = 'Choose a supported card style.';
+  if(!anime && card.summon_materials.length>200)errors.summon_materials='Use at most 200 characters.';
+  if (!selected.category&&card.attribute!==NO_ATTRIBUTE&&!Object.hasOwn(attributes, card.attribute)) errors.attribute = 'Choose a supported attribute.';
   if (!selected.hideLevels && (!Number.isInteger(card.level) || card.level < 1 || card.level > 12)) errors.level = 'Choose a level from 1 to 12.';
   if(selected.arrows){
     const valid=new Set(selected.arrows.map(arrow=>arrow.key));
@@ -106,6 +154,7 @@ export function validateCard(card: Card): Issues {
   }
   if(selected.cardTypes&&!selected.cardTypes.some(option=>option.key===card.spellTrapType))errors.spellTrapType=`Choose a supported ${selected.category} type.`;
   if (!['bottom','set-line'].includes(card.editionPosition)) errors.editionPosition = 'Choose an edition position.';
+  if (!rarities.some(option => option.key === card.rarity)) errors.rarity = 'Choose a supported rarity.';
   if (!/^#[0-9a-f]{6}$/i.test(card.titleColor)) errors.titleColor = 'Choose a valid title color.';
   if (![card.artX,card.artY,card.artZoom].every(Number.isFinite) || card.artX<0 || card.artX>1 || card.artY<0 || card.artY>1 || card.artZoom<1 || card.artZoom>4) errors.artwork = 'Reset artwork positioning.';
   return errors;

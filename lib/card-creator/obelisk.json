@@ -1,0 +1,30 @@
+{
+  "id": "obelisk",
+  "label": "Obelisk",
+  "frameId": "layer-05c0b53e86f46c42dc9493ed",
+  "description": {
+    "sourcePath": [
+      0,
+      7,
+      5
+    ],
+    "name": "Effect 1-2-3-4 Lines",
+    "font": "MatrixBook",
+    "maxSize": 29,
+    "horizontalScale": 0.9955,
+    "lineHeight": 1.086,
+    "typeSuffix": "EFFECT"
+  },
+  "asset": {
+    "url": "/card-creator/normal/layer-05c0b53e86f46c42dc9493ed.png",
+    "bounds": [
+      28,
+      28,
+      785,
+      1156
+    ],
+    "z": 19,
+    "opacity": 1,
+    "sha256": "dfb7411f6ccebb83281c61255b140df028448a8be5bd50bee545c0ae8c7e4aa9"
+  }
+}

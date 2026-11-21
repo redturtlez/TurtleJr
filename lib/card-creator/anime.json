@@ -1,0 +1,243 @@
+{
+  "note": "Anime-style frames and Link markers from the Dueling Nexus card maker (421 x 614 design space), used at the project owner's direction; credit undecided. Layout numbers are in lib/card-creator/anime.ts.",
+  "frames": {
+    "normal": "anime-frame-normal",
+    "effect": "anime-frame-effect",
+    "ritual": "anime-frame-ritual",
+    "fusion": "anime-frame-fusion",
+    "synchro": "anime-frame-synchro",
+    "xyz": "anime-frame-xyz",
+    "token": "anime-frame-token",
+    "link": "anime-frame-link",
+    "spell": "anime-frame-spell",
+    "trap": "anime-frame-trap"
+  },
+  "markers": {
+    "up-left": "anime-marker-up-left",
+    "up": "anime-marker-up",
+    "up-right": "anime-marker-up-right",
+    "left": "anime-marker-left",
+    "right": "anime-marker-right",
+    "down-left": "anime-marker-down-left",
+    "down": "anime-marker-down",
+    "down-right": "anime-marker-down-right"
+  },
+  "assets": {
+    "anime-frame-normal": {
+      "url": "/card-creator/anime/normal-frame.png",
+      "bounds": [
+        0,
+        0,
+        421,
+        614
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "c41fcdcf96a93b7bf47e13b5d7060e7b1ab5dd0d3aa58f2f8e62826a243d5d49"
+    },
+    "anime-frame-effect": {
+      "url": "/card-creator/anime/effect-frame.png",
+      "bounds": [
+        0,
+        0,
+        421,
+        614
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "644f94fdbcd2f8653852d147dff2b116754594d9ec42e15733055b730e9120fd"
+    },
+    "anime-frame-ritual": {
+      "url": "/card-creator/anime/ritual-frame.png",
+      "bounds": [
+        0,
+        0,
+        421,
+        614
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "81a6fc82056180db1834947ebd214d9b5227920393ecc1d57b4bb646f1e045f3"
+    },
+    "anime-frame-fusion": {
+      "url": "/card-creator/anime/fusion-frame.png",
+      "bounds": [
+        0,
+        0,
+        421,
+        614
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "7c04632e97273f8945345f9b632890f68d405aa8c134702f9569ee049c0c5ce7"
+    },
+    "anime-frame-synchro": {
+      "url": "/card-creator/anime/synchro-frame.png",
+      "bounds": [
+        0,
+        0,
+        421,
+        614
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "f2751cf85a0e0131540cb0518fa67abfc12d40020df73fe33d38d40aa5d8f873"
+    },
+    "anime-frame-xyz": {
+      "url": "/card-creator/anime/xyz-frame.png",
+      "bounds": [
+        0,
+        0,
+        421,
+        614
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "8c16959a0b374328c51e9a972ecfa91116ec160041880e4e5ad7df7b0f2b7612"
+    },
+    "anime-frame-token": {
+      "url": "/card-creator/anime/token-frame.png",
+      "bounds": [
+        0,
+        0,
+        421,
+        614
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "8783da55bee16d02d37e67e53105375ec30a8bacb20310ae014ea523fe49e940"
+    },
+    "anime-frame-link": {
+      "url": "/card-creator/anime/link-frame.png",
+      "bounds": [
+        0,
+        0,
+        421,
+        614
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "7f86985187e032450267ed7f601d7b73d360969e8736976a91c5529dcce7af0d"
+    },
+    "anime-frame-spell": {
+      "url": "/card-creator/anime/spell-frame.png",
+      "bounds": [
+        0,
+        0,
+        421,
+        614
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "4aa13ea6b76b1d8a27607d9cdaf525c726c76f0c7598e0ec470912b922e8563d"
+    },
+    "anime-frame-trap": {
+      "url": "/card-creator/anime/trap-frame.png",
+      "bounds": [
+        0,
+        0,
+        421,
+        614
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "7fc545480cb1c757f9a01bad91e0e3a6088829cb3578876a9f87edc3bf693d5e"
+    },
+    "anime-marker-up-left": {
+      "url": "/card-creator/anime/marker-up-left.png",
+      "bounds": [
+        0,
+        0,
+        44,
+        43
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "93494dbfc7af3471972bde800910663a2286b53d35389a47086a694434816568"
+    },
+    "anime-marker-up": {
+      "url": "/card-creator/anime/marker-up.png",
+      "bounds": [
+        0,
+        0,
+        97,
+        24
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "ceed7f05c0eae6263c24382c4f7022dddcc99b8bc0d3d9d6e2641c728fdc1ec0"
+    },
+    "anime-marker-up-right": {
+      "url": "/card-creator/anime/marker-up-right.png",
+      "bounds": [
+        0,
+        0,
+        45,
+        43
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "1b6caef69e4c142dd9673f907670793b0a8477ea0b78787aef907a4c206f7f4d"
+    },
+    "anime-marker-left": {
+      "url": "/card-creator/anime/marker-left.png",
+      "bounds": [
+        0,
+        0,
+        24,
+        97
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "f848d5a5ba13e2b295448740d1a9640a68f53c698eb6889bc5729951392bc3f5"
+    },
+    "anime-marker-right": {
+      "url": "/card-creator/anime/marker-right.png",
+      "bounds": [
+        0,
+        0,
+        25,
+        96
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "17137efa7f6aa63d9fb8d87de948429d37c17d6fe5ae7ff5d2149e628fc6a469"
+    },
+    "anime-marker-down-left": {
+      "url": "/card-creator/anime/marker-down-left.png",
+      "bounds": [
+        0,
+        0,
+        43,
+        43
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "bdc8455833125cb802088a295996ae75e33b10e1968e157c7520177fc4c5f619"
+    },
+    "anime-marker-down": {
+      "url": "/card-creator/anime/marker-down.png",
+      "bounds": [
+        0,
+        0,
+        97,
+        24
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "7be74f44995b8c2a95a99ffed8143b56d440e506457d12dd2425aebb4d6ae7f5"
+    },
+    "anime-marker-down-right": {
+      "url": "/card-creator/anime/marker-down-right.png",
+      "bounds": [
+        0,
+        0,
+        45,
+        44
+      ],
+      "z": 0,
+      "opacity": 1,
+      "sha256": "b74796a56cc4255e61175ba10c2d5f55159cf897b6e67e99acd9e3e85aa1f40e"
+    }
+  }
+}

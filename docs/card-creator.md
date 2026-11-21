@@ -129,6 +129,62 @@ frames and generate compact manifests. Fusion includes a dedicated materials lin
 above its effect text and automatically renders / FUSION / EFFECT in the type line.
 Ritual uses its blue PSD frame, Matrix Book effect text and automatically renders
 / RITUAL / EFFECT in the type line.
+Token, Obelisk, Slifer and Ra (added 2026-11-21; listed by those short names) use their own hidden PSD frames
+(same 813 x 1185 geometry as Normal/Effect) with the Effect text style. Token
+appends / TOKEN to the type line; the three Egyptian God templates append / EFFECT.
+Those suffixes follow printed-card convention and are inferred, not read from the
+PSD; set Monster type to e.g. DIVINE-BEAST and Attribute to Divine for the gods.
+## Rarity (2026-11-21)
+
+A Rarity dropdown (None, Secret, Mosaic, Shatterfoil) sits in the main "Your card" section and
+works on every template. Pair it with the corner sticker (Advanced options). Data lives in
+`lib/card-creator/rarity.json`; `rarityFoils(card)` returns the layers and `renderCard` draws them:
+
+- Secret: sparkle texture over the artwork only, `color-dodge`, under the frame.
+- Mosaic: the same artwork texture plus a translucent full-card sheet.
+- Shatterfoil: the full-card sheet only.
+
+The full-card sheet is drawn after text with `source-atop`, so it never paints outside the card shape
+(rounded corners, print trim). Foil PNGs are in `public/card-creator/rarity/`. They are 325 x 324 and
+421 x 614 sources stretched to the artwork box / full card, so they are softer than the PSD layers.
+Provenance: taken from duelingnexus.com's Yu-Gi-Oh card maker at the project owner's direction under
+a fair-use position; no licence or permission was obtained and credit is undecided. Revisit before any
+wider promotion of the site. Rarity does not change the sticker or title colour automatically.
+
+## Anime style (2026-11-21)
+
+A Style dropdown (TCG / Anime) sits under Card template. Anime is available for Normal, Effect, Ritual,
+Fusion, Synchro, Xyz, Token, Link, Spell and Trap; the Obelisk/Slifer/Ra templates have no anime frame, so
+the Anime option is disabled there and switching to them falls back to TCG.
+
+Anime cards carry no name, type, effect or footer text: they show the artwork (a much larger window), the
+frame, attribute (or Spell/Trap symbol), stars along the bottom, ATK and DEF in the frame's boxes, and for Link
+the glowing arrow markers with "L-n" in the DEF box. The editor hides the text fields in this mode (entries are
+kept if you switch back) and `validateCard` ignores them, so hidden text can never block a download.
+Rarity, artwork crop and export modes work as for TCG cards.
+
+- The anime frame is the whole card: it is stretched over the entire canvas with no separate black border, and
+  there is no corner sticker (the sticker option is hidden in anime mode).
+- Corners: Export options has a Corners choice for image downloads (Rounded, 1 mm radius, or Square). Anime
+  cards default to Square (like the show's artwork) and TCG cards to Rounded; once the user picks one, it stays
+  across style changes. Print-ready downloads are always square.
+- Bleed: for print export the card's own outermost pixel row/column is stretched outward (the TCG path
+  stretches the black border graphic instead); the edge is first flattened onto the corner colour so no
+  semi-transparent edge pixel (Link) leaves a see-through strip. The anime edges are not one flat colour (grey
+  bevel, orange panel), so the bleed is a streak of the edge pixels, which blends naturally. The card sheet maker
+  has a "Yu-Gi-Oh Anime" card type (59 x 86 mm, always 2 mm bleed) that uses the same own-edge method; it is a
+  manual choice because its proportions are identical to plain Yu-Gi-Oh.
+- Code: `lib/card-creator/anime.ts` (layout in a 421 x 614 design space stretched over the full canvas); data in `anime.json`; `animeParts(card)` in
+  `model.ts` lists the images a card needs; `renderCard` branches to `drawAnime`.
+- Reused PSD art: attribute, Spell/Trap symbol and one star image (scaled 28 design px per star).
+- New images: ten anime frames and eight Link markers in `public/card-creator/anime/` (421 x 614 and small
+  marker PNGs), stretched about 1.8x, so they are softer than the PSD frames. Provenance: Dueling Nexus card
+  maker at the project owner's direction under a fair-use position; no permission obtained; credit undecided
+  and deliberately not shown in the UI.
+- Not included: anime Pendulum, Dark Synchro and Skill; no anime frames exist for the god templates.
+
+Their recipes are token-, obelisk-, slifer- and ra-monster.json. No assets were
+taken from third-party sites; everything comes from the project's own PSD.
 Synchro uses its white PSD frame, Matrix Book text, / SYNCHRO / EFFECT, and a
 dedicated Synchro-materials line. Fusion and Synchro share the stored materials
 value so switching between them does not discard user input. The Synchro suffix is

@@ -30,14 +30,15 @@ const round3 = (value: number) => Math.round(value * 1000) / 1000;
 export const mmToPx = (mm: number) => Math.round((mm * PPI) / MM_PER_INCH);
 export const mmToPt = (mm: number) => (mm * 72) / MM_PER_INCH;
 
-export type CardKind = "pokemon" | "yugioh" | "pokemonJumbo";
+export type CardKind = "pokemon" | "yugioh" | "yugiohAnime" | "pokemonJumbo";
 export const CARD_KINDS: Record<CardKind, { label: string; widthMm: number; heightMm: number }> = {
   pokemon: { label: "Pokémon (63 × 88 mm)", widthMm: 63, heightMm: 88 },
   yugioh: { label: "Yu-Gi-Oh (59 × 86 mm)", widthMm: 59, heightMm: 86 },
+  yugiohAnime: { label: "Yu-Gi-Oh Anime (59 × 86 mm)", widthMm: 59, heightMm: 86 },
   pokemonJumbo: { label: "Jumbo Pokémon (133.4 × 187 mm)", widthMm: 133.4, heightMm: 187 },
 };
 /** The card kinds that can be chosen for each sheet mode. */
-export const KINDS_BY_MODE: Record<SheetMode, readonly CardKind[]> = { standard: ["pokemon", "yugioh"], jumbo: ["pokemonJumbo"] };
+export const KINDS_BY_MODE: Record<SheetMode, readonly CardKind[]> = { standard: ["pokemon", "yugioh", "yugiohAnime"], jumbo: ["pokemonJumbo"] };
 /** Bleed (in millimetres) already present in an uploaded image, on each side of the card. */
 export type InputBleed = 0 | 1 | 2;
 export const INPUT_BLEEDS: readonly InputBleed[] = [0, 1, 2];
@@ -54,7 +55,9 @@ export function cellMm(sheetBleed: SheetBleed, mode: SheetMode = "standard") {
 /** The sheet mode a card kind belongs to, which decides the size of its cell. */
 export const modeOfKind = (kind: CardKind): SheetMode => (kind === "pokemonJumbo" ? "jumbo" : "standard");
 /** Bleed a finished card ends up with: the sheet's bleed for Pokémon, always 2 mm for Yu-Gi-Oh. */
-export const finalBleedMm = (kind: CardKind, sheetBleed: SheetBleed): number => (kind === "yugioh" ? BLEED_MM : sheetBleed);
+/** Both Yu-Gi-Oh kinds are the same size; they differ only in how missing bleed is extended. */
+export const isYugiohKind = (kind: CardKind): boolean => kind === "yugioh" || kind === "yugiohAnime";
+export const finalBleedMm = (kind: CardKind, sheetBleed: SheetBleed): number => (isYugiohKind(kind) ? BLEED_MM : sheetBleed);
 
 /** Physical size of the uploaded artwork (the card plus whatever bleed it already has) and of the guided area. */
 export function cardFrame(kind: CardKind, inputBleed: InputBleed, sheetBleed: SheetBleed = DEFAULT_SHEET_BLEED) {

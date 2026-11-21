@@ -4,8 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const ts = require('typescript');
 const root = path.resolve(__dirname, '..');
-const names = ['lib/card-creator/model','lib/card-creator/layout','lib/card-creator/artwork','lib/card-creator/render',
-  'lib/card-creator/fonts','lib/card-creator/print',
+const names = ['lib/card-creator/model','lib/card-creator/layout','lib/card-creator/artwork','lib/card-creator/render','lib/card-creator/anime',
+  'lib/card-creator/fonts','lib/card-creator/print','lib/card-sheet/shadow-canvas','lib/card-sheet/shadow','lib/card-sheet/geometry',
   'app/card-creator/yugioh/CardEditor'];
 function source(name) {
   const extension = name.endsWith('CardEditor') ? '.tsx' : '.ts';
@@ -38,6 +38,7 @@ function localModule(name) {
     if (target.endsWith('link.json')) return JSON.parse(linkJson);
     if (target.endsWith('spell.json')) return JSON.parse(spellJson);
     if (target.endsWith('trap.json')) return JSON.parse(trapJson);
+    if (/lib\/card-creator\/(token|obelisk|slifer|ra|rarity|anime)\.json$/.test(target)) return JSON.parse(fs.readFileSync(path.join(root,target),'utf8'));
     if (!compiled[target]) throw new Error('Unexpected test dependency: '+target);
     return localModule(target);
   };
@@ -52,7 +53,7 @@ if (process.argv.includes('--serve')) {
   for (const [name,code] of Object.entries(compiled)) bundle += `modules[${JSON.stringify(name)}]=(require,module,exports)=>{${code}\n};\n`;
   bundle += `const cache={};function load(name){if(cache[name])return cache[name].exports;const m={exports:{}};cache[name]=m;
     function req(p){if(p==='react')return window.React;const a=name.split('/');a.pop();for(const v of p.split('/')){if(v==='..')a.pop();else if(v!=='.')a.push(v);}const key=a.join('/');
-    if(key.endsWith('normal.json'))return ${json};if(key.endsWith('effect.json'))return ${effectJson};if(key.endsWith('fusion.json'))return ${fusionJson};if(key.endsWith('ritual.json'))return ${ritualJson};if(key.endsWith('synchro.json'))return ${synchroJson};if(key.endsWith('xyz.json'))return ${xyzJson};if(key.endsWith('link.json'))return ${linkJson};if(key.endsWith('spell.json'))return ${spellJson};if(key.endsWith('trap.json'))return ${trapJson};if(key.endsWith('editor-shared.module.css'))return {__esModule:true,default:${JSON.stringify(classes)}};return load(key);}
+    if(key.endsWith('normal.json'))return ${json};if(key.endsWith('effect.json'))return ${effectJson};if(key.endsWith('fusion.json'))return ${fusionJson};if(key.endsWith('ritual.json'))return ${ritualJson};if(key.endsWith('synchro.json'))return ${synchroJson};if(key.endsWith('xyz.json'))return ${xyzJson};if(key.endsWith('link.json'))return ${linkJson};if(key.endsWith('spell.json'))return ${spellJson};if(key.endsWith('trap.json'))return ${trapJson};${['token','obelisk','slifer','ra','rarity','anime'].map(n=>`if(key.endsWith('/${n}.json'))return ${fs.readFileSync(path.join(root,`lib/card-creator/${n}.json`),'utf8')};`).join('')}if(key.endsWith('editor-shared.module.css'))return {__esModule:true,default:${JSON.stringify(classes)}};return load(key);}
     modules[name](req,m,m.exports);return m.exports;}
     ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(load('app/card-creator/yugioh/CardEditor').default));`;
   const server = http.createServer((req,res)=>{
@@ -79,7 +80,7 @@ if (process.argv.includes('--serve')) {
 } else {
   const {test} = require('node:test');
   const assert = require('node:assert/strict');
-  const {defaults,validateCard,graphics,assets,fields,layoutFields,fieldText,typeText,formattedTypeText,templates} = localModule('lib/card-creator/model');
+  const {defaults,validateCard,graphics,assets,fields,layoutFields,fieldText,typeText,formattedTypeText,templates,template,attributeNames,NO_ATTRIBUTE,isTemplateId,rarities,rarityFoils,animeSupported,isAnime,animeParts} = localModule('lib/card-creator/model');
   const plain={...defaults,sticker:false,stickerColor:'silver',editionPosition:'bottom'}; // defaults now ship with a gold sticker and set-line edition
   const {fontStyle} = localModule('lib/card-creator/fonts');
   test('Effect swaps only the frame, uses upright text and adds one type suffix',()=>{
@@ -117,6 +118,100 @@ if (process.argv.includes('--serve')) {
     assert.equal(templates.ritual.description,'effect');
     assert.equal(templates.ritual.maxSize,25);
     assert.equal(templates.ritual.materialsRegion,undefined);
+  });
+  test('Token, Obelisk, Slifer and Ra use their own frames over the standard monster layout',()=>{
+    const frames=new Set();
+    for(const {id,suffix} of [{id:'token',suffix:'TOKEN'},{id:'obelisk',suffix:'EFFECT'},{id:'slifer',suffix:'EFFECT'},{id:'ra',suffix:'EFFECT'}]){
+      const card={...defaults,templateId:id};
+      const selected=graphics(card);
+      assert.ok(selected.includes(assets[templates[id].frameId]),id);
+      assert.ok(!selected.includes(assets[templates.normal.frameId]),id);
+      assert.equal(templates[id].description,'effect');
+      assert.equal(templates[id].typeSuffix,suffix);
+      assert.equal(typeText(card),`WARRIOR / ${suffix}`);
+      assert.deepEqual(validateCard(card),{});
+      assert.ok(fs.existsSync(path.join(root,'public',assets[templates[id].frameId].url)),id);
+      frames.add(templates[id].frameId);
+    }
+    assert.equal(frames.size,4);
+    assert.ok(isTemplateId('token')&&isTemplateId('ra')&&!isTemplateId('constructor'));
+  });
+  test('Attribute None is offered last, is not the default, and draws no attribute symbol in either style',()=>{
+    assert.equal(NO_ATTRIBUTE,'None');
+    assert.equal(attributeNames[attributeNames.length-1],'None');
+    assert.ok(['Fire','Water','Earth','Wind','Dark','Divine','Light'].every(name=>attributeNames.includes(name)));
+    assert.notEqual(defaults.attribute,'None');
+    for(const style of ['tcg','anime']){
+      for(const templateId of ['normal','effect','xyz','link']){
+        const card={...defaults,style,templateId,attribute:'None'};
+        assert.ok(!validateCard(card).attribute,`${style} ${templateId}`);
+        const withAttr=style==='anime'?animeParts({...card,attribute:'Dark'}).symbol:graphics({...card,attribute:'Dark'}).find(a=>a.url===assets[JSON.parse(JSON.stringify(localModule('lib/card-creator/model').template)).attributes.Dark].url);
+        assert.ok(withAttr,`${style} ${templateId} has an attribute symbol when one is chosen`);
+        if(style==='anime')assert.equal(animeParts(card).symbol,undefined,`${templateId} anime None`);
+        else assert.ok(!graphics(card).some(a=>a===withAttr),`${templateId} tcg None`);
+      }
+    }
+    assert.ok(validateCard({...defaults,attribute:'Plasma'}).attribute);
+  });
+  test('Rarity offers None, Secret, Mosaic and Shatterfoil with the right foil layers',()=>{
+    assert.deepEqual(rarities.map(option=>option.key),['none','secret','mosaic','shatter']);
+    assert.equal(defaults.rarity,'none');
+    const foils=key=>rarityFoils({...defaults,rarity:key});
+    assert.deepEqual(foils('none'),{picture:undefined,card:undefined});
+    assert.ok(foils('secret').picture&&!foils('secret').card);
+    assert.ok(foils('mosaic').picture&&foils('mosaic').card);
+    assert.ok(!foils('shatter').picture&&foils('shatter').card);
+    assert.equal(foils('mosaic').picture,foils('secret').picture);
+    assert.notEqual(foils('mosaic').card,foils('shatter').card);
+    assert.ok(!validateCard({...defaults,rarity:'mosaic'}).rarity);
+    assert.ok(validateCard({...defaults,rarity:'ultra'}).rarity);
+    // Foils are drawn by the renderer, never added to the template graphics.
+    const base=graphics(defaults).map(a=>a.url);
+    assert.deepEqual(graphics({...defaults,rarity:'mosaic'}).map(a=>a.url),base);
+  });
+  test('Anime style applies only where a frame exists and draws only artwork, attribute, level and stats',()=>{
+    const {animeStarPositions}=localModule('lib/card-creator/anime');
+    const {requiredGraphicUrls}=localModule('lib/card-creator/render');
+    for(const id of ['normal','effect','ritual','fusion','synchro','xyz','token','link','spell','trap'])assert.ok(animeSupported(id),id);
+    for(const id of ['obelisk','slifer','ra'])assert.ok(!animeSupported(id),id);
+    assert.ok(!isAnime({...defaults,style:'tcg'}));
+    assert.ok(isAnime({...defaults,style:'anime',templateId:'effect'}));
+    assert.ok(!isAnime({...defaults,style:'anime',templateId:'ra'}));
+    assert.equal(animeParts({...defaults,style:'tcg'}),null);
+    const effect=animeParts({...defaults,style:'anime',templateId:'effect',level:7,sticker:false});
+    // The anime frame is the whole card: no separate border, and no corner sticker even when one is selected.
+    assert.ok(effect.frame&&effect.symbol&&effect.star&&effect.markers.length===0);
+    assert.equal(effect.border,undefined);
+    assert.equal(effect.sticker,undefined);
+    assert.equal(animeParts({...defaults,style:'anime',templateId:'effect',sticker:true,stickerColor:'gold'}).sticker,undefined);
+    const link=animeParts({...defaults,style:'anime',templateId:'link',linkArrows:['up','down-left','right']});
+    assert.deepEqual(link.markers.map(m=>m.key).sort(),['down-left','right','up']);
+    assert.equal(link.star,undefined);
+    const spell=animeParts({...defaults,style:'anime',templateId:'spell'});
+    assert.ok(spell.symbol&&!spell.star);
+    // Hidden text must not block a download.
+    const longName='x'.repeat(500);
+    assert.ok(validateCard({...defaults,name:longName}).name);
+    assert.ok(!validateCard({...defaults,name:longName,style:'anime',templateId:'effect'}).name);
+    assert.ok(validateCard({...defaults,attack:'abc',style:'anime',templateId:'effect'}).attack);
+    assert.ok(validateCard({...defaults,style:'cartoon'}).style);
+    // Only anime frames load for an anime card, never the TCG frame.
+    const urls=requiredGraphicUrls({...defaults,style:'anime',templateId:'effect'});
+    assert.ok(urls.includes(effect.frame.url)&&!urls.includes(assets[templates.effect.frameId].url));
+    // No TCG border or sticker image is requested for anime, but a TCG card still needs them.
+    const borderUrl=assets[template.fixed.find(item=>item.role==='border').layer_id].url;
+    assert.ok(!urls.includes(borderUrl));
+    assert.ok(!requiredGraphicUrls({...defaults,style:'anime',templateId:'effect',sticker:true}).some(url=>/b10ffa23|goldsticker/i.test(url)));
+    assert.ok(requiredGraphicUrls({...defaults,style:'tcg'}).includes(borderUrl));
+    // Stars run right to left, stay inside the frame and never exceed 12.
+    for(const level of [1,4,10,11,12]){
+      const xs=animeStarPositions(level);
+      assert.equal(xs.length,level);
+      assert.deepEqual(xs,[...xs].sort((a,b)=>b-a));
+      assert.ok(Math.min(...xs)>=0&&Math.max(...xs)+28<=421,String(level));
+    }
+    assert.equal(animeStarPositions(0).length,0);
+    assert.equal(animeStarPositions(99).length,12);
   });
   test('Synchro uses its white frame and shared materials contract',()=>{
     const synchro={...defaults,templateId:'synchro',summon_materials:'1 Tuner + 1+ non-Tuner monsters'};
@@ -263,7 +358,7 @@ if (process.argv.includes('--serve')) {
     assert.ok(!validateCard({...defaults,attack:'?'}).attack);
   });
   test('graphics are ordered and exclude private dynamic text/artwork',()=>{
-    assert.equal(Object.keys(assets).length,63);
+    assert.equal(Object.keys(assets).length,88);
     const selected=graphics({...defaults,level:12,sticker:true});
     assert.equal(selected.length,19);
     assert.deepEqual(selected.map(a=>a.z),selected.map(a=>a.z).sort((a,b)=>a-b));

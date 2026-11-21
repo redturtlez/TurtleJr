@@ -1,0 +1,30 @@
+{
+  "id": "slifer",
+  "label": "Slifer",
+  "frameId": "layer-cca1f34c332f2b544201242c",
+  "description": {
+    "sourcePath": [
+      0,
+      7,
+      5
+    ],
+    "name": "Effect 1-2-3-4 Lines",
+    "font": "MatrixBook",
+    "maxSize": 29,
+    "horizontalScale": 0.9955,
+    "lineHeight": 1.086,
+    "typeSuffix": "EFFECT"
+  },
+  "asset": {
+    "url": "/card-creator/normal/layer-cca1f34c332f2b544201242c.png",
+    "bounds": [
+      28,
+      28,
+      785,
+      1156
+    ],
+    "z": 9,
+    "opacity": 1,
+    "sha256": "66898d1c08303d059390337142a6d3bf362f6a421e604b8902e472d7b56e35db"
+  }
+}

@@ -36,7 +36,6 @@
 .reset { margin-top:20px; width:100%; }
 .error { color:#ffaaa0 !important; font-size:13px; line-height:1.5; }
 .note { font-size:12px; color:rgb(var(--text)/.68); line-height:1.6; margin:8px 0; }
-.attribution { font-size:12px; color:rgb(var(--text)/.68); line-height:1.6; margin-top:20px; }
 .previewStatus { font-size:12px; color:rgb(var(--text)/.78); min-height:20px; margin:12px 0; }
 
 /* Sticky preview: capped to the viewport so the download button stays reachable. */

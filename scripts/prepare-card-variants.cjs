@@ -1,9 +1,12 @@
 // Explicit semantic variants over the reviewed standard monster layout.
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const root=path.resolve(__dirname,'..');
-for(const [kind,recipeFile] of [['effect','effect-monster'],['fusion','fusion-monster'],['ritual','ritual-monster'],['synchro','synchro-monster'],['xyz','xyz-monster'],['link','link-monster'],['spell','spell-card'],['trap','trap-card']]){
-  const recipe=JSON.parse(fs.readFileSync(path.resolve(root,`../psd-extractor/recipes/${recipeFile}.json`),'utf8'));
-  const raw=path.resolve(root,`../psd-extractor/output/${recipe.sourceSha256}-extract-1.24.0-v2`);
+// psd-extractor sits beside the website repo or one level above it, depending on checkout layout.
+const extractor=['..','../..'].map(p=>path.resolve(root,p,'psd-extractor')).find(p=>fs.existsSync(p));
+if(!extractor)throw Error('psd-extractor directory not found');
+for(const [kind,recipeFile] of [['effect','effect-monster'],['fusion','fusion-monster'],['ritual','ritual-monster'],['synchro','synchro-monster'],['xyz','xyz-monster'],['link','link-monster'],['spell','spell-card'],['trap','trap-card'],['token','token-monster'],['obelisk','obelisk-monster'],['slifer','slifer-monster'],['ra','ra-monster']]){
+  const recipe=JSON.parse(fs.readFileSync(path.join(extractor,'recipes',`${recipeFile}.json`),'utf8'));
+  const raw=path.join(extractor,'output',`${recipe.sourceSha256}-extract-1.24.0-v2`);
   const inventory=JSON.parse(fs.readFileSync(path.join(raw,'manifest.json'),'utf8'));
   const layer=inventory.layers.find(l=>l.id===recipe.frame.id);
   const sourceText=inventory.layers.find(l=>JSON.stringify(l.index_path)===JSON.stringify(recipe.description.sourcePath));

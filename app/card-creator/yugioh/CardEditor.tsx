@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { attributes, cardTemplate, defaults, editions, fields, labels, templates, titleColors, type Card, type FieldId, type Issues } from '../../../lib/card-creator/model';
+import { animeSupported, attributeNames, cardTemplate, defaults, editions, fields, isAnime, isTemplateId, labels, rarities, templates, titleColors, type Card, type FieldId, type Issues } from '../../../lib/card-creator/model';
 import { decodeArtwork } from '../../../lib/card-creator/artwork';
 import { loadGraphics, requiredGraphicUrls, type Images } from '../../../lib/card-creator/render';
 import { DEFAULT_SHADOW_LEVEL, DEFAULT_SHADOW_SCOPE, SHADOW_LEVELS, isShadowScope, shadowLevelLabel, type ShadowLevel, type ShadowScope } from '../../../lib/card-sheet/shadow';
@@ -26,7 +26,10 @@ export default function CardEditor() {
   const [overlay, setOverlay] = useState(false);
   const [retry, setRetry] = useState(0);
   const [bleed,setBleed]=useState<Bleed>(0);
-  const [cornerStyle,setCornerStyle]=useState<CornerStyle>('rounded');
+  // 'image' downloads are for screens (bleed 0); 'print' adds bleed and always has square corners.
+  const [exportMode,setExportMode]=useState<'image'|'print'>('image');
+  // null follows the card style: anime cards are square by default (like the show's artwork), TCG cards rounded.
+  const [imageCorners,setImageCorners]=useState<CornerStyle|null>(null);
   const [lift,setLift]=useState<ShadowLevel>(DEFAULT_SHADOW_LEVEL);
   const [liftScope,setLiftScope]=useState<ShadowScope>(DEFAULT_SHADOW_SCOPE);
   const [liftPreview,setLiftPreview]=useState(true);
@@ -44,6 +47,8 @@ export default function CardEditor() {
   const downloadUrls=useRef<string[]>([]);
   const geometry=printGeometry(bleed);
   const selectedTemplate=cardTemplate(card);
+  const anime=isAnime(card);
+  const cornerStyle:CornerStyle=exportMode==='print' ? 'square' : imageCorners ?? (anime ? 'square' : 'rounded');
   // Only the layers this card draws are downloaded; switching template or options loads the rest on demand.
   const neededUrls=requiredGraphicUrls(card);
   const neededKey=neededUrls.join('|');
@@ -86,7 +91,7 @@ export default function CardEditor() {
       const blob=await exportPng(card,images,artwork,bleed,fonts,cornerStyle,lift,liftScope);
       const url=URL.createObjectURL(blob);downloadUrls.current.push(url);
       const link=document.createElement('a');link.href=url;link.download=cornerStyle==='rounded'
-        ? `${card.templateId}-card-300ppi-rounded${lift?`-sticker-lift-${lift}${liftScope==='art'?'-art':''}`:''}.png` : `${card.templateId}-card-300ppi-${bleed}mm-bleed${lift?`-sticker-lift-${lift}${liftScope==='art'?'-art':''}`:''}.png`;
+        ? `${card.templateId}${anime?'-anime':''}-card-300ppi-rounded${lift?`-sticker-lift-${lift}${liftScope==='art'?'-art':''}`:''}.png` : `${card.templateId}${anime?'-anime':''}-card-300ppi-${bleed}mm-bleed${lift?`-sticker-lift-${lift}${liftScope==='art'?'-art':''}`:''}.png`;
       document.body.appendChild(link);link.click();link.remove();
       window.setTimeout(()=>{URL.revokeObjectURL(url);downloadUrls.current=downloadUrls.current.filter(item=>item!==url);},30000);
       setExportStatus('PNG prepared. Check your browser downloads.');
@@ -139,12 +144,22 @@ export default function CardEditor() {
         <EditorSection number="01" title="Your card" classes={styles} />
         <div className={styles.field}><label htmlFor="card-template">Card template</label>
           <select id="card-template" value={card.templateId} onChange={event=>{
-            const id=event.target.value;if(id==='normal'||id==='effect'||id==='fusion'||id==='ritual'||id==='synchro'||id==='xyz'||id==='link'||id==='spell'||id==='trap')setCard(previous=>({...previous,templateId:id,
+            const id=event.target.value;if(isTemplateId(id))setCard(previous=>({...previous,templateId:id,style:animeSupported(id)?previous.style:'tcg',
               spellTrapType:templates[id].cardTypes?.some(option=>option.key===previous.spellTrapType)?previous.spellTrapType:'normal',
               titleColor:['xyz','spell','trap'].includes(id)&&previous.titleColor===titleColors.Black?titleColors.White:previous.titleColor}));
-          }}>{Object.entries(templates).map(([id,value])=><option key={id} value={id}>{value.label}</option>)}</select></div>
-        {textControl('name')}
-        <div className={advanced ? styles.row : undefined}>
+          }}>{Object.entries(templates).map(([id,value])=>{
+            // Templates without an anime frame stay selectable, but say plainly that choosing one leaves the anime style.
+            const tcgOnly=anime&&isTemplateId(id)&&!animeSupported(id);
+            return <option key={id} value={id} style={tcgOnly?{color:'#8b9199'}:undefined}>{value.label}{tcgOnly?' — no anime version, switches to TCG style':''}</option>;
+          })}</select></div>
+        <div className={styles.field}><label htmlFor="card-style">Style</label>
+          <select id="card-style" value={anime?'anime':'tcg'} onChange={event=>{const value=event.target.value;if(value==='tcg'||value==='anime')setCard(previous=>({...previous,style:value}));}}>
+            <option value="tcg">TCG (printed card)</option>
+            <option value="anime" disabled={!animeSupported(card.templateId)}>{animeSupported(card.templateId)?'Anime':'Anime (not available for this template)'}</option>
+          </select>
+          {anime&&<p className={styles.note}>Anime cards fill the whole card and show only the artwork, attribute, level and ATK/DEF, so name, text and sticker options are hidden. Your entries are kept if you switch back.</p>}</div>
+        {!anime&&textControl('name')}
+        {!anime&&<div className={advanced ? styles.row : undefined}>
           <div className={styles.field}><label htmlFor="card-title-preset">Title color</label>
             <select id="card-title-preset" value={Object.values(titleColors).some(color=>color===card.titleColor) ? card.titleColor : 'custom'}
               onChange={event=>{if(event.target.value!=='custom')setCard(previous=>({...previous,titleColor:event.target.value}));}}>
@@ -154,17 +169,22 @@ export default function CardEditor() {
           {advanced && <div className={styles.field}><label htmlFor="card-title-color">Custom title color</label>
             <input id="card-title-color" type="color" value={card.titleColor}
               onChange={event=>setCard(previous=>({...previous,titleColor:event.target.value}))} /></div>}
-        </div>
+        </div>}
         {!selectedTemplate.category&&<div className={styles.row}>
           <div className={styles.field}><label htmlFor="card-attribute">Attribute</label><select id="card-attribute" value={card.attribute}
             onChange={event=>setCard(previous=>({...previous,attribute:event.target.value}))}>
-            {Object.keys(attributes).map(attribute=><option key={attribute}>{attribute}</option>)}</select></div>
+            {attributeNames.map(attribute=><option key={attribute}>{attribute}</option>)}</select></div>
           {card.templateId==='link' ? <div className={styles.field}><label htmlFor="card-link-rating">Link Rating</label>
             <input id="card-link-rating" type="text" readOnly value={card.linkArrows.length} /></div>
             : <div className={styles.field}><label htmlFor="card-level">{card.templateId==='xyz'?'Rank':'Level'}</label><select id="card-level" value={card.level}
               onChange={event=>setCard(previous=>({...previous,level:Number(event.target.value)}))}>
               {Array.from({length:12},(_,i)=><option key={i+1} value={i+1}>{i+1}</option>)}</select></div>}
         </div>}
+        <div className={styles.field}><label htmlFor="card-rarity">Rarity</label>
+          <select id="card-rarity" value={card.rarity}
+            onChange={event=>{const value=rarities.find(option=>option.key===event.target.value)?.key;if(value)setCard(previous=>({...previous,rarity:value}));}}>
+            {rarities.map(option=><option key={option.key} value={option.key}>{option.label}</option>)}</select>
+          <p className={styles.note}>{anime ? 'Adds a foil finish to the artwork and card.' : 'Adds a foil finish to the artwork and card. Pair it with a corner sticker under Advanced options.'}</p></div>
         <EditorSection number="02" title="Artwork" classes={styles} />
         <div className={styles.upload}>
           <label htmlFor="card-artwork">Choose your artwork</label>
@@ -187,15 +207,15 @@ export default function CardEditor() {
           {uploadError && <p className={styles.error} role="alert">{uploadError}</p>}
         </div>
         <EditorSection number="03" title="The details" classes={styles} />
-        {selectedTemplate.cardTypes ? <div className={styles.field}><label htmlFor="card-spell-trap-type">{selectedTemplate.label} type</label>
+        {!anime&&(selectedTemplate.cardTypes ? <div className={styles.field}><label htmlFor="card-spell-trap-type">{selectedTemplate.label} type</label>
           <select id="card-spell-trap-type" value={card.spellTrapType} onChange={event=>{
             const option=selectedTemplate.cardTypes?.find(item=>item.key===event.target.value);
             if(option)setCard(previous=>({...previous,spellTrapType:option.key}));
           }}>{selectedTemplate.cardTypes.map(option=><option key={option.key} value={option.key}>{option.label}</option>)}</select>
           {issues.spellTrapType&&<span className={styles.error}>{issues.spellTrapType}</span>}
-        </div> : textControl('monster_type')}
-        {card.templateId!=='normal' && !selectedTemplate.category && <p className={styles.note}>The type line adds / {selectedTemplate.typeSuffix} automatically.</p>}
-        {selectedTemplate.materialsRegion && <div className={styles.field}>
+        </div> : textControl('monster_type'))}
+        {!anime && card.templateId!=='normal' && !selectedTemplate.category && <p className={styles.note}>The type line adds / {selectedTemplate.typeSuffix} automatically.</p>}
+        {!anime && selectedTemplate.materialsRegion && <div className={styles.field}>
           <label htmlFor="card-summon-materials">{card.templateId==='fusion' ? 'Fusion materials' : card.templateId==='synchro' ? 'Synchro materials' : card.templateId==='link' ? 'Link materials' : 'Xyz materials'}</label>
           <input id="card-summon-materials" type="text" maxLength={200} value={card.summon_materials}
             aria-invalid={Boolean(issues.summon_materials)} onChange={event=>setCard(previous=>({...previous,summon_materials:event.target.value}))} />
@@ -210,9 +230,9 @@ export default function CardEditor() {
             })} />{arrow.label}</label>)}</div>
           {issues.linkArrows && <span className={styles.error}>{issues.linkArrows}</span>}
         </fieldset>}
-        {textControl('lore')}
+        {!anime&&textControl('lore')}
         {!selectedTemplate.category&&<div className={styles.row}>{textControl('attack')}{card.templateId!=='link'&&textControl('defense')}</div>}
-        <details className={styles.optional} open><summary>{advanced ? 'Edition & finishing details' : 'Signature'}</summary>
+        {!anime&&<details className={styles.optional} open><summary>{advanced ? 'Edition & finishing details' : 'Signature'}</summary>
           {advanced && (['set_id','serial'] as const).map(textControl)}
           {advanced && <div className={styles.field}><label htmlFor="card-edition">Edition</label>
             <select id="card-edition" value={card.edition} onChange={event=>change('edition',event.target.value)}>
@@ -233,7 +253,7 @@ export default function CardEditor() {
               onChange={event=>{const value=event.target.value;setCard(previous=>({...previous,sticker:value!=='none',stickerColor:value==='gold'?'gold':'silver'}));}}>
               <option value="none">None</option><option value="silver">Silver</option><option value="gold">Gold</option>
             </select></div>}
-        </details>
+        </details>}
         <AdvancedHint advanced={advanced} onChange={setAdvanced} examples="set ID, serial number, edition or the corner sticker" classes={styles} />
         <button className={styles.reset} type="button" onClick={()=>{setCard({...defaults});clearArtwork();setOverlay(false);}}>Reset card</button>
       </section>
@@ -242,7 +262,7 @@ export default function CardEditor() {
         <div className={styles.stage} ref={stage}>
           <canvas ref={canvas} width={813} height={1185} aria-label={selectedTemplate.category
             ? `${card.name || 'Untitled'} ${selectedTemplate.label} preview. ${card.spellTrapType} type.`
-            : `${card.name || 'Untitled'} ${selectedTemplate.label} card preview. ${card.attribute}, ${card.templateId==='link'?`Link Rating ${card.linkArrows.length}`:`${card.templateId==='xyz'?'rank':'level'} ${card.level}`}. ATK ${card.attack}${card.templateId==='link'?'':`, DEF ${card.defense}`}.`}>
+            : `${card.name || 'Untitled'} ${selectedTemplate.label} card preview. ${card.attribute==='None'?'No attribute':card.attribute}, ${card.templateId==='link'?`Link Rating ${card.linkArrows.length}`:`${card.templateId==='xyz'?'rank':'level'} ${card.level}`}. ATK ${card.attack}${card.templateId==='link'?'':`, DEF ${card.defense}`}.`}>
             Your browser needs Canvas support to display the card preview.
           </canvas>
           {!ready && !failure && <p className={styles.loading} role="status">Loading card graphics…</p>}
@@ -254,15 +274,21 @@ export default function CardEditor() {
         <details className={styles.optional}>
           <summary>Export options</summary>
           <div className={styles.field}><label htmlFor="card-export-mode">Download as</label>
-            <select id="card-export-mode" value={cornerStyle==='rounded' ? 'image' : 'print'} onChange={event=>{
-              if(event.target.value==='print'){setCornerStyle('square');setBleed(previous=>previous===0?2:previous);}
-              else{setCornerStyle('rounded');setBleed(0);}
+            <select id="card-export-mode" value={exportMode} onChange={event=>{
+              if(event.target.value==='print'){setExportMode('print');setBleed(previous=>previous===0?2:previous);}
+              else{setExportMode('image');setBleed(0);}
             }}>
-              <option value="image">Image — rounded corners</option>
+              <option value="image">Image — for screens</option>
               <option value="print">Print-ready — square corners with bleed</option>
             </select></div>
+          {exportMode==='image'&&<div className={styles.field}><label htmlFor="card-corners">Corners</label>
+            <select id="card-corners" value={cornerStyle} onChange={event=>{const value=event.target.value;if(value==='rounded'||value==='square')setImageCorners(value);}}>
+              <option value="rounded">Rounded ({DIGITAL_CORNER_RADIUS_MM} mm radius)</option>
+              <option value="square">Square</option>
+            </select>
+            {anime&&<p className={styles.note}>Anime cards are square by default; choose Rounded if you want the look of a trimmed physical card.</p>}</div>}
           <div className={styles.field}><label htmlFor="card-bleed">Print bleed</label>
-            <select id="card-bleed" value={bleed} onChange={event=>{const next=Number(event.target.value) as Bleed;setBleed(next);if(next>0)setCornerStyle('square');}}>
+            <select id="card-bleed" value={bleed} onChange={event=>{const next=Number(event.target.value) as Bleed;setBleed(next);if(next>0)setExportMode('print');}}>
               <option value={0}>None — 59 × 86 mm</option><option value={1}>1 mm per edge — 61 × 88 mm</option><option value={2}>2 mm per edge — 63 × 90 mm</option>
             </select></div>
           <div className={styles.field}><label htmlFor="card-shadow-lift">Clear sticker shadow lift</label>
@@ -279,7 +305,7 @@ export default function CardEditor() {
           {lift>0&&<p className={styles.note}>Lightens and spreads apart only the dark tones in the downloaded PNG so fine detail does not clog when printed on clear sticker paper; midtones and bright areas are not changed. The preview stays unchanged. Use the Card Sheet Maker test sheet to choose a level, and do not apply a lift again in the sheet maker or PDF combiner.</p>}
           <p className={styles.note}>{geometry.width} × {geometry.height} pixels · 300 PPI. Trim size: 59 × 86 mm.</p>
           {cornerStyle==='rounded'&&<p className={styles.note}>Transparent {DIGITAL_CORNER_RADIUS_MM} mm corners are intended for screen use. Choose Print-ready for printing.</p>}
-          {bleed>0&&cornerStyle==='square'&&<p className={styles.note}>Bleed repeats the outer border’s edge pixels; it is not original extended artwork and may show streaks. Card contents stay the same size.</p>}
+          {bleed>0&&cornerStyle==='square'&&<p className={styles.note}>{anime ? 'Bleed repeats the card’s own edge pixels;' : 'Bleed repeats the outer border’s edge pixels;'} it is not original extended artwork and may show streaks. Card contents stay the same size.</p>}
           {cornerStyle==='square'&&<p className={styles.note}>Print at the stated size without “fit to page.” PNG includes a 300 PPI density hint, but printer software may ignore it.</p>}
         </details>
         {advanced&&<label className={styles.checkbox}><input type="checkbox" checked={overlay} onChange={event=>setOverlay(event.target.checked)} />Show layout guides (not included in downloads)</label>}

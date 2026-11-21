@@ -12,7 +12,6 @@
 .row{composes:row from '../shared/editor-shared.module.css'}
 .upload{composes:upload from '../shared/editor-shared.module.css'}
 .note{composes:note from '../shared/editor-shared.module.css'}
-.attribution{composes:attribution from '../shared/editor-shared.module.css'}
 .reset{composes:reset from '../shared/editor-shared.module.css'}
 .optional{composes:optional from '../shared/editor-shared.module.css'}
 .primary{composes:primary from '../shared/editor-shared.module.css'}
