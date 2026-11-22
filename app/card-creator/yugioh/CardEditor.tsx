@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { animeSupported, attributeNames, cardTemplate, defaults, editions, fields, isAnime, isTemplateId, labels, rarities, templates, titleColors, type Card, type FieldId, type Issues } from '../../../lib/card-creator/model';
+import { animeSupported, attributeNames, cardTemplate, defaults, editions, fields, isAnime, isTemplateId, labels, rarities, retypeMonsterType, templates, titleColors, type Card, type FieldId, type Issues } from '../../../lib/card-creator/model';
 import { decodeArtwork } from '../../../lib/card-creator/artwork';
 import { loadGraphics, requiredGraphicUrls, type Images } from '../../../lib/card-creator/render';
 import { DEFAULT_SHADOW_LEVEL, DEFAULT_SHADOW_SCOPE, SHADOW_LEVELS, isShadowScope, shadowLevelLabel, type ShadowLevel, type ShadowScope } from '../../../lib/card-sheet/shadow';
@@ -144,7 +144,7 @@ export default function CardEditor() {
         <EditorSection number="01" title="Your card" classes={styles} />
         <div className={styles.field}><label htmlFor="card-template">Card template</label>
           <select id="card-template" value={card.templateId} onChange={event=>{
-            const id=event.target.value;if(isTemplateId(id))setCard(previous=>({...previous,templateId:id,style:animeSupported(id)?previous.style:'tcg',
+            const id=event.target.value;if(isTemplateId(id))setCard(previous=>({...previous,templateId:id,monster_type:retypeMonsterType(previous.monster_type,previous.templateId,id),style:animeSupported(id)?previous.style:'tcg',
               spellTrapType:templates[id].cardTypes?.some(option=>option.key===previous.spellTrapType)?previous.spellTrapType:'normal',
               titleColor:['xyz','spell','trap'].includes(id)&&previous.titleColor===titleColors.Black?titleColors.White:previous.titleColor}));
           }}>{Object.entries(templates).map(([id,value])=>{
@@ -214,7 +214,7 @@ export default function CardEditor() {
           }}>{selectedTemplate.cardTypes.map(option=><option key={option.key} value={option.key}>{option.label}</option>)}</select>
           {issues.spellTrapType&&<span className={styles.error}>{issues.spellTrapType}</span>}
         </div> : textControl('monster_type'))}
-        {!anime && card.templateId!=='normal' && !selectedTemplate.category && <p className={styles.note}>The type line adds / {selectedTemplate.typeSuffix} automatically.</p>}
+        {!anime && card.templateId!=='normal' && !selectedTemplate.category && <p className={styles.note}>{selectedTemplate.typeSuffix} is added to the type line for you. Edit or delete it freely; the card frame stays {selectedTemplate.label}.</p>}
         {!anime && selectedTemplate.materialsRegion && <div className={styles.field}>
           <label htmlFor="card-summon-materials">{card.templateId==='fusion' ? 'Fusion materials' : card.templateId==='synchro' ? 'Synchro materials' : card.templateId==='link' ? 'Link materials' : 'Xyz materials'}</label>
           <input id="card-summon-materials" type="text" maxLength={200} value={card.summon_materials}

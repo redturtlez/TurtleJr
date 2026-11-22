@@ -64,9 +64,16 @@ export function typeText(card: Card): string {
     const option=selected.cardTypes?.find(item=>item.key===card.spellTrapType);
     return `${selected.cardTypeLabel}${option?.icon?'     ':''}`;
   }
-  const suffix=selected.typeSuffix;
-  return suffix && !card.monster_type.split('/').some(part=>part.trim().toUpperCase()===suffix)
-    ? `${card.monster_type} / ${suffix}` : card.monster_type;
+  // The type line is exactly what the user sees in the input; template suffixes are prefilled there (see retypeMonsterType), not appended here.
+  return card.monster_type;
+}
+const typeParts=(text:string):string[]=>text.split('/').map(part=>part.trim().toUpperCase()).filter(Boolean);
+/** On a template change, swaps the old template's auto-added parts (e.g. FUSION / EFFECT) for the new template's, keeping what the user typed. */
+export function retypeMonsterType(current:string, fromId:TemplateId, toId:TemplateId):string {
+  const old=typeParts(templates[fromId].typeSuffix);
+  const kept=typeParts(current).filter(part=>!old.includes(part));
+  for(const part of typeParts(templates[toId].typeSuffix)) if(!kept.includes(part)) kept.push(part);
+  return kept.join(' / ');
 }
 export function formattedTypeText(card: Card): string {
   const raw=typeText(card);
