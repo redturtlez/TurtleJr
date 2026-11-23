@@ -281,31 +281,47 @@ test("bad, empty, oversized and too many files are rejected with clear messages"
   await assert.rejects(merge.mergePdfs(many), /at most/);
 });
 
-test("shadow lift: off is identity, everything from 55% brightness up is untouched, darks get lighter with each level", () => {
+test("shadow lift: off is identity, everything from 30% brightness up is untouched, darks get lighter with each level", () => {
   const off = shadow.shadowLut(0);
   for (let v = 0; v < 256; v++) assert.equal(off[v], v);
-  let previousBlack = -1, previousDark = -1;
+  assert.deepEqual([...shadow.SHADOW_LEVELS], [0, 1, 2, 3]);
+  let previousDark = -1;
   for (const level of shadow.SHADOW_LEVELS) {
     const lut = shadow.shadowLut(level);
     assert.equal(lut[255], 255, "white stays white");
     for (let v = Math.ceil(shadow.SHADOW_REACH * 255); v < 256; v++) assert.equal(lut[v], v, "light tones and midtones are exactly unchanged");
     for (let v = 1; v < 256; v++) assert.ok(lut[v] >= lut[v - 1], "monotonic: no tones swap order");
     for (let v = 0; v < 256; v++) assert.ok(lut[v] >= v, "never darker than the input");
-    assert.equal(lut[0], 0, "black stays black");
-    if (level > 0) assert.ok(lut[40] > previousDark, "each level lightens the darks");
-    if (level > 0) assert.ok(lut[20] - lut[10] > 10 && lut[40] - lut[30] > 10, "near-black tones are pushed apart, never squeezed together");
-    previousBlack = lut[0];
-    previousDark = lut[40];
+    for (let v = 0; v <= shadow.SHADOW_BLACK_FLOOR; v++) assert.equal(lut[v], v, "black and the black floor stay as they were");
+    if (level > 0) assert.ok(lut[25] > previousDark, "each level lightens the darks");
+    if (level > 0) assert.ok(lut[20] - lut[10] > 10 && lut[10] - lut[5] > 5, "near-black tones are pushed apart, never squeezed together");
+    previousDark = lut[25];
   }
-  assert.equal(shadow.shadowLut(5)[0], 0);
-  assert.ok(shadow.shadowLut(5)[40] - shadow.shadowLut(5)[0] > 70, "level 5 spreads the darkest 40 values over more than 70");
-  assert.ok(shadow.shadowLut(5)[128] - 128 <= 3, "midtones are essentially unchanged (at most 3 of 255 at the strongest level)");
-  assert.throws(() => shadow.shadowLut(6));
+  assert.ok(shadow.shadowLut(3)[40] - shadow.shadowLut(3)[0] > 55, "level 3 spreads the darkest 40 values over more than 55");
+  assert.ok(shadow.shadowLut(3)[77] === 77 && shadow.shadowLut(3)[128] === 128, "midtones are exactly unchanged");
+  assert.throws(() => shadow.shadowLut(4));
+  assert.throws(() => shadow.shadowLut(5));
   assert.throws(() => shadow.shadowLut(1.5));
 });
 
+test("shadow lift is driven by the brightest channel: vivid colors are untouched and dark colors keep their hue", () => {
+  for (const level of [1, 2, 3]) {
+    /** @type {[number, number, number][]} */
+    const vivid = [[200, 30, 30], [30, 160, 60], [30, 80, 200], [224, 172, 140], [255, 0, 0], [90, 0, 0]];
+    for (const [r, g, b] of vivid) assert.deepEqual(shadow.liftRgb(r, g, b, level), [r, g, b], "a pixel with a bright channel is exactly unchanged");
+    const [r, g, b] = shadow.liftRgb(10, 15, 35, level);
+    assert.ok(r >= 10 && g >= 15 && b > 35, "dark navy gets lighter");
+    assert.ok(Math.abs(r / b - 10 / 35) < 0.04 && Math.abs(g / b - 15 / 35) < 0.04, "channel ratios, so hue and saturation, are preserved");
+    assert.deepEqual(shadow.liftRgb(0, 0, 0, level), [0, 0, 0]);
+    assert.deepEqual(shadow.liftRgb(2, 3, 1, level), [2, 3, 1], "values at or below the black floor are left alone");
+  }
+  assert.deepEqual(shadow.liftRgb(18, 16, 14, 0), [18, 16, 14]);
+  const gray = shadow.shadowLut(3);
+  assert.deepEqual(shadow.liftRgb(30, 30, 30, 3), [gray[30], gray[30], gray[30]], "a neutral gray matches the tone curve used for the test squares");
+});
+
 test("shadow lift changes color channels only, never alpha, and level 0 changes nothing", () => {
-  const pixels = new Uint8ClampedArray([0, 10, 20, 77, 255, 255, 255, 0]);
+  const pixels = new Uint8ClampedArray([0, 10, 20, 77, 255, 255, 255, 0, 220, 30, 40, 200]);
   const copy = pixels.slice();
   shadow.applyShadowLift(copy, 0);
   assert.deepEqual([...copy], [...pixels]);
@@ -315,21 +331,24 @@ test("shadow lift changes color channels only, never alpha, and level 0 changes 
   assert.equal(copy[0], 0, "black stays black");
   assert.ok(Number(copy[1]) > 10 && Number(copy[2]) > 20);
   assert.deepEqual([...copy.slice(4, 7)], [255, 255, 255]);
+  assert.deepEqual([...copy.slice(8, 12)], [220, 30, 40, 200], "a vivid red is not desaturated");
 });
 
-test("calibration sheet lays out 6 levels in reading order, well inside the page on Letter and A4", () => {
+test("calibration sheet lays out 4 levels in reading order, well inside the page on Letter and A4", () => {
   for (const paper of ["letter", "a4"]) {
     const page = geometry.PAPERS[paper];
     const layout = shadow.calibrationLayout(paper, 90 / 65);
-    assert.deepEqual(layout.tiles.map((t) => t.level), [0, 1, 2, 3, 4, 5]);
+    assert.deepEqual(layout.tiles.map((t) => t.level), [0, 1, 2, 3]);
     assert.equal(layout.tiles[0].steps.length, shadow.CALIBRATION_STEPS.length);
-    const rects = layout.tiles.flatMap((t) => [t.image, ...t.steps]);
+    assert.equal(layout.tiles[0].swatches.length, shadow.CALIBRATION_STEPS.length);
+    assert.equal(shadow.CALIBRATION_SWATCHES.length, shadow.CALIBRATION_STEPS.length);
+    const rects = layout.tiles.flatMap((t) => [t.image, ...t.steps, ...t.swatches]);
     for (const r of rects) {
       assert.ok(r.xMm >= 8 - 1e-6 && r.yMm >= 8 - 1e-6, "8 mm from the left and top");
       assert.ok(r.xMm + r.widthMm <= page.widthMm - 8 + 1e-6, "8 mm from the right");
       assert.ok(r.yMm + r.heightMm <= page.heightMm - 8, "8 mm from the bottom");
     }
-    assert.ok(layout.footer.yMm < page.heightMm - 8);
+    assert.ok(layout.footer.yMm + layout.footerLineMm < page.heightMm - 8, "both footer lines stay inside the margin");
     for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) {
       const a = rects[i], b = rects[j];
       const apart = a.xMm + a.widthMm <= b.xMm + 1e-6 || b.xMm + b.widthMm <= a.xMm + 1e-6 || a.yMm + a.heightMm <= b.yMm + 1e-6 || b.yMm + b.heightMm <= a.yMm + 1e-6;

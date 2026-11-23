@@ -2,7 +2,7 @@ import { cellToJpeg } from "./bleed";
 import { PAPERS, PPI, MM_PER_INCH, type PaperId } from "./geometry";
 import { buildPdf } from "./pdf";
 import { liftCanvas } from "./shadow-canvas";
-import { CALIBRATION_STEPS, calibrationLayout, shadowLevelLabel, shadowLut, type ShadowLevel } from "./shadow";
+import { CALIBRATION_STEPS, CALIBRATION_SWATCHES, calibrationLayout, liftRgb, shadowLevelLabel, shadowLut, type ShadowLevel } from "./shadow";
 
 /** Browser-only helpers for the clear sticker shadow lift. Everything runs on the device; nothing is uploaded. */
 const pxPerMm = PPI / MM_PER_INCH;
@@ -51,8 +51,8 @@ export async function buildCalibrationPdf(card: HTMLCanvasElement, paper: PaperI
   ctx.font = font(5.5, "bold");
   ctx.fillText("Clear sticker shadow lift test", mm(layout.title.xMm), mm(layout.title.yMm + 5.5));
   ctx.font = font(3.4);
-  ctx.fillText("Same card at each level. Higher levels lighten the dark areas. Pick the lowest level where the dark", mm(layout.title.xMm), mm(layout.title.yMm + 11));
-  ctx.fillText("detail and the dark squares are still clearly separate.", mm(layout.title.xMm), mm(layout.title.yMm + 15));
+  ctx.fillText("Same card at each level. Higher levels lighten only the darkest areas. Pick the lowest level where", mm(layout.title.xMm), mm(layout.title.yMm + 11));
+  ctx.fillText("dark detail stays separate and the color squares still look the same as at Level 0.", mm(layout.title.xMm), mm(layout.title.yMm + 15));
   for (const tile of layout.tiles) {
     ctx.fillStyle = "#000";
     ctx.font = font(4, "bold");
@@ -72,10 +72,16 @@ export async function buildCalibrationPdf(card: HTMLCanvasElement, paper: PaperI
       ctx.fillStyle = `rgb(${value},${value},${value})`;
       ctx.fillRect(mm(step.xMm), mm(step.yMm), mm(step.widthMm), mm(step.heightMm));
     });
+    tile.swatches.forEach((swatch, index) => {
+      const [red, green, blue] = liftRgb(...(CALIBRATION_SWATCHES[index] as readonly [number, number, number]), tile.level);
+      ctx.fillStyle = `rgb(${red},${green},${blue})`;
+      ctx.fillRect(mm(swatch.xMm), mm(swatch.yMm), mm(swatch.widthMm), mm(swatch.heightMm));
+    });
   }
   ctx.fillStyle = "#000";
   ctx.font = font(3.4);
-  ctx.fillText("Print at 100% (Actual size), not Fit to page. Photo or high-quality mode if offered.", mm(layout.footer.xMm), mm(layout.footer.yMm));
+  ctx.fillText("Top strip: grays (dark ones lift, light ones never change). Bottom strip: vivid colors must not change;", mm(layout.footer.xMm), mm(layout.footer.yMm));
+  ctx.fillText("the last four are dark colors that may lighten. Print at 100% (Actual size), not Fit to page.", mm(layout.footer.xMm), mm(layout.footer.yMm + layout.footerLineMm));
   const jpeg = await cellToJpeg(canvas);
   return buildPdf({
     widthMm: page.widthMm,

@@ -421,11 +421,13 @@ Ctrl+wheel, and drag to pan.
 ### Card Sheet Maker: clear sticker shadow lift
 
 Laser printers have no white toner, so on clear sticker stock dark tones fill in and fine shadow detail clogs (plain paper prints fine).
-The shadow lift (levels 0 to 5, 0 = off; `lib/card-sheet/shadow.ts`) is a smooth shadow curve on each color channel: black stays black, the curve is steepest just above it
-(slope up to 3 at level 5, so near-black tones are pushed apart rather than squeezed together) and the effect fades to zero at 55% brightness, so every tone from there to white is exactly unchanged. One level is therefore safe for a sheet with
-both dark and bright images; bright photos change only in their darkest spots. It is applied only to the downloaded PDF (the on-screen preview is unchanged).
-The "Download test sheet" button (`lib/card-sheet/shadow-image.ts`) makes a one-page 300 PPI PDF: one of your cards at all six levels, each with a strip of
-gray squares (dark ones to judge the lift, then light ones that stay unchanged), labelled, with every element at least 8 mm from the page edge. Print it on the sticker stock at 100%, pick the lowest level that keeps the
+The shadow lift (levels 0 to 3, 0 = off; `lib/card-sheet/shadow.ts`) is driven by each pixel's **brightest channel** (max of red, green, blue) and multiplies all three channels by the same gain, so a pixel is lifted only when
+every channel is dark: vivid colors are left exactly as they were and dark colors keep their hue and saturation. Values of 3/255 or less stay as they are (black stays black) and the gain ramps in smoothly above that; it is steepest just above black
+(slope up to 3 at level 3, so near-black tones are pushed apart rather than squeezed together) and fades to zero at 30% brightness, so any pixel with a channel above that is exactly unchanged. Above the peak the curve gives back
+a little contrast (its slope drops to about 0.33 around 20% brightness at level 3); tones stay in order. Level 3 uses the strength the old level 5 had; levels 1 and 2 are one third and two thirds of it. One level is safe for a sheet with
+both dark and bright images. It is applied only to the downloaded PDF (the on-screen preview is unchanged).
+The "Download test sheet" button (`lib/card-sheet/shadow-image.ts`) makes a one-page 300 PPI PDF: one of your cards at all four levels (2 x 2), each with a strip of
+gray squares (dark ones to judge the lift, then light ones that stay unchanged) and a strip of color squares (vivid ones that must not change, then four dark ones that may lighten), labelled, with every element at least 8 mm from the page edge. Print it on the sticker stock at 100%, pick the lowest level that keeps the
 dark detail, then set that level for the sheet download. On browsers with the Web Share API for files (most phones) "Share test sheet…" and "Share PDF…" open the
 share sheet (email, print). The PDF combiner has the same setting: it re-encodes every RGB JPEG in the combined file (JPEG quality 0.95, same pixel size);
 other image types are left unchanged and counted in the status line. Do not lift sheets that were already downloaded with a lift (it would apply twice).
